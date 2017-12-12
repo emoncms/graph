@@ -35,33 +35,48 @@
 <script language="javascript" type="text/javascript" src="<?php echo $path;?>Lib/flot/flot.min.js"></script>
 -->
 <script language="javascript" type="text/javascript" src="<?php echo $path;?>Modules/graph/vis.helper.js"></script>
+
+<!-- toggle button to choose User or Group. Documentation: http://bootstrapswitch.com/options.html -->
+<link href="<?php echo $path; ?>Modules/graph/Lib/bootstrap-switch.css" rel="stylesheet">
+<script src="<?php echo $path; ?>Modules/graph/Lib/bootstrap-switch.js"></script>
 <link href="<?php echo $path; ?>Modules/graph/graph.css" rel="stylesheet">
 
 <div id="wrapper">
     <div id="sidebar-wrapper">
-            <div style="padding-left:10px;">
-                <div id="sidebar-close" style="float:right; cursor:pointer; padding:10px;"><i class="icon-remove"></i></div>
-                <h3>Feeds</h3>
-                
+        <div style="padding-left:10px;">
+            <div id="sidebar-close" style="float:right; cursor:pointer; padding:10px;"><i class="icon-remove"></i></div>
+            <div id="vis-mode-toggle" class="hide">
+                <input type="checkbox" name="vis-mode-toggle" data-on-text="User" data-off-text="Groups" data-label-text="Mode" data-inverse="true" data-on-color="default" data-off-color="default" checked>
             </div>
+        </div>
+        <div id='vis-mode-user' style="padding-left:10px;">            
+            <h3>Feeds</h3>
             <div style="overflow-x: hidden; background-color:#f3f3f3; width:100%">
                 <table class="table" id="feeds">
                 </table>
             </div>
-            
-            <div id="mygraphs" style="padding:10px;">
-                <h4>My Graphs</h4>
-                
-                <select id="graph-select" style="width:215px">
-                </select>
-                
-                <br><br>
-                <b>Graph Name:</b><br>
-                <input id="graph-name" type="text" style="width:200px" />
-                <div id="selected-graph-id" style="font-size:10px">Selected graph id: <span id="graph-id">None selected</span></div>
-                <button id="graph-delete" class="btn" style="display:none">Delete</button>
-                <button id="graph-save" class="btn">Save</button>
+        </div>
+        <div id='vis-mode-groups' class='hide' style="padding-left:10px;">            
+            <h3>Groups</h3>
+            <select id='select-group'></select>
+            <div style="overflow-x: hidden; background-color:#f3f3f3; width:100%">
+                <div id='group-table' class='table'></div>
             </div>
+        </div>
+
+        <div id="mygraphs" style="padding:10px;">
+            <h4>My Graphs</h4>
+
+            <select id="graph-select" style="width:215px">
+            </select>
+
+            <br><br>
+            <b>Graph Name:</b><br>
+            <input id="graph-name" type="text" style="width:200px" />
+            <div id="selected-graph-id" style="font-size:10px">Selected graph id: <span id="graph-id">None selected</span></div>
+            <button id="graph-delete" class="btn" style="display:none">Delete</button>
+            <button id="graph-save" class="btn">Save</button>
+        </div>
     </div>
 
     <div id="page-content-wrapper" style="max-width:1280px">
@@ -197,87 +212,143 @@
     </div>
 </div>
 
-<script language="javascript" type="text/javascript" src="<?php echo $path;?>Modules/graph/graph.js?v=1"></script>
+<script language="javascript" type="text/javascript" src="<?php echo $path;?>Modules/graph/group_graph.js?v=1"></script>
 
 <script>
     var path = "<?php echo $path; ?>";
     var session = <?php echo $session; ?>;
-    var userid = <?php echo $userid; ?>;
-    var feedidsLH = "<?php echo $feedidsLH; ?>";
-    var feedidsRH = "<?php echo $feedidsRH; ?>";
-    
-    // Load user feeds
+    var group_support = <?php echo $group_support === 0 ? 'false' : 'true'; ?>;
+    var vis_mode = 'user';
+
+    /*********************************************
+     Load user feeds and groups (users and feeds)
+     *********************************************/
     if (session) {
-        $.ajax({                                      
-            url: path+"feed/list.json", async: false, dataType: "json",
-            success: function(data_in) { feeds = data_in; }
-        });
-    // Load public feeds for a particular user
-    } else if (userid) {
-        $.ajax({                                      
-            url: path+"feed/list.json?userid="+userid, async: false, dataType: "json",
-            success: function(data_in) { feeds = data_in; }
-        });
+        // Load user feeds
+        $.ajax({
+            url: path + "/feed/list.json",
+            async: false,
+            dataType: "json",
+            success: function (data_in) {
+                feeds = data_in;
+            }});
+
+        // Only show visualization mode switcher if groups module is installed and the user is member of a group (different than "passive member")
+        if (group_support === true) {
+            // Load user groups
+            $.ajax({url: path + "/group/mygroups.json", async: false, dataType: "json", success: function (data_in) {
+                    groups = data_in;
+                }});
+            if (groups.length === 0)
+                group_support = false; // Disable group support
+            else
+                $('#vis-mode-toggle').show();
+        }
     }
 
-    // Assign active feedid from URL
-    console.log(window.location.pathname);
-    var urlparts = window.location.pathname.split("graph/");
-    if (urlparts.length==2) {
-        var feedids = urlparts[1].split(",");
-		    for (var z in feedids) {
-		        var feedid = parseInt(feedids[z]);
-		         
-		        if (feedid) {
-		            var f = getfeed(feedid);
-                if (f==false) f = getfeedpublic(feedid);
-                if (f!=false) feedlist.push({id:feedid, name:f.name, tag:f.tag, yaxis:1, fill:0, scale: 1.0, delta:false, dp:1, plottype:'lines'});
-			      }		
-		    }
-    }
-    
-    // Left hand feed ids property
-    if (feedidsLH!="") {
-        var feedids = feedidsLH.split(",");
-		    for (var z in feedids) {
-		        var feedid = parseInt(feedids[z]);
-		         
-		        if (feedid) {
-		            var f = getfeed(feedid);
-                if (f==false) f = getfeedpublic(feedid);
-                if (f!=false) feedlist.push({id:feedid, name:f.name, tag:f.tag, yaxis:1, fill:0, scale: 1.0, delta:false, dp:1, plottype:'lines'});
-			      }		
-		    }
-    }
-
-    // Right hand feed ids property
-    if (feedidsRH!="") {
-        var feedids = feedidsRH.split(",");
-		    for (var z in feedids) {
-		        var feedid = parseInt(feedids[z]);
-		         
-		        if (feedid) {
-		            var f = getfeed(feedid);
-                if (f==false) f = getfeedpublic(feedid);
-                if (f!=false) feedlist.push({id:feedid, name:f.name, tag:f.tag, yaxis:2, fill:0, scale: 1.0, delta:false, dp:1, plottype:'lines'});
-			      }		
-		    }
-    }   
-    
-    sidebar_resize();
+    /*********************************************
+     Init editor
+     *********************************************/
     graph_init_editor();
-    
-    load_feed_selector(); 
-    if (!session) $("#mygraphs").hide();
+
+    /*********************************************
+     Assign active feedid from URL
+     *********************************************/
+    var urlparts = window.location.pathname.split("graph/");
+    if (urlparts.length == 2) {
+        var feedids = urlparts[1].split(",");
+        for (var z in feedids) {
+            var feedid = parseInt(feedids[z]);
+
+            if (feedid) {
+                if (session) {
+                    f = getfeed(feedid);
+                    feedlist.push({id: feedid, name: f.name, tag: f.tag, yaxis: 1, fill: 0, scale: 1.0, delta: false, dp: 1, plottype: 'lines'});
+                } else {
+                    feedlist.push({id: feedid, name: "undefined", tag: "undefined", yaxis: 1, fill: 0, scale: 1.0, delta: false, dp: 1, plottype: 'lines'});
+                }
+            }
+        }
+    }
+    if (urlparts.length > 2) {
+        // get data from URL
+        var groupid = urlparts[2].slice(0, urlparts[2].indexOf(','));
+        var feeds_string = urlparts[2].slice(urlparts[2].indexOf(',') + 1);
+        var feedids = feeds_string.split(",");
+
+        // Display groups mode and select the right group
+        $("[name='vis-mode-toggle']").bootstrapSwitch('state', false);
+        vis_mode = 'groups';
+        $('#vis-mode-groups').show();
+        $('#vis-mode-user').hide();
+        $('#select-group').val(get_group_index(groupid));
+        populate_group_table(get_group_index(groupid));
+
+        // fetch feeds to display
+        for (var z in feedids) {
+            var feedid = parseInt(feedids[z]);
+
+            if (feedid) {
+                if (session) {
+                    f = getfeedfromgroups(feedid);
+                    feedlist.push({id: feedid, name: f.name, tag: f.tag, yaxis: 1, fill: 0, scale: 1.0, delta: false, dp: 1, plottype: 'lines', source: 'group'});
+                } else {
+                    feedlist.push({id: feedid, name: "undefined", tag: "undefined", yaxis: 1, fill: 0, scale: 1.0, delta: false, dp: 1, plottype: 'lines'});
+                }
+            }
+        }
+    }
+
+    /*********************************************
+     Other initialitation
+     *********************************************/
+    sidebar_resize();
+
+    load_feed_selector();
+    if (!session)
+        $("#mygraphs").hide();
     graph_resize();
-    
-    var timeWindow = 3600000*24.0*7;
-    var now = Math.round(+new Date * 0.001)*1000;
+
+    var timeWindow = 3600000 * 24.0 * 7;
+    var now = Math.round(+new Date * 0.001) * 1000;
     view.start = now - timeWindow;
     view.end = now;
     view.calc_interval();
-    
+
     graph_reloaddraw();
-    
+
+    /******************************************
+     Visualization mode switcher
+     ******************************************/
+    $("[name='vis-mode-toggle']").bootstrapSwitch();
+    $("[name='vis-mode-toggle']").on('switchChange.bootstrapSwitch', function (event, state) {
+        // Clear data viewer
+        $('.feed-select-right').prop('checked', '');
+        $('.feed-select-left').prop('checked', '');
+        feedlist = [];
+        graph_reloaddraw();
+
+        //show the relevant info in editor
+        if (vis_mode == 'user') {
+            vis_mode = 'groups';
+            $('#vis-mode-groups').show();
+            $('#vis-mode-user').hide();
+        }
+        else {
+            vis_mode = 'user';
+            $('#vis-mode-groups').hide();
+            $('#vis-mode-user').show();
+        }
+    });
+
+    /******************************************
+     Functions
+     ******************************************/
+    function get_group_index(groupid) {
+        for (z in groups)
+            if (groups[z].groupid == groupid)
+                return z;
+    }
 </script>
+
 

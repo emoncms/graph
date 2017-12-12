@@ -1,28 +1,28 @@
 <?php
-/*
-  All Emoncms code is released under the GNU Affero General Public License.
-  See COPYRIGHT.txt and LICENSE.txt.
+    /*
+    All Emoncms code is released under the GNU Affero General Public License.
+    See COPYRIGHT.txt and LICENSE.txt.
 
-  ---------------------------------------------------------------------
-  Emoncms - open source energy visualisation
-  Part of the OpenEnergyMonitor project:
-  http://openenergymonitor.org
- */
+    ---------------------------------------------------------------------
+    Emoncms - open source energy visualisation
+    Part of the OpenEnergyMonitor project:
+    http://openenergymonitor.org
+    */
 
-global $path, $embed;
-global $fullwidth;
-$fullwidth = true;
-
-$graphid = get("graphid");
+    global $path, $embed;
+    global $fullwidth;
+    $fullwidth = true;
+    
+    $graphid = get("graphid");
 ?>
 
-<!--[if IE]><script language="javascript" type="text/javascript" src="<?php echo $path; ?>Lib/flot/excanvas.min.js"></script><![endif]-->
-<script language="javascript" type="text/javascript" src="<?php echo $path; ?>Lib/flot/jquery.flot.min.js"></script>
-<script language="javascript" type="text/javascript" src="<?php echo $path; ?>Lib/flot/jquery.flot.time.min.js"></script>
-<script language="javascript" type="text/javascript" src="<?php echo $path; ?>Lib/flot/jquery.flot.selection.min.js"></script>
-<script language="javascript" type="text/javascript" src="<?php echo $path; ?>Lib/flot/jquery.flot.touch.min.js"></script>
-<script language="javascript" type="text/javascript" src="<?php echo $path; ?>Lib/flot/jquery.flot.togglelegend.min.js"></script>
-<script language="javascript" type="text/javascript" src="<?php echo $path; ?>Modules/graph/vis.helper.js"></script>
+<!--[if IE]><script language="javascript" type="text/javascript" src="<?php echo $path;?>Lib/flot/excanvas.min.js"></script><![endif]-->
+<script language="javascript" type="text/javascript" src="<?php echo $path;?>Lib/flot/jquery.flot.min.js"></script>
+<script language="javascript" type="text/javascript" src="<?php echo $path;?>Lib/flot/jquery.flot.time.min.js"></script>
+<script language="javascript" type="text/javascript" src="<?php echo $path;?>Lib/flot/jquery.flot.selection.min.js"></script>
+<script language="javascript" type="text/javascript" src="<?php echo $path;?>Lib/flot/jquery.flot.touch.min.js"></script>
+<script language="javascript" type="text/javascript" src="<?php echo $path;?>Lib/flot/jquery.flot.togglelegend.min.js"></script>
+<script language="javascript" type="text/javascript" src="<?php echo $path;?>Modules/graph/vis.helper.js"></script>
 
 <div id="navigation" style="padding-bottom:5px;">
     <button class='btn graph_time' type='button' time='1'>D</button>
@@ -39,40 +39,40 @@ $graphid = get("graphid");
     <div id="placeholder"></div>
 </div>
 
-<script language="javascript" type="text/javascript" src="<?php echo $path; ?>Modules/graph/graph.js"></script>
+<script language="javascript" type="text/javascript" src="<?php echo $path;?>Modules/graph/graph.js"></script>
 
 <script>
-    $("body").css("background", "none");
+    $("body").css("background","none");
     embed = true;
-
+    
     var path = "<?php echo $path; ?>";
-
+    
     var graphid = "<?php echo $graphid; ?>";
-        
-    $.ajax({
-        url: path + "/graph/get?id=" + graphid,
+    
+    $.ajax({                                      
+        url: path+"/graph/get?id="+graphid,
         async: true,
         dataType: "json",
-        success: function (result) {
-
+        success: function(result) {
+            
             view.start = result.start;
             view.end = result.end;
             view.interval = result.interval;
             view.limitinterval = result.limitinterval;
             view.fixinterval = result.fixinterval;
             floatingtime = result.floatingtime,
-                    yaxismin = result.yaxismin;
+            yaxismin = result.yaxismin;
             yaxismax = result.yaxismax;
             feedlist = result.feedlist;
-
+            
             // show settings
             showmissing = result.showmissing;
             showtag = result.showtag;
             showlegend = result.showlegend;
-
+            
             if (floatingtime) {
                 var timewindow = view.end - view.start;
-                var now = Math.round(+new Date * 0.001) * 1000;
+                var now = Math.round(+new Date * 0.001)*1000;
                 view.end = now;
                 view.start = view.end - timewindow;
             }
@@ -90,7 +90,7 @@ $graphid = get("graphid");
             graph_reloaddraw();
         }
     });
-
+    
 
 </script>
 

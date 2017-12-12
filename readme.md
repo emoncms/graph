@@ -1,10 +1,3 @@
-# Graph with Group support
-
-This fork is part of the development of the [Groups module](https://github.com/emoncms/group/) and will allow users in a group to show in a the same graph feeds from the members of the group.
-
-
-
-
 # Graph
 
 A versatile graphing module for emoncms. This module is designed to replace the default data viewer in emoncms and is loaded when a feed view button is clicked.
