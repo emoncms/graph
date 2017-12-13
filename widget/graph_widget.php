@@ -19,11 +19,12 @@ $savedgraphsnamelist = array();
 foreach ($savedgraphs['user'] as $savedgraph) {
     $savedgraphsnamelist[] = array($savedgraph->id, $savedgraph->name);
 }
-foreach ($savedgraphs['groups'] as $group_graphs) {
-    foreach ($group_graphs as $savedgraph) {
-        $savedgraphsnamelist[] = array($savedgraph->id, $savedgraph->name);
+if ($group !== false) {
+    foreach ($savedgraphs['groups'] as $group_graphs) {
+        foreach ($group_graphs as $savedgraph) {
+            $savedgraphsnamelist[] = array($savedgraph->id, $savedgraph->name);
+        }
     }
 }
-
 ?>
 <script>var savedgraphsnamelist = <?php echo json_encode($savedgraphsnamelist); ?>;</script>
