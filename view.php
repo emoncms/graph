@@ -12,6 +12,7 @@
     global $path, $embed, $sidebarCollapsed, $fullwidth, $menucollapses;
     $fullwidth = true;
     $menucollapses = true;
+    $v = 2; // force js & css cache reload
     
     $userid = 0;
     if (isset($_GET['userid'])) $userid = (int) $_GET['userid'];
@@ -39,11 +40,11 @@
 <script language="javascript" type="text/javascript" src="<?php echo $path;?>Lib/flot/jquery.flot.togglelegend.min.js"></script>
 <script language="javascript" type="text/javascript" src="<?php echo $path;?>Lib/flot/jquery.flot.resize.min.js"></script>
 <script language="javascript" type="text/javascript" src="<?php echo $path; ?>Lib/flot/jquery.flot.stack.min.js"></script>
-<script language="javascript" type="text/javascript" src="<?php echo $path;?>Modules/graph/vis.helper.js"></script>
-<script language="javascript" type="text/javascript" src="<?php echo $path;?>Lib/misc/clipboard.js"></script>
+<script language="javascript" type="text/javascript" src="<?php echo $path;?>Modules/graph/vis.helper.js?v=<?php echo $v; ?>"></script>
+<script language="javascript" type="text/javascript" src="<?php echo $path;?>Lib/misc/clipboard.js?v=<?php echo $v; ?>"></script>
 <link href="<?php echo $path; ?>Lib/bootstrap-datetimepicker-0.0.11/css/bootstrap-datetimepicker.min.css" rel="stylesheet">
 <script language="javascript" type="text/javascript" src="<?php echo $path; ?>Lib/bootstrap-datetimepicker-0.0.11/js/bootstrap-datetimepicker.min.js"></script>
-<link href="<?php echo $path; ?>Modules/graph/graph.css" rel="stylesheet">
+<link href="<?php echo $path; ?>Modules/graph/graph.css?v=<?php echo $v; ?>" rel="stylesheet">
 
 <div id="page-content-wrapper" style="max-width:1280px">
     <div style="display: flex; align-items: center;">
@@ -218,7 +219,7 @@
     </div> 
 </div>
 
-<script language="javascript" type="text/javascript" src="<?php echo $path;?>Modules/graph/graph.js?v=1"></script>
+<script language="javascript" type="text/javascript" src="<?php echo $path;?>Modules/graph/graph.js?v=<?php echo $v; ?>"></script>
 <script language="javascript" type="text/javascript" src="<?php echo $path;?>Lib/moment.min.js"></script>
 <script>
     var path = "<?php echo $path; ?>";
