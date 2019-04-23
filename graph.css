@@ -15,6 +15,16 @@
   z-index: 1000;
 }
 
+#sidebar-split {
+    background-color: darkgrey;
+    position: fixed;
+    left: 250px;
+    top: 0;
+    height: 100%;
+    width: 4px;
+    cursor: col-resize;
+}
+
 #page-content-wrapper {
   width: 100%;
   padding-left:0px;

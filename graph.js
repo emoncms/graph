@@ -7,6 +7,8 @@ var datetimepicker2;
 
 var embed = false;
 
+var sidebarwidth = 250;
+
 var skipmissing = 0;
 var requesttype = "interval";
 var showcsv = 0;
@@ -1449,13 +1451,42 @@ function graph_delete(id) {
 // Sidebar
 // ----------------------------------------------------------------------------------------
 $("#sidebar-open").click(function(){
-    $("#sidebar-wrapper").css("left","250px");
+    $("#sidebar-wrapper").css("left", sidebarwidth);
     $("#sidebar-close").show();
 });
 
 $("#sidebar-close").click(function(){
     $("#sidebar-wrapper").css("left","0");
     $("#sidebar-close").hide();
+});
+
+function set_sidebar_width(width) {
+    $('#wrapper').css("padding-left", width);
+    $('#sidebar-wrapper').css("left", width);
+    $('#sidebar-wrapper').css("width", width);
+    $('#sidebar-wrapper').css("margin-left", -1*width);
+    $('#sidebar-split').css("left", width);
+    sidebarwidth = width;
+}
+
+$('#sidebar-split').mousedown(function (e) {
+    e.preventDefault();
+    $(document).mousemove(function (e) {
+        e.preventDefault();
+        var min = 250;
+        var max = 500;
+        var mainmin = 300;
+        var x = e.pageX - $('#sidebar-wrapper').offset().left;
+        if (x > min && x < max && e.pageX < ($(window).width() - mainmin)) {
+          set_sidebar_width(x);
+        }
+    });
+
+    $(document).one('mouseup', function (e) {
+        $(document).unbind('mousemove');
+        graph_resize();
+        graph_draw();
+    });
 });
 
 function sidebar_resize() {
@@ -1467,11 +1498,12 @@ function sidebar_resize() {
         $("#sidebar-wrapper").css("left","0");
         $("#wrapper").css("padding-left","0");
         $("#sidebar-open").show();
+        $("#sidebar-split").hide();
     } else {
-        $("#sidebar-wrapper").css("left","250px");
-        $("#wrapper").css("padding-left","250px");
+        set_sidebar_width(sidebarwidth);
         $("#sidebar-open").hide();
         $("#sidebar-close").hide();
+        $("#sidebar-split").show();
     }
 }
 

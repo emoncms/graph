@@ -86,6 +86,8 @@
             </div>
     </div>
 
+    <div id="sidebar-split"></div>
+
     <div id="page-content-wrapper" style="max-width:1280px">
         
         <h3><?php echo _('Data viewer') ?></h3> 
