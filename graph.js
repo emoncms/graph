@@ -55,7 +55,8 @@ $('#placeholder').bind("plotselected", function (event, ranges)
     graph_reloaddraw();
 });
 function getFeedUnit(id){
-    if ((typeof feeds[id] !== 'undefined') && feeds[id].unit) return feeds[id].unit;
+    let f = feeds.find(function(fd) { return fd.id == this; }, id);
+    if (f && f.unit) return f.unit;
 
     for (let gid = 0; gid < groups.length; gid++) {
         for (let uid = 0; uid < groups[gid].users.length; uid++) {
