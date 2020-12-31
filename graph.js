@@ -942,6 +942,7 @@ function graph_draw()
             out += "</select></td>";
             out += "<td style='text-align:center'><input class='scale' feedid="+feedlist[z].id+" type='text' style='width:50px' value='1.0' /></td>";
             out += "<td style='text-align:center'><input class='offset' feedid="+feedlist[z].id+" type='text' style='width:50px' value='0.0' /></td>";
+            out += "<td style='text-align:center'><button class='btn feed-edit' feedid="+feedlist[z].id+" style='padding:4px 6px'>Save</button></td>";
             out += "<td style='text-align:center'><input class='delta' feedid="+feedlist[z].id+" type='checkbox'/></td>";
             out += "<td style='text-align:center'><input class='getaverage' feedid="+feedlist[z].id+" type='checkbox'/></td>";
             out += "<td><select feedid="+feedlist[z].id+" class='decimalpoints' style='width:50px'><option>0</option><option>1</option><option>2</option><option>3</option></select></td>";
@@ -1741,6 +1742,38 @@ function load_feed_selector() {
         }
     }
 }
+
+$("#feed-controls").on("click",".feed-edit",function(){
+    var feedid = $(this).attr("feedid");
+    
+    var scale = $(".scale[feedid="+feedid+"]").val();
+    if (scale==undefined) scale = 1;
+    var offset = $(".offset[feedid="+feedid+"]").val();
+    if (offset==undefined) offset = 0;
+    
+    console.log(feedid+" "+scale+" "+offset);
+    
+    if (scale!=1 || offset!=0) {
+        var ajax = $.ajax({
+            method: "GET",
+            url: path+"feed/scalerange.json",
+            data: "id="+feedid+"&start="+view.start+"&end="+view.end+"&value="+scale,
+            async: true,
+            dataType: "json",
+            success: function(result) {
+                console.log(result);
+                //if (!result.success) alert("ERROR: "+result.message);
+            }
+        });
+    }
+    
+    $(".scale[feedid="+feedid+"]").val(1);
+    $(".offset[feedid="+feedid+"]").val(0);
+    
+    graph_reload();
+});
+
+
 /**
  * @todo replace this with moment.js translated date/time strings
  * see feed and input views for example of translated dates
