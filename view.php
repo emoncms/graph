@@ -205,6 +205,7 @@
                     <th><?php echo _('Min') ?></th>
                     <th><?php echo _('Max') ?></th>
                     <th><?php echo _('Diff') ?></th>
+                    <th><?php echo _('Sum') ?></th>          
                     <th><?php echo _('Mean') ?></th>
                     <th><?php echo _('Stdev') ?></th>
                     <th><?php echo _('Wh') ?></th>

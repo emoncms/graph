@@ -116,18 +116,20 @@ function stats(data)
         npoints ++;
     }
     var mean = sum / i;
-    sum = 0, i=0;
+    var stdev_sum = 0;
+    i = 0;
     for (z in data)
     {
-        sum += (data[z][1] - mean) * (data[z][1] - mean);
+        stdev_sum += (data[z][1] - mean) * (data[z][1] - mean);
         i++;
     }
-    var stdev = Math.sqrt(sum / i);
+    var stdev = Math.sqrt(stdev_sum / i);
     
     return {
         "minval":minval,
         "maxval":maxval,
         "diff":maxval-minval,
+        "sum":sum,
         "mean":mean,
         "stdev":stdev,
         "npointsnull":npointsnull,

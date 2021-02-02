@@ -963,6 +963,7 @@ function graph_draw()
             if(!isNaN(Number(feedlist[z].stats.minval))) out += "<td>"+feedlist[z].stats.minval.toFixed(dp)+"</td>";
             if(!isNaN(Number(feedlist[z].stats.maxval))) out += "<td>"+feedlist[z].stats.maxval.toFixed(dp)+"</td>";
             out += "<td>"+feedlist[z].stats.diff.toFixed(dp)+"</td>";
+            out += "<td>"+feedlist[z].stats.sum.toFixed(dp)+"</td>";
             out += "<td>"+feedlist[z].stats.mean.toFixed(dp)+"</td>";
             out += "<td>"+feedlist[z].stats.stdev.toFixed(dp)+"</td>";
             out += "<td>"+Math.round((feedlist[z].stats.mean*time_in_window)/3600)+"</td>";
