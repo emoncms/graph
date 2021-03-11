@@ -3,26 +3,26 @@
 /* ------------------------------------------ */
 /* REMOVE ONCE GROUP VIEW SIDEBAR REMOVED */
 #wrapper {
-  padding:0px;
-  margin:0px;
-  padding-left: 250px;
+    padding:0px;
+    margin:0px;
+    padding-left: 250px;
 }
 
 #sidebar-wrapper {
-  margin-top:-10px;
-  margin-left: -250px;
-  left: 250px;
-  width: 250px;
-  background: #eee;
-  position: fixed;
-  overflow-y: auto;
-  z-index: 1000;
-  height: 100%;
+    margin-top:-10px;
+    margin-left: -250px;
+    left: 250px;
+    width: 250px;
+    background: #eee;
+    position: fixed;
+    overflow-y: auto;
+    z-index: 1000;
+    height: 100%;
 }
 
 #page-content-wrapper {
-  width: 100%;
-  padding-left:0px;
+    width: 100%;
+    padding-left:0px;
 }
 
 #sub_nav li{
@@ -39,32 +39,20 @@
 }
 /* ------------------------------------------ */
 
-/* sidebar #mygraphs */
-#graph-list{
-    width: 14rem;
+/* sidebar #graph-list */
+#graph-list {
     overflow: hidden;
-    position: relative;
-    /* margin-bottom: 3rem; */
 }
-#graph-list input{
-    width:12rem;
+#graph-list select {
+    width: 100%;
 }
-#graph-list select{
-    width:13rem;
+#graph-list input {
+    width: calc(100% - var(--s3));
 }
-/* end of sidebar #mygraphs */
+/* end of sidebar #graph-list */
 
 .feed-options {
     background-color:#eee;
-    overflow-x: scroll;
-}
-table#feeds thead tr th .caret{
-    border-top-color: black!important;
-    vertical-align: middle;
-    margin-right: 10px;
-}
-table#feeds tbody tr th {
-    font-weight: normal
 }
 .feed-options-header {
     height:40px;
@@ -82,6 +70,10 @@ table#feeds tbody tr th {
 .feed-options-header .caret.open {
     transform: rotate(-90deg);
 }
+.feed-options-body {
+    overflow-x:auto;
+}
+
 .feed-options-title:link,
 .feed-options-title:focus {
     padding:10px;
@@ -105,10 +97,6 @@ table#feeds tbody tr th {
     z-index: 2;
 }
 
-.feed-options #tables {
-    overflow-x: scroll;
-}
-
 #vis-mode-toggle, #vis-mode-user, #vis-mode-groups{
     margin:15px 0;
 }
@@ -126,7 +114,6 @@ table#feeds tbody tr th {
     background-color:#aaa;
     cursor:pointer
 }
-
 
 #group-table .user-feed td{
     max-width:150px;
@@ -173,6 +160,12 @@ table#feeds tbody tr th {
 input.feed-tag-checkbox-left, input.feed-tag-checkbox-right{
     margin:0 5px;
 }
+
+#navigation svg.icon {
+    width: .9em;
+    height: .9em;
+}
+
 #tooltip {
     z-index: 1001;
 }
@@ -195,10 +188,10 @@ input.feed-tag-checkbox-left, input.feed-tag-checkbox-right{
     top: 0
 }
 #legend .right{
-    right: .8em;
+    right: 1em;
 }
 #legend .left{
-    left: 0;
+    left: 1em;
 }
 #legend .legendColorBox {
     display: inline-block;
@@ -220,36 +213,35 @@ input.feed-tag-checkbox-left, input.feed-tag-checkbox-right{
     float: right;
 }
 
-table#feeds.table thead th{
-    border-top: 4px solid #333;
+/*
+table#feeds.table thead tr th:hover {
+    text-decoration: underline;
+}
+*/
+table#feeds.table thead tr th {
+    border-top: 4px solid transparent;
     font-weight: normal !important;
-    color: #adadad;
     cursor: pointer;
     transition: all .3s ease-in;
     padding-left: 0;
 }
-table#feeds.table thead th:hover{
-    color: #f8f9fa;
-    text-decoration: underline;
+table#feeds.table input[type="checkbox"] {
+    margin: 0;
 }
-table#feeds.table input[type="checkbox"] { margin: 0 }
-table#feeds.table tbody tr > *{
-    border-color: #444;
+table#feeds.table tbody tr {
+    padding-left: 10px;
 }
-table#feeds.table tbody tr th{
+table#feeds.table tbody tr th {
     cursor: pointer;
-    transition: all .3s ease-in;
+    padding-left: 25px;
     font-weight: normal;
+    transition: all .3s ease-in;
 }
-table#feeds.table tbody tr th:hover{
-    text-decoration: underline;
+table#feeds.table tbody tr th.feed-title span {
+    vertical-align: middle;
+    max-width: 8em;
 }
-table#feeds.table tbody tr th.feed-title span{
-    max-width:9em;
-}
-
 table#feeds.table .caret {
-    border-top-color: currentColor !important;
     display: inline-block;
     vertical-align: middle;
     margin-right: .4em;

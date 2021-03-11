@@ -77,16 +77,16 @@
     <button class='btn graph_time' type='button' data-time='365' title="<?php echo _('Year') ?>"><?php echo _('Y') ?></button>
     -->
     
-    <button id='graph_zoomin' class='btn' title="<?php echo _('Zoom In') ?>">+</button>
-    <button id='graph_zoomout' class='btn' title="<?php echo _('Zoom Out') ?>">-</button>
-    <button id='graph_left' class='btn' title="<?php echo _('Earlier') ?>"><</button>
-    <button id='graph_right' class='btn' title="<?php echo _('Later') ?>">></button>
+    <button id='graph_zoomin' class='btn' title="<?php echo _('Zoom In') ?>"><svg class="icon"><use xlink:href="#icon-plus"></use></svg></button>
+    <button id='graph_zoomout' class='btn' title="<?php echo _('Zoom Out') ?>"><svg class="icon"><use xlink:href="#icon-minus"></use></svg></button>
+    <button id='graph_left' class='btn' title="<?php echo _('Earlier') ?>"><svg class="icon"><use xlink:href="#icon-chevron-left"></use></svg></button>
+    <button id='graph_right' class='btn' title="<?php echo _('Later') ?>"><svg class="icon"><use xlink:href="#icon-chevron-right"></use></svg></button>
     
     <div id="showcontrols" class="input-prepend input-append">
-    <span class="add-on"><?php echo _('Show') ?></span>
-    <span class="add-on"><?php echo _('missing data') ?>: <input type="checkbox" id="showmissing" style="margin-top:1px" /></span>
-    <span class="add-on"><?php echo _('legend') ?>: <input type="checkbox" id="showlegend" style="margin-top:1px" /></span>
-    <span class="add-on"><?php echo _('feed tag') ?>: <input type="checkbox" id="showtag" style="margin-top:1px" /></span>
+        <span class="add-on"><?php echo _('Show') ?></span>
+        <span class="add-on"><?php echo _('missing data') ?>: <input type="checkbox" id="showmissing" /></span>
+        <span class="add-on"><?php echo _('legend') ?>: <input type="checkbox" id="showlegend" /></span>
+        <span class="add-on"><?php echo _('feed tag') ?>: <input type="checkbox" id="showtag" /></span>
     </div>
     
     <div style="clear:both"></div>
@@ -144,8 +144,8 @@
         
         <span class="fixed-interval-options">
             <input id="request-interval" type="text" style="width:60px" />
-            <span class="add-on"><?php echo _('Fix') ?> <input id="request-fixinterval" type="checkbox" style="margin-top:1px" /></span>
-            <span class="add-on"><?php echo _('Limit to data interval') ?> <input id="request-limitinterval" type="checkbox" style="margin-top:1px" checked></span>
+            <span class="add-on"><?php echo _('Fix') ?> <input id="request-fixinterval" type="checkbox" /></span>
+            <span class="add-on"><?php echo _('Limit to data interval') ?> <input id="request-limitinterval" type="checkbox" checked></span>
         </span>
     </div>
     <div>

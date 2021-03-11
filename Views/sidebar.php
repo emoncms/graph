@@ -1,6 +1,6 @@
 <table class="table table-condensed mx-3" id="feeds" style="width: 90%"></table>
 
-<div id="my_graphs" class="px-3" v-cloak>
+<div id="graph-list" class="px-3" v-cloak>
     <h4>
         <a href="#" @click.prevent="collapsed=!collapsed" :class="{'collapsed': collapsed}">
             <?php echo _('My Graphs') ?> 

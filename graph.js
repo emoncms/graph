@@ -902,9 +902,12 @@ function graph_draw()
         }
         // Add series to plot
         var label = "";
+        var unit = getFeedUnit(feedlist[z].id);
         if (showtag) label += feedlist[z].tag+": ";
         label += feedlist[z].name;
-        // label += ' '+getFeedUnit(feedlist[z].id);
+        if (unit.length > 0) {
+            label += ' ['+unit+']';
+        }
         var stacked = (typeof(feedlist[z].stack) !== "undefined" && feedlist[z].stack);
         var plot = {label:label, data:data, yaxis:feedlist[z].yaxis, color: feedlist[z].color, stack: stacked};
 
@@ -1298,7 +1301,7 @@ function histogram(feedid,type,resolution)
 // Saved graphs
 // ----------------------------------------------------------------------
 var saveGraphsApp = new Vue({
-    el: '#my_graphs',
+    el: '#graph-list',
     data: {
         selected: -1,
         collapsed: false,
