@@ -47,6 +47,7 @@
 <script src="<?php echo $path;?>Lib/flot/jquery.flot.resize.min.js"></script>
 <script src="<?php echo $path; ?>Lib/flot/jquery.flot.stack.min.js"></script>
 -->
+<script src="<?php echo $path; ?>Lib/flot/jquery.flot.stack.min.js"></script>
 <script src="<?php echo $path;?>Modules/graph/vis.helper.js?v=<?php echo $v; ?>"></script>
 <script src="<?php echo $path;?>Lib/misc/clipboard.js?v=<?php echo $v; ?>"></script>
 <script src="<?php echo $path; ?>Lib/bootstrap-datetimepicker-0.0.11/js/bootstrap-datetimepicker.min.js"></script>

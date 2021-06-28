@@ -588,7 +588,7 @@ function pushfeedlist(feedid, yaxis) {
 
     if (f==false) f = getfeedpublic(feedid);
     if (f!=false) {
-        if (f.datatype==2 || f.value % 1 !== 0 ) dp=1;
+        if (f.value % 1 !== 0 ) dp=1;
         feedlist.push({id:feedid, name:f.name, tag:f.tag, yaxis:yaxis, fill:0, scale: 1.0, offset: 0.0, delta:false, getaverage:false, dp:dp, plottype:'lines'});
     }
 }
