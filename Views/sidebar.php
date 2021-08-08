@@ -1,4 +1,4 @@
-<div class="htop"></div><h3 class="l3-title mx-3">Graph</h3><table class="table table-condensed mx-3" id="feeds" style="width: 90%;"></table>
+<div class="htop"></div><h3 class="l3-title mx-3"><?php echo _('Graph') ?> </h3><table class="table table-condensed mx-3" id="feeds" style="width: 90%;"></table>
 
 <div id="my_graphs" class="px-3" v-cloak>
     <h4>

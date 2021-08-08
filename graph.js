@@ -1357,7 +1357,7 @@ function load_saved_graphs_menu()
                 none: 'None selected',
                 deleted: 'Deleted',
                 saved: 'Saved',
-                select: 'Select graph'
+                select: _lang['Select graph']
             },
             original: '',
             graphs: {},
