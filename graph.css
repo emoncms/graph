@@ -40,16 +40,30 @@
 /* ------------------------------------------ */
 
 /* sidebar #mygraphs */
-#graph-list{
-    width: 14rem;
+#my_graphs{
+    width: 13rem;
     overflow: hidden;
     position: relative;
     /* margin-bottom: 3rem; */
 }
-#graph-list input{
+
+#my_graphs h4 a {
+  color: white;
+  display: block;
+}
+
+#my_graphs h4 a:hover {
+  text-decoration: underline;
+}
+
+#my_graphs h5 {
+  color:#aaa;
+}
+
+#my_graphs input{
     width:12rem;
 }
-#graph-list select{
+#my_graphs select{
     width:13rem;
 }
 /* end of sidebar #mygraphs */
@@ -221,9 +235,9 @@ input.feed-tag-checkbox-left, input.feed-tag-checkbox-right{
 }
 
 table#feeds.table thead th{
-    border-top: 4px solid #333;
+    border-top: 2px solid #333;
     font-weight: normal !important;
-    color: #adadad;
+    color: #bdbdbd;
     cursor: pointer;
     transition: all .3s ease-in;
     padding-left: 0;
@@ -232,7 +246,7 @@ table#feeds.table thead th:hover{
     color: #f8f9fa;
     text-decoration: underline;
 }
-table#feeds.table input[type="checkbox"] { margin: 0 }
+table#feeds.table input[type="checkbox"] { margin: 0; }
 table#feeds.table tbody tr > *{
     border-color: #444;
 }

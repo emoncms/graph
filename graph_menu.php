@@ -1,13 +1,12 @@
 <?php
+global $session;
+// Initial graph menu item placement
+$menu["setup"]["l2"]['graph'] = array(
+    "name"=>_("Graphs"),
+    "href"=>"graph",
+    "order"=>3, 
+    "icon"=>"show_chart"
+);
 
-    $menu['sidebar']['emoncms'][] = array(
-        'text' => _("Graphs"),
-        'path' => 'graph',
-        'active'=>'graph',
-        'icon' => 'show_chart',
-        'order' => 2,
-        'li_id' => 'graph-link',
-        'data'=> array('sidebar' => '#sidebar_graph')
-    );
+// Full level3 sidebar is added via javascript in graph.js
 
-    $menu['sidebar']['includes']['emoncms']['graph'] = view('Modules/graph/Views/sidebar.php',array());

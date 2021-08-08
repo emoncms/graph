@@ -27,7 +27,7 @@ class Graph
     public function create($userid,$data)
     {
         $userid = (int) $userid;
-        $data = preg_replace('/[^\w\s\-.",:#{}\[\]]/','',$data);
+        $data = preg_replace('/[^\w\s\-.",:#&{}\[\]]/','',$data);
 
         $stmt = $this->mysqli->prepare("INSERT INTO graph ( userid, data, groupid ) VALUES (?,?,0)");
         $stmt->bind_param("is", $userid, $data);
@@ -41,7 +41,7 @@ class Graph
     {
         $userid = (int) $userid;
         $id = (int) $id;
-        $data = preg_replace('/[^\w\s\-.",:#{}\[\]]/','',$data);
+        $data = preg_replace('/[^\w\s\-.",:#&{}\[\]]/','',$data);
         
         $result = $this->mysqli->query("SELECT data FROM graph WHERE `id`='$id' AND `userid`='$userid'");
         if ($result->num_rows) {
@@ -127,7 +127,7 @@ class Graph
     
     public function creategroupgraph($userid, $data, $groupid) {
         $userid = (int) $userid;
-        $data = preg_replace('/[^\w\s\-.",:#{}\[\]]/', '', $data);
+        $data = preg_replace('/[^\w\s\-.",:#&{}\[\]]/', '', $data);
         $groupid = (int) $groupid;
         $user_role = $this->group->get_user_role($userid, $userid, $groupid);
 
@@ -147,7 +147,7 @@ class Graph
     public function updategroupgraph($userid, $id, $data, $groupid) {
         $userid = (int) $userid;
         $id = (int) $id;
-        $data = preg_replace('/[^\w\s\-.",:#{}\[\]]/', '', $data);
+        $data = preg_replace('/[^\w\s\-.",:#&{}\[\]]/', '', $data);
         $groupid = (int) $groupid;
         $user_role = $this->group->get_user_role($userid, $userid, $groupid);
 

@@ -71,7 +71,6 @@ function graph_controller()
         $result = view("Modules/graph/group_view.php", array("session" => $session["write"], 'group_support' => 1));
     }
     else {
-        $route->sidebar = view("Modules/graph/Views/sidebar.php",array());
         $result = view("Modules/graph/view.php", array("session" => $session["write"]));
     }
 
