@@ -95,11 +95,15 @@ function stats(data)
     var npoints = 0;
     var npointsnull = 0;
     
+    var start_time = -1;
+    var end_time = 0;
+    
     var val = null;
     for (var z in data)
     {
         var val = data[z][1];                        // 1) only calculated based on present values
-        //if (data[z][1]!=null) val = data[z][1];    // 2) if value is missing use last value
+        // if (data[z][1]!=null) val = data[z][1];   // 2) if value is missing use last value
+        
         if (val!=null) 
         {
             if (i==0) {
@@ -110,9 +114,12 @@ function stats(data)
             if (val<minval) minval = val;
             sum += val;
             i++;
+            
+            if (start_time==-1) start_time = data[z][0]
+            end_time = data[z][0]
         }
         if (data[z][1]==null) npointsnull++;
-        
+
         npoints ++;
     }
     var mean = sum / i;
@@ -124,16 +131,22 @@ function stats(data)
     }
     var stdev = Math.sqrt(sum / i);
     
+    var time_elapsed = end_time - start_time;
+    
+    var kwh = (mean*time_elapsed*0.001)/3600000.0
+    
     return {
         "minval":minval,
         "maxval":maxval,
         "diff":maxval-minval,
         "mean":mean,
         "stdev":stdev,
+        "time_elapsed":time_elapsed,
+        "kwh":kwh,
         "npointsnull":npointsnull,
-        "npoints":npoints
-    };
-};
+        "npoints":npoints    
+    }
+}
 
 // http://stackoverflow.com/questions/901115/how-can-i-get-query-string-values/901144#901144
 var urlParams;
@@ -149,17 +162,19 @@ var urlParams;
        urlParams[decode(match[1])] = decode(match[2]);
 })();
 
-function tooltip(x, y, contents, bgColour)
+function tooltip(x, y, contents, bgColour, borderColour="rgb(255, 221, 221)")
 {
-    var offset = 15; // use higher values for a little spacing between `x,y` and tooltip
+    var offset = 10; // use higher values for a little spacing between `x,y` and tooltip
     var elem = $('<div id="tooltip">' + contents + '</div>').css({
         position: 'absolute',
+        color: "#000",
         display: 'none',
         'font-weight':'bold',
-        border: '1px solid rgb(255, 221, 221)',
+        border: '1px solid '+borderColour,
         padding: '2px',
         'background-color': bgColour,
-        opacity: '0.8'
+        opacity: '0.8',
+        'text-align': 'left'
     }).appendTo("body").fadeIn(200);
 
     var elemY = y - elem.height() - offset;
@@ -170,7 +185,7 @@ function tooltip(x, y, contents, bgColour)
         top: elemY,
         left: elemX
     });
-};
+}
 
 function parseTimepickerTime(timestr){
     var tmp = timestr.split(" ");
