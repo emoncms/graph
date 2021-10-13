@@ -70,7 +70,7 @@ function graph_controller()
     else if ($group && $route->action=="groupgraph") {
         $result = view("Modules/graph/group_view.php", array("session" => $session["write"], 'group_support' => 1));
     }
-    else if ($session['read']){
+    else if ($session['read'] || isset($_GET['userid'])){  // allow emoncms.org/graph?userid=1  to work
         $result = view("Modules/graph/view.php", array("session" => $session["write"]));
     }
 
