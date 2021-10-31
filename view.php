@@ -265,7 +265,7 @@
 <script src="<?php echo $path;?>Modules/graph/graph.js?v=<?php echo $v; ?>"></script>
 <script src="<?php echo $path;?>Lib/moment.min.js"></script>
 <script>
-    var user = {
+    var _user = {
         lang : "<?php if (isset($_SESSION['lang'])) echo $_SESSION['lang']; ?>"
     }
     _locale_loaded = function (event){
