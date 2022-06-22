@@ -17,7 +17,7 @@ function graph_controller()
     require_once "Modules/graph/graph_model.php";
     $graph = new Graph($mysqli, $group);
 
-    $result = "";
+    $result = false;
     
     if ($route->action=="embed") {
         global $embed; $embed = true;
@@ -70,7 +70,7 @@ function graph_controller()
     else if ($group && $route->action=="groupgraph") {
         $result = view("Modules/graph/group_view.php", array("session" => $session["write"], 'group_support' => 1));
     }
-    else {
+    else if ($session['read'] || isset($_GET['userid'])){  // allow emoncms.org/graph?userid=1  to work
         $result = view("Modules/graph/view.php", array("session" => $session["write"]));
     }
 

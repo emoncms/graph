@@ -227,18 +227,20 @@ function graph_init_editor()
     // ---------------------------------------------------------------
     // Writting direct to the menu system here
     // ---------------------------------------------------------------
-    // 1. Populate custom l3 menu from sidebar html placed in hidden element
-    $(".menu-l3").html($("#sidebar_html").html());
-    // 2. Clear original hidden element
-    $("#sidebar_html").html("");
-    // 3. Populate with feed list selector
-    $("#feeds").html(out);
-    // 4. Show l3 menu
-    if (menu.width>=576) menu.show_l3();
-    // 5. Enable l3 menu so that collapsing and re-expanding works
     if (menu.obj.setup!=undefined) {
-        menu.obj.setup.l2.graph.l3 = []
-        menu.active_l3 = true;
+        if (menu.obj.setup.l2.graph != undefined) {
+            // 1. Populate custom l3 menu from sidebar html placed in hidden element
+            $(".menu-l3").html($("#sidebar_html").html());
+            // 2. Clear original hidden element
+            $("#sidebar_html").html("");
+            // 3. Populate with feed list selector
+            $("#feeds").html(out);
+            // 4. Enable l3 menu
+            menu.obj.setup.l2.graph.l3 = []
+            menu.active_l3 = true;
+            // 5. Show l3 menu now (next line or just the if may not be neede as menu class will use auto hide feature when needed)
+            if (menu.width>=576) menu.show_l3();
+        }
     }
     load_saved_graphs_menu();
     // ---------------------------------------------------------------
@@ -1828,7 +1830,7 @@ function printdate(timestamp)
     if (secs<10) secs = "0"+secs;
 
     var datestr = "";
-    //	date.getHours()+":"+minutes+" "+day+" "+month;
+    //  date.getHours()+":"+minutes+" "+day+" "+month;
     datestr += day+"/"+month;
     if (thisyear!=year) datestr += "/"+year;
     datestr += " " + date.getHours()+":"+minutes+":"+secs;
