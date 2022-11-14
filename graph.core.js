@@ -162,6 +162,19 @@ const GraphLayoutApp = {
 				menu?.show_l3?.();
 			});
 		}
+		else {
+			// automatic refresh every 60s < interval < 1 day
+			var refresh = 60;
+			var parent = this;
+			window.setInterval(function() {
+				if (parent.state.floatingtime) {
+					parent.onGraphTimeRefresh();
+				}
+				else {
+					parent.onReload();
+				}
+			}, refresh * 1000); // ms
+		}
 
 		this._onHashChange = this.onSavedHashChange.bind(this);
 		this._onColorModeChange = () => this.renderChart();
