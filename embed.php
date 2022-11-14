@@ -139,6 +139,10 @@
             yaxismax2 = result.yaxismax2;
             feedlist = result.feedlist;
             
+            // attempt to update time selector to match the view
+            var hours = Math.round((view.end - view.start) / 3600 / 1000);
+            $('.graph_time').val(hours);
+            
             // show settings
             showmissing = result.showmissing;
             showtag = result.showtag;
@@ -163,6 +167,16 @@
             datetimepickerInit();
             graph_resize();
             graph_reload();
+            
+            // automatic refresh
+            window.setInterval(function() {
+              if (floatingtime) {
+                $('.graph_time_refresh').click();
+              }
+              else {
+                graph_reload();
+              }
+            }, 60000);
         }
     });
     
