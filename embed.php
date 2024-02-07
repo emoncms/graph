@@ -173,8 +173,9 @@
             datetimepickerInit();
             graph_resize();
             graph_reload();
-            
-            // automatic refresh
+
+            // automatic refresh every 60s < interval < 1 day
+            var refresh = Math.min(Math.max(60, view.interval / 2), 86400);
             window.setInterval(function() {
               if (floatingtime) {
                 $('.graph_time_refresh').click();
@@ -182,7 +183,7 @@
               else {
                 graph_reload();
               }
-            }, 60000);
+            }, refresh * 1000); // ms
         }
     });
     
