@@ -164,7 +164,7 @@ const GraphLayoutApp = {
 		}
 		else {
 			// automatic refresh every 60s < interval < 1 day
-			var refresh = 60;
+            var refresh = Math.min(Math.max(60, this.state.interval / 2), 86400);
 			var parent = this;
 			window.setInterval(function() {
 				if (parent.state.floatingtime) {
