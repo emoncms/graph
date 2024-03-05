@@ -299,6 +299,7 @@
         $lang['Lines'] = _('Lines');
         $lang['Bars'] = _('Bars');
         $lang['Points'] = _('Points');
+        $lang['Steps'] = _('Steps');
         $lang['Histogram'] = _('Histogram');
         $lang['Move up'] = _('Move up');
         $lang['Move down'] = _('Move down');
