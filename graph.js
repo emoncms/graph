@@ -847,6 +847,7 @@ function onClickLegendLink(event) {
         case 'lines': current_data[index].lines.show = !current_data[index].lines.show; break;
         case 'bars': current_data[index].bars.show = !current_data[index].bars.show; break;
         case 'points': current_data[index].points.show = !current_data[index].points.show; break;
+        case 'steps': current_data[index].steps.show = !current_data[index].steps.show; break;
     }
     plot_statistics.setData(current_data);
     // re-draw
@@ -952,6 +953,7 @@ function graph_draw()
         if (feedlist[z].plottype=="lines") { plot.lines = { show: true, fill: (feedlist[z].fill ? (stacked ? 1.0 : 0.5) : 0.0), fill: feedlist[z].fill } };
         if (feedlist[z].plottype=="bars") { plot.bars = { align: "center", fill: (feedlist[z].fill ? (stacked ? 1.0 : 0.5) : 0.0), show: true, barWidth: view.interval * 1000 * 0.75 } };
         if (feedlist[z].plottype == 'points') plot.points = {show: true, radius: 3};
+        if (feedlist[z].plottype=="steps") { plot.lines = { steps: true, show: true, fill: (feedlist[z].fill ? (stacked ? 1.0 : 0.5) : 0.0), fill: feedlist[z].fill } };
         plot.isRight = feedlist[z].yaxis === 2;
         plot.id = feedlist[z].id;
         plot.index = z;
@@ -996,6 +998,8 @@ function graph_draw()
             out += "<option value='bars' "+selected+">"+_lang['Bars']+"</option>";
             if (feedlist[z].plottype == "points") selected = "selected"; else selected = "";
             out += "<option value='points' "+selected+">"+_lang['Points']+"</option>";
+            if (feedlist[z].plottype == "steps") selected = "selected"; else selected = "";
+            out += "<option value='steps' "+selected+">"+_lang['Steps']+"</option>";
             out += "</select></td>";
             out += "<td><input class='linecolor' feedid="+feedlist[z].id+" style='width:50px' type='color' value='#"+default_linecolor+"'></td>";
             out += "<td><input class='fill' type='checkbox' feedid="+feedlist[z].id+"></td>";

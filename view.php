@@ -9,9 +9,9 @@
     http://openenergymonitor.org
     */
 
-    global $path, $embed, $session;
+    global $path, $embed, $session, $settings;
     $userid = 0;
-    $v = 20;
+    $v = 24;
     
     $feedidsLH = "";
     if (isset($_GET['feedidsLH'])) $feedidsLH = $_GET['feedidsLH'];
@@ -24,6 +24,12 @@
     
     $apikey = "";
     if (isset($_GET['apikey'])) $apikey = $_GET['apikey'];
+    
+    $min_feed_interval = 10;
+    if (isset($settings['feed']['min_feed_interval'])) {
+         $min_feed_interval = (int) $settings['feed']['min_feed_interval'];
+    }
+    
 ?>
 
 <!--[if IE]><script src="<?php echo $path;?>Lib/flot/excanvas.min.js"></script><![endif]-->
@@ -46,6 +52,8 @@
 <script src="<?php echo $path; ?>Lib/flot/jquery.flot.stack.min.js"></script>
 -->
 <script src="<?php echo $path; ?>Lib/flot/jquery.flot.stack.min.js"></script>
+
+<script>var min_feed_interval = <?php echo $min_feed_interval; ?>;</script>
 <script src="<?php echo $path;?>Modules/graph/vis.helper.js?v=<?php echo $v; ?>"></script>
 <script src="<?php echo $path;?>Lib/misc/clipboard.js?v=<?php echo $v; ?>"></script>
 <script src="<?php echo $path; ?>Lib/bootstrap-datetimepicker-0.0.11/js/bootstrap-datetimepicker.min.js"></script>
@@ -291,6 +299,7 @@
         $lang['Lines'] = _('Lines');
         $lang['Bars'] = _('Bars');
         $lang['Points'] = _('Points');
+        $lang['Steps'] = _('Steps');
         $lang['Histogram'] = _('Histogram');
         $lang['Move up'] = _('Move up');
         $lang['Move down'] = _('Move down');
