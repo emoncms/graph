@@ -237,8 +237,12 @@ function graph_init_editor()
     if (menu.width>=576) menu.show_l3();
     // 5. Enable l3 menu so that collapsing and re-expanding works
     if (menu.obj.setup!=undefined) {
-        menu.obj.setup.l2.graph.l3 = []
-        menu.active_l3 = true;
+        if (menu.obj.setup.l2!=undefined) {
+            if (menu.obj.setup.l2.graph!=undefined) {
+                menu.obj.setup.l2.graph.l3 = []
+                menu.active_l3 = true;
+            }
+        }
     }
     if (session_write) load_saved_graphs_menu();
     // ---------------------------------------------------------------
