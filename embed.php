@@ -146,6 +146,16 @@
             yaxismax2 = result.yaxismax2;
             feedlist = result.feedlist;
             
+            // attempt to update time selector to match the view
+            var hours = Math.floor((view.end - view.start) / 3600 / 1000);
+            dropdown = $('.graph_time').children()
+            for (var i = dropdown.length - 1; i > 0; i--) {
+                if (hours >= dropdown[i].value) {
+                    $('.graph_time').val(dropdown[i].value);
+                    break;
+                }
+            }
+
             // show settings
             showmissing = result.showmissing;
             showtag = result.showtag;
@@ -170,6 +180,17 @@
             datetimepickerInit();
             graph_resize();
             graph_reload();
+
+            // automatic refresh every 60s < interval < 1 day
+            var refresh = Math.min(Math.max(60, view.interval / 2), 86400);
+            window.setInterval(function() {
+              if (floatingtime) {
+                $('.graph_time_refresh').click();
+              }
+              else {
+                graph_reload();
+              }
+            }, refresh * 1000); // ms
         }
     });
     
