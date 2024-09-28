@@ -16,10 +16,10 @@ function graph_widgetlist(){
     {
       "offsetx":0,"offsety":0,"width":400,"height":300,
       "menu":"Visualisations",
-      "options":["graphid"],
-      "optionstype":["dropbox"],
-      "optionsname":[_Tr("Graph")],
-      "optionshint":[_Tr("Saved graphs from graph module")],
+      "options":["graphid", "lookahead"],
+      "optionstype":["dropbox", "value"],
+      "optionsname":[_Tr("Graph"),"Look Ahead"],
+      "optionshint":[_Tr("Saved graphs from graph module"), "Hours into the future to show on the graph (optional)"],
       "optionsdata":[savedgraphsnamelist],
       "html":""
     }
