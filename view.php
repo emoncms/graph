@@ -9,10 +9,9 @@
     http://openenergymonitor.org
     */
 
-    global $path, $embed, $session;
+    global $path, $embed, $session, $settings;
     $userid = 0;
-    $v = 22;
-    
+    $v = 25;
     $feedidsLH = "";
     if (isset($_GET['feedidsLH'])) $feedidsLH = $_GET['feedidsLH'];
 
@@ -24,6 +23,12 @@
     
     $apikey = "";
     if (isset($_GET['apikey'])) $apikey = $_GET['apikey'];
+    
+    $min_feed_interval = 10;
+    if (isset($settings['feed']['min_feed_interval'])) {
+         $min_feed_interval = (int) $settings['feed']['min_feed_interval'];
+    }
+    
 ?>
 
 <!--[if IE]><script src="<?php echo $path;?>Lib/flot/excanvas.min.js"></script><![endif]-->
@@ -46,6 +51,8 @@
 <script src="<?php echo $path; ?>Lib/flot/jquery.flot.stack.min.js"></script>
 -->
 <script src="<?php echo $path; ?>Lib/flot/jquery.flot.stack.min.js"></script>
+
+<script>var min_feed_interval = <?php echo $min_feed_interval; ?>;</script>
 <script src="<?php echo $path;?>Modules/graph/vis.helper.js?v=<?php echo $v; ?>"></script>
 <script src="<?php echo $path;?>Lib/misc/clipboard.js?v=<?php echo $v; ?>"></script>
 <script src="<?php echo $path; ?>Lib/bootstrap-datetimepicker-0.0.11/js/bootstrap-datetimepicker.min.js"></script>
@@ -167,6 +174,18 @@
         <button id="reload" class="btn" style="vertical-align:top"><?php echo _('Reload') ?></button>
         <button id="clear" class="btn" style="vertical-align:top"><?php echo _('Clear All') ?></button>
     </div>
+
+    <!-- 
+        var remove_null = $(".remove-null")[0].checked;
+    var remove_null_max_duration = $(".remove-null-max-duration").val();
+-->
+    <div class="input-prepend input-append">
+        <span class="add-on"><?php echo _('Remove null values') ?>:</span>
+        <span class="add-on"><input type="checkbox" class="remove-null" style="margin-top:3px" /></span>
+        <span class="add-on"><?php echo _('Max fill length') ?>:</span>
+        <input type="text" class="remove-null-max-duration" value="900" style="width:60px"/>
+        <span class="add-on"><?php echo _('s') ?></span>
+    </div>
     
     <div id="window-info" style=""></div><br>
     
@@ -261,7 +280,7 @@
 </script>
 
 <script src="<?php echo $path;?>Modules/graph/graph.js?v=<?php echo $v; ?>"></script>
-<script src="<?php echo $path;?>Lib/moment.min.js"></script>
+<script src="<?php echo $path;?>Lib/moment.min.js?v=1"></script>
 <script>
     var _user = {
         lang : "<?php if (isset($_SESSION['lang'])) echo $_SESSION['lang']; ?>"
@@ -291,6 +310,7 @@
         $lang['Lines'] = _('Lines');
         $lang['Bars'] = _('Bars');
         $lang['Points'] = _('Points');
+        $lang['Steps'] = _('Steps');
         $lang['Histogram'] = _('Histogram');
         $lang['Move up'] = _('Move up');
         $lang['Move down'] = _('Move down');
@@ -310,7 +330,7 @@
             url: path+public_username_str+"feed/list.json", async: false, dataType: "json",
             success: function(data_in) { feeds = data_in; }
         });
-    } else if (session_write) {
+    } else {
         // Load user feeds    
         $.ajax({
             url: path+"feed/list.json"+apikeystr, async: false, dataType: "json",

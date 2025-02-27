@@ -753,6 +753,11 @@ function checkFeedlistData(response){
 }
 
 function set_feedlist() {
+
+
+    var remove_null = $(".remove-null")[0].checked;
+    var remove_null_max_duration = $(".remove-null-max-duration").val();
+
     for (var z in feedlist)
     {
         var scale = $(".scale[feedid="+feedlist[z].id+"]").val();
@@ -764,6 +769,11 @@ function set_feedlist() {
         if (feedlist[z].postprocessed==false) {
             feedlist[z].postprocessed = true;
             console.log("postprocessing feed "+feedlist[z].id+" "+feedlist[z].name);
+
+            // Remove null values
+            if (remove_null) {
+                feedlist[z].data = remove_null_values(feedlist[z].data, view.interval, remove_null_max_duration);
+            }
             
             // Apply a scale to feed values
             if (feedlist[z].scale!=undefined && feedlist[z].scale!=1.0) {
@@ -781,7 +791,8 @@ function set_feedlist() {
                         feedlist[z].data[i][1] = feedlist[z].data[i][1] + 1*feedlist[z].offset;
                     }
                 }
-            } 
+            }
+             
         }
     }
     // call graph_draw() once feedlist is altered
@@ -851,6 +862,7 @@ function onClickLegendLink(event) {
         case 'lines': current_data[index].lines.show = !current_data[index].lines.show; break;
         case 'bars': current_data[index].bars.show = !current_data[index].bars.show; break;
         case 'points': current_data[index].points.show = !current_data[index].points.show; break;
+        case 'steps': current_data[index].steps.show = !current_data[index].steps.show; break;
     }
     plot_statistics.setData(current_data);
     // re-draw
@@ -956,6 +968,7 @@ function graph_draw()
         if (feedlist[z].plottype=="lines") { plot.lines = { show: true, fill: (feedlist[z].fill ? (stacked ? 1.0 : 0.5) : 0.0), fill: feedlist[z].fill } };
         if (feedlist[z].plottype=="bars") { plot.bars = { align: "center", fill: (feedlist[z].fill ? (stacked ? 1.0 : 0.5) : 0.0), show: true, barWidth: view.interval * 1000 * 0.75 } };
         if (feedlist[z].plottype == 'points') plot.points = {show: true, radius: 3};
+        if (feedlist[z].plottype=="steps") { plot.lines = { steps: true, show: true, fill: (feedlist[z].fill ? (stacked ? 1.0 : 0.5) : 0.0), fill: feedlist[z].fill } };
         plot.isRight = feedlist[z].yaxis === 2;
         plot.id = feedlist[z].id;
         plot.index = z;
@@ -1000,6 +1013,8 @@ function graph_draw()
             out += "<option value='bars' "+selected+">"+_lang['Bars']+"</option>";
             if (feedlist[z].plottype == "points") selected = "selected"; else selected = "";
             out += "<option value='points' "+selected+">"+_lang['Points']+"</option>";
+            if (feedlist[z].plottype == "steps") selected = "selected"; else selected = "";
+            out += "<option value='steps' "+selected+">"+_lang['Steps']+"</option>";
             out += "</select></td>";
             out += "<td><input class='linecolor' feedid="+feedlist[z].id+" style='width:50px' type='color' value='#"+default_linecolor+"'></td>";
             out += "<td><input class='fill' type='checkbox' feedid="+feedlist[z].id+"></td>";
@@ -1860,4 +1875,21 @@ function download_data(filename, data) {
 function arrayMove(array,old_index, new_index){
     array.splice(new_index, 0, array.splice(old_index, 1)[0]);
     return array;
+}
+
+// Remove null values from feed data
+function remove_null_values(data, interval, max_duration = 900) {
+    var last_valid_pos = 0;
+    for (var pos = 0; pos < data.length; pos++) {
+        if (data[pos][1] != null) {
+            let null_time = (pos - last_valid_pos) * interval;
+            if (null_time < max_duration) {
+                for (var x = last_valid_pos + 1; x < pos; x++) {
+                    data[x][1] = data[last_valid_pos][1];
+                }
+            }
+            last_valid_pos = pos;
+        }
+    }
+    return data;
 }

@@ -9,7 +9,7 @@
     http://openenergymonitor.org
     */
 
-    global $path, $embed;
+    global $path, $embed, $settings;
     global $fullwidth;
     $fullwidth = true;
     
@@ -18,10 +18,16 @@
     $apikey = "";
     if (isset($_GET['apikey'])) $apikey = $_GET['apikey'];
     
-    $js_css_version = 4;
+    $min_feed_interval = 10;
+    if (isset($settings['feed']['min_feed_interval'])) {
+         $min_feed_interval = (int) $settings['feed']['min_feed_interval'];
+    }
+
+    $js_css_version = 5;
 ?>
 
 <!--[if IE]><script language="javascript" type="text/javascript" src="<?php echo $path;?>Lib/flot/excanvas.min.js"></script><![endif]-->
+<script>var min_feed_interval = <?php echo $min_feed_interval; ?>;</script>
 <script language="javascript" type="text/javascript" src="<?php echo $path;?>Lib/flot/jquery.flot.min.js"></script>
 <script language="javascript" type="text/javascript" src="<?php echo $path;?>Lib/flot/jquery.flot.time.min.js"></script>
 <script language="javascript" type="text/javascript" src="<?php echo $path;?>Lib/flot/jquery.flot.selection.min.js"></script>
@@ -109,6 +115,7 @@
         $lang['Lines'] = _('Lines');
         $lang['Bars'] = _('Bars');
         $lang['Points'] = _('Points');
+        $lang['Steps'] = _('Steps');
         $lang['Histogram'] = _('Histogram');
         $lang['Move up'] = _('Move up');
         $lang['Move down'] = _('Move down');

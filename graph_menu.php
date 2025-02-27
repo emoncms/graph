@@ -1,7 +1,7 @@
 <?php
 global $session;
 
-if ($session["write"] || $session['public_userid']) {
+if ($session["read"] || $session['public_userid']) {
     // Initial graph menu item placement
     $menu["setup"]["l2"]['graph'] = array(
         "name"=>_("Graphs"),
