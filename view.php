@@ -11,7 +11,7 @@
 
     global $path, $embed, $session, $settings;
     $userid = 0;
-    $v = 24;
+    $v = 25;
     
     $feedidsLH = "";
     if (isset($_GET['feedidsLH'])) $feedidsLH = $_GET['feedidsLH'];
@@ -174,6 +174,18 @@
         </div>
         <button id="reload" class="btn" style="vertical-align:top"><?php echo _('Reload') ?></button>
         <button id="clear" class="btn" style="vertical-align:top"><?php echo _('Clear All') ?></button>
+    </div>
+
+    <!-- 
+        var remove_null = $(".remove-null")[0].checked;
+    var remove_null_max_duration = $(".remove-null-max-duration").val();
+-->
+    <div class="input-prepend input-append">
+        <span class="add-on"><?php echo _('Remove null values') ?>:</span>
+        <span class="add-on"><input type="checkbox" class="remove-null" style="margin-top:3px" /></span>
+        <span class="add-on"><?php echo _('Max fill length') ?>:</span>
+        <input type="text" class="remove-null-max-duration" value="900" style="width:60px"/>
+        <span class="add-on"><?php echo _('s') ?></span>
     </div>
     
     <div id="window-info" style=""></div><br>

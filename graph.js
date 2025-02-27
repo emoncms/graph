@@ -749,6 +749,11 @@ function checkFeedlistData(response){
 }
 
 function set_feedlist() {
+
+
+    var remove_null = $(".remove-null")[0].checked;
+    var remove_null_max_duration = $(".remove-null-max-duration").val();
+
     for (var z in feedlist)
     {
         var scale = $(".scale[feedid="+feedlist[z].id+"]").val();
@@ -760,6 +765,11 @@ function set_feedlist() {
         if (feedlist[z].postprocessed==false) {
             feedlist[z].postprocessed = true;
             console.log("postprocessing feed "+feedlist[z].id+" "+feedlist[z].name);
+
+            // Remove null values
+            if (remove_null) {
+                feedlist[z].data = remove_null_values(feedlist[z].data, view.interval, remove_null_max_duration);
+            }
             
             // Apply a scale to feed values
             if (feedlist[z].scale!=undefined && feedlist[z].scale!=1.0) {
@@ -777,7 +787,8 @@ function set_feedlist() {
                         feedlist[z].data[i][1] = feedlist[z].data[i][1] + 1*feedlist[z].offset;
                     }
                 }
-            } 
+            }
+             
         }
     }
     // call graph_draw() once feedlist is altered
@@ -1860,4 +1871,21 @@ function download_data(filename, data) {
 function arrayMove(array,old_index, new_index){
     array.splice(new_index, 0, array.splice(old_index, 1)[0]);
     return array;
+}
+
+// Remove null values from feed data
+function remove_null_values(data, interval, max_duration = 900) {
+    var last_valid_pos = 0;
+    for (var pos = 0; pos < data.length; pos++) {
+        if (data[pos][1] != null) {
+            let null_time = (pos - last_valid_pos) * interval;
+            if (null_time < max_duration) {
+                for (var x = last_valid_pos + 1; x < pos; x++) {
+                    data[x][1] = data[last_valid_pos][1];
+                }
+            }
+            last_valid_pos = pos;
+        }
+    }
+    return data;
 }
