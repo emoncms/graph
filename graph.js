@@ -581,7 +581,16 @@ function graph_init_editor()
         $(".feed-options-show-stats").removeClass('hide');
         event.preventDefault();
     });
-        
+
+    // Reload feeds if remove-null is changed or remove-null-max-duration is changed
+    $(".remove-null").change(function(){
+        graph_reload();
+    });
+    
+    $(".remove-null-max-duration").change(function(){
+        graph_reload();
+    });
+
     /**
      * show sidebar if mobile view hiding sidebar
      */
@@ -774,7 +783,7 @@ function set_feedlist() {
             if (remove_null) {
                 feedlist[z].data = remove_null_values(feedlist[z].data, view.interval, remove_null_max_duration);
             }
-            
+
             // Apply a scale to feed values
             if (feedlist[z].scale!=undefined && feedlist[z].scale!=1.0) {
                 for (var i=0; i<feedlist[z].data.length; i++) {
