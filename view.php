@@ -11,7 +11,8 @@
 
     global $path, $embed, $session, $settings;
     $userid = 0;
-    $v = 25;
+    $v = 26;
+    
     $feedidsLH = "";
     if (isset($_GET['feedidsLH'])) $feedidsLH = $_GET['feedidsLH'];
 
