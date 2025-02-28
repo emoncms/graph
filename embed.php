@@ -23,7 +23,7 @@
          $min_feed_interval = (int) $settings['feed']['min_feed_interval'];
     }
 
-    $js_css_version = 5;
+    $js_css_version = 6;
 ?>
 
 <!--[if IE]><script language="javascript" type="text/javascript" src="<?php echo $path;?>Lib/flot/excanvas.min.js"></script><![endif]-->

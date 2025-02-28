@@ -760,8 +760,12 @@ function checkFeedlistData(response){
 function set_feedlist() {
 
 
-    var remove_null = $(".remove-null")[0].checked;
-    var remove_null_max_duration = $(".remove-null-max-duration").val();
+    var remove_null = false;
+    var remove_null_max_duration = 900;
+    if (!embed) {
+        remove_null = $(".remove-null")[0].checked;
+        remove_null_max_duration = $(".remove-null-max-duration").val();
+    }
 
     for (var z in feedlist)
     {
