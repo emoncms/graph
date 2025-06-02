@@ -959,6 +959,8 @@ function graph_draw()
     if (!embed) $("#window-info").html("<b>"+_lang['Window']+":</b> "+printdate(view.start)+" <b>→</b> "+printdate(view.end)+"<br><b>"+_lang['Length']+":</b> "+hours+"h"+mins+" ("+time_in_window+" seconds)");
 
     plotdata = [];
+    let num_left = 0;
+    let num_right = 0;
     for (var z in feedlist) {
 
         var data = feedlist[z].data;
@@ -986,13 +988,26 @@ function graph_draw()
         plot.id = feedlist[z].id;
         plot.index = z;
         plotdata.push(plot);
+
+        if (feedlist[z].yaxis == 1) {
+            num_left++;
+        } else if (feedlist[z].yaxis == 2) {
+            num_right++;
+        }
     }
-    if (plotdata.length > 1) {
-        // show right yaxis options if required
+
+    if (num_left > 0) {
+        $('#yaxis_left').show()
+    } else {
+        $('#yaxis_left').hide();
+    }
+
+    if (num_right > 0) {
         $('#yaxis_right').show()
     } else {
-        $('#yaxis_right').hide()
+        $('#yaxis_right').hide();
     }
+
     plot_statistics = $.plot($('#placeholder'), plotdata, options);
 
     if (!embed) {
