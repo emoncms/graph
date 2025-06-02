@@ -18,6 +18,8 @@
 
             <input id="graphName" v-model="graphName" type="text" placeholder="<?php echo _('Graph Name') ?>">
             
+            <input id="lookAhead" v-model="lookAhead" type="text" placeholder="<?php echo _('Look Ahead (s)') ?>">
+
             <small v-if="selected > -1" class="help-block text-light">
                 <?php echo _('Selected graph id') ?>: {{ graphs[selected].id }}
             </small>
