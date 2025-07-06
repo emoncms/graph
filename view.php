@@ -59,41 +59,41 @@
 <script src="<?php echo $path; ?>Lib/bootstrap-datetimepicker-0.0.11/js/bootstrap-datetimepicker.min.js"></script>
 <script src="<?php echo $path; ?>Lib/vue.min.js?v=<?php echo $v; ?>"></script>
 
-<h3><?php echo _('Data viewer'); ?></h3>
+<h3><?php echo tr('Data viewer'); ?></h3>
 <div id="error" style="display:none"></div>
 
 <div id="navigation" style="padding-bottom:5px;">
 
     <div class="input-prepend input-append" style="margin-bottom:0 !important">
-        <button class='btn graph_time_refresh' title="<?php echo _('Refresh') ?>"><i class="icon-repeat"></i></button>
+        <button class='btn graph_time_refresh' title="<?php echo tr('Refresh') ?>"><i class="icon-repeat"></i></button>
         <select class='btn graph_time' style="width:110px; padding-left:5px">
-            <option value='1'><?php echo _('1 hour') ?></option>
-            <option value='6'><?php echo _('6 hours') ?></option>
-            <option value='12'><?php echo _('12 hours') ?></option>
-            <option value='24'><?php echo _('24 hours') ?></option>
-            <option value='168' selected><?php echo _('1 Week') ?></option>
-            <option value='336'><?php echo _('2 Weeks') ?></option>        
-            <option value='720'><?php echo _('Month') ?></option>
-            <option value='8760'><?php echo _('Year') ?></option>
+            <option value='1'><?php echo tr('1 hour') ?></option>
+            <option value='6'><?php echo tr('6 hours') ?></option>
+            <option value='12'><?php echo tr('12 hours') ?></option>
+            <option value='24'><?php echo tr('24 hours') ?></option>
+            <option value='168' selected><?php echo tr('1 Week') ?></option>
+            <option value='336'><?php echo tr('2 Weeks') ?></option>        
+            <option value='720'><?php echo tr('Month') ?></option>
+            <option value='8760'><?php echo tr('Year') ?></option>
         </select>
     </div>
     <!--
-    <button class='btn graph_time' type='button' data-time='1' title="<?php echo _('Day') ?>"><?php echo _('D') ?></button>
-    <button class='btn graph_time' type='button' data-time='7' title="<?php echo _('Week') ?>"><?php echo _('W') ?></button>
-    <button class='btn graph_time' type='button' data-time='30' title="<?php echo _('Month') ?>"><?php echo _('M') ?></button>
-    <button class='btn graph_time' type='button' data-time='365' title="<?php echo _('Year') ?>"><?php echo _('Y') ?></button>
+    <button class='btn graph_time' type='button' data-time='1' title="<?php echo tr('Day') ?>"><?php echo tr('D') ?></button>
+    <button class='btn graph_time' type='button' data-time='7' title="<?php echo tr('Week') ?>"><?php echo tr('W') ?></button>
+    <button class='btn graph_time' type='button' data-time='30' title="<?php echo tr('Month') ?>"><?php echo tr('M') ?></button>
+    <button class='btn graph_time' type='button' data-time='365' title="<?php echo tr('Year') ?>"><?php echo tr('Y') ?></button>
     -->
     
-    <button id='graph_zoomin' class='btn' title="<?php echo _('Zoom In') ?>">+</button>
-    <button id='graph_zoomout' class='btn' title="<?php echo _('Zoom Out') ?>">-</button>
-    <button id='graph_left' class='btn' title="<?php echo _('Earlier') ?>"><</button>
-    <button id='graph_right' class='btn' title="<?php echo _('Later') ?>">></button>
+    <button id='graph_zoomin' class='btn' title="<?php echo tr('Zoom In') ?>">+</button>
+    <button id='graph_zoomout' class='btn' title="<?php echo tr('Zoom Out') ?>">-</button>
+    <button id='graph_left' class='btn' title="<?php echo tr('Earlier') ?>"><</button>
+    <button id='graph_right' class='btn' title="<?php echo tr('Later') ?>">></button>
     
     <div id="showcontrols" class="input-prepend input-append">
-    <span class="add-on"><?php echo _('Show') ?></span>
-    <span class="add-on"><?php echo _('missing data') ?>: <input type="checkbox" id="showmissing" style="margin-top:1px" /></span>
-    <span class="add-on"><?php echo _('legend') ?>: <input type="checkbox" id="showlegend" style="margin-top:1px" /></span>
-    <span class="add-on"><?php echo _('feed tag') ?>: <input type="checkbox" id="showtag" style="margin-top:1px" /></span>
+    <span class="add-on"><?php echo tr('Show') ?></span>
+    <span class="add-on"><?php echo tr('missing data') ?>: <input type="checkbox" id="showmissing" style="margin-top:1px" /></span>
+    <span class="add-on"><?php echo tr('legend') ?>: <input type="checkbox" id="showlegend" style="margin-top:1px" /></span>
+    <span class="add-on"><?php echo tr('feed tag') ?>: <input type="checkbox" id="showtag" style="margin-top:1px" /></span>
     </div>
     
     <div style="clear:both"></div>
@@ -101,17 +101,17 @@
 
 <div id="histogram-controls" style="padding-bottom:5px; display:none;">
     <div class="input-prepend input-append">
-        <span class="add-on" style="width:100px"><b><?php echo _('Histogram') ?></b></span>
-        <span class="add-on" style="width:75px"><?php echo _('Type') ?></span>
+        <span class="add-on" style="width:100px"><b><?php echo tr('Histogram') ?></b></span>
+        <span class="add-on" style="width:75px"><?php echo tr('Type') ?></span>
         <select id="histogram-type" style="width:150px">
-            <option value="timeatvalue" ><?php echo _('Time at value') ?></option>
-            <option value="kwhatpower" ><?php echo _('kWh at Power') ?></option>
+            <option value="timeatvalue" ><?php echo tr('Time at value') ?></option>
+            <option value="kwhatpower" ><?php echo tr('kWh at Power') ?></option>
         </select>
-        <span class="add-on" style="width:75px"><?php echo _('Resolution') ?></span>
+        <span class="add-on" style="width:75px"><?php echo tr('Resolution') ?></span>
         <input id="histogram-resolution" type="text" style="width:60px"/>
     </div>
     
-    <button id="histogram-back" class="btn" style="float:right"><?php echo _('Back to main view') ?></button>
+    <button id="histogram-back" class="btn" style="float:right"><?php echo tr('Back to main view') ?></button>
 </div>
 <div id="legend"></div>
 <div id="placeholder_bound" style="width:100%; height:400px;">
@@ -121,7 +121,7 @@
 <div id="info">
     
     <div class="input-prepend input-append" style="padding-right:5px">
-        <span class="add-on" style="width:50px"><?php echo _('Start') ?></span>
+        <span class="add-on" style="width:50px"><?php echo tr('Start') ?></span>
         <span id="datetimepicker1">
             <input id="request-start" data-format="dd/MM/yyyy hh:mm:ss" type="text" style="width:140px" />
             <span class="add-on"><i data-time-icon="icon-time" data-date-icon="icon-calendar"></i></span>
@@ -129,7 +129,7 @@
     </div>
     
     <div class="input-prepend input-append" style="padding-right:5px">
-        <span class="add-on" style="width:50px"><?php echo _('End') ?></span>
+        <span class="add-on" style="width:50px"><?php echo tr('End') ?></span>
         <span id="datetimepicker2">
             <input id="request-end" data-format="dd/MM/yyyy hh:mm:ss" type="text" style="width:140px" />
             <span class="add-on"><i data-time-icon="icon-time" data-date-icon="icon-calendar"></i></span>
@@ -137,13 +137,13 @@
     </div>
     
     <div class="input-prepend input-append" style="padding-right:5px">
-        <span class="add-on" style="width:50px"><?php echo _('Type') ?></span>
+        <span class="add-on" style="width:50px"><?php echo tr('Type') ?></span>
         <select id="request-type" style="width:130px">
-            <option value="interval"><?php echo _('Fixed Interval') ?></option>
-            <option value="daily"><?php echo _('Daily') ?></option>
-            <option value="weekly"><?php echo _('Weekly') ?></option>
-            <option value="monthly"><?php echo _('Monthly') ?></option>
-            <option value="annual"><?php echo _('Annual') ?></option>
+            <option value="interval"><?php echo tr('Fixed Interval') ?></option>
+            <option value="daily"><?php echo tr('Daily') ?></option>
+            <option value="weekly"><?php echo tr('Weekly') ?></option>
+            <option value="monthly"><?php echo tr('Monthly') ?></option>
+            <option value="annual"><?php echo tr('Annual') ?></option>
         </select>
         
     </div>
@@ -151,29 +151,29 @@
         
         <span class="fixed-interval-options">
             <input id="request-interval" type="text" style="width:60px" />
-            <span class="add-on"><?php echo _('Fix') ?> <input id="request-fixinterval" type="checkbox" style="margin-top:1px" /></span>
-            <span class="add-on"><?php echo _('Limit to data interval') ?> <input id="request-limitinterval" type="checkbox" style="margin-top:1px" checked></span>
+            <span class="add-on"><?php echo tr('Fix') ?> <input id="request-fixinterval" type="checkbox" style="margin-top:1px" /></span>
+            <span class="add-on"><?php echo tr('Limit to data interval') ?> <input id="request-limitinterval" type="checkbox" style="margin-top:1px" checked></span>
         </span>
     </div>
     <div>
         <div id="yaxis_left" class="input-append input-prepend">
-            <span id="yaxis-left" class="add-on"><?php echo _('Y-axis').' ('._('Left').')' ?>:</span>
-            <span class="yaxis-minmax-label add-on"><?php echo _('min') ?></span>
+            <span id="yaxis-left" class="add-on"><?php echo tr('Y-axis').' ('.tr('Left').')' ?>:</span>
+            <span class="yaxis-minmax-label add-on"><?php echo tr('min') ?></span>
             <input class="yaxis-minmax" id="yaxis-min" type="text" value="auto">
-            <span class="yaxis-minmax-label add-on"><?php echo _('max') ?></span>
+            <span class="yaxis-minmax-label add-on"><?php echo tr('max') ?></span>
             <input class="yaxis-minmax" id="yaxis-max" type="text" value="auto">
-            <button class="btn reset-yaxis"><?php echo _('Reset') ?></button>
+            <button class="btn reset-yaxis"><?php echo tr('Reset') ?></button>
         </div>
         <div id="yaxis_right" class="input-append input-prepend">
-            <span id="yaxis-right" class="add-on"><?php echo _('Y-axis').' ('._('Right').')' ?>:</span>
-            <span class="yaxis-minmax-label add-on"><?php echo _('min') ?></span>
+            <span id="yaxis-right" class="add-on"><?php echo tr('Y-axis').' ('.tr('Right').')' ?>:</span>
+            <span class="yaxis-minmax-label add-on"><?php echo tr('min') ?></span>
             <input class="yaxis-minmax" id="yaxis-min2" type="text" value="auto">
-            <span class="yaxis-minmax-label add-on"><?php echo _('max') ?></span>
+            <span class="yaxis-minmax-label add-on"><?php echo tr('max') ?></span>
             <input class="yaxis-minmax" id="yaxis-max2" type="text" value="auto">
-            <button class="btn reset-yaxis"><?php echo _('Reset') ?></button>
+            <button class="btn reset-yaxis"><?php echo tr('Reset') ?></button>
         </div>
-        <button id="reload" class="btn" style="vertical-align:top"><?php echo _('Reload') ?></button>
-        <button id="clear" class="btn" style="vertical-align:top"><?php echo _('Clear All') ?></button>
+        <button id="reload" class="btn" style="vertical-align:top"><?php echo tr('Reload') ?></button>
+        <button id="clear" class="btn" style="vertical-align:top"><?php echo tr('Clear All') ?></button>
     </div>
 
     <!-- 
@@ -181,22 +181,22 @@
     var remove_null_max_duration = $(".remove-null-max-duration").val();
 -->
     <div class="input-prepend input-append">
-        <span class="add-on"><?php echo _('Remove null values') ?>:</span>
+        <span class="add-on"><?php echo tr('Remove null values') ?>:</span>
         <span class="add-on"><input type="checkbox" class="remove-null" style="margin-top:3px" /></span>
-        <span class="add-on"><?php echo _('Max fill length') ?>:</span>
+        <span class="add-on"><?php echo tr('Max fill length') ?>:</span>
         <input type="text" class="remove-null-max-duration" value="900" style="width:60px"/>
-        <span class="add-on"><?php echo _('s') ?></span>
+        <span class="add-on"><?php echo tr('s') ?></span>
     </div>
     
     <div id="window-info" style=""></div><br>
     
     <div class="feed-options hide">
         <div class="feed-options-header">
-            <div class="feed-options-show-options btn btn-default hide"><?php echo _('Show options') ?></div>
-            <div class="feed-options-show-stats btn btn-default"><?php echo _('Show statistics') ?></div>
+            <div class="feed-options-show-options btn btn-default hide"><?php echo tr('Show options') ?></div>
+            <div class="feed-options-show-stats btn btn-default"><?php echo tr('Show statistics') ?></div>
             <a href="#tables" class="feed-options-title">
                 <span class="caret pull-left"></span>
-                <?php echo _('Feeds in view') ?>
+                <?php echo tr('Feeds in view') ?>
             </a>
         </div>
 
@@ -204,16 +204,16 @@
             <table id="feed-options-table" class="table">
                 <tr>
                     <th></th>
-                    <th><?php echo _('Feed') ?></th>
-                    <th><?php echo _('Type') ?></th>
-                    <th><?php echo _('Color') ?></th>
-                    <th><?php echo _('Fill') ?></th>
-                    <th><?php echo _('Stack') ?></th>
-                    <th style='text-align:center'><?php echo _('Scale') ?></th>
-                    <th style='text-align:center'><?php echo _('Offset') ?></th>
-                    <th style='text-align:center'><?php echo _('Delta') ?></th>
-                    <th style='text-align:center'><?php echo _('Average') ?></th>
-                    <th><?php echo _('DP') ?></th><th style="width:120px"></th>
+                    <th><?php echo tr('Feed') ?></th>
+                    <th><?php echo tr('Type') ?></th>
+                    <th><?php echo tr('Color') ?></th>
+                    <th><?php echo tr('Fill') ?></th>
+                    <th><?php echo tr('Stack') ?></th>
+                    <th style='text-align:center'><?php echo tr('Scale') ?></th>
+                    <th style='text-align:center'><?php echo tr('Offset') ?></th>
+                    <th style='text-align:center'><?php echo tr('Delta') ?></th>
+                    <th style='text-align:center'><?php echo tr('Average') ?></th>
+                    <th><?php echo tr('DP') ?></th><th style="width:120px"></th>
                 </tr>
                 <tbody id="feed-controls"></tbody>
             </table>
@@ -221,14 +221,14 @@
             <table id="feed-stats-table" class="table hide">
                 <tr>
                     <th></th>
-                    <th><?php echo _('Feed') ?></th>
-                    <th><?php echo _('Quality') ?></th>
-                    <th><?php echo _('Min') ?></th>
-                    <th><?php echo _('Max') ?></th>
-                    <th><?php echo _('Diff') ?></th>
-                    <th><?php echo _('Mean') ?></th>
-                    <th><?php echo _('Stdev') ?></th>
-                    <th><?php echo _('Wh') ?></th>
+                    <th><?php echo tr('Feed') ?></th>
+                    <th><?php echo tr('Quality') ?></th>
+                    <th><?php echo tr('Min') ?></th>
+                    <th><?php echo tr('Max') ?></th>
+                    <th><?php echo tr('Diff') ?></th>
+                    <th><?php echo tr('Mean') ?></th>
+                    <th><?php echo tr('Stdev') ?></th>
+                    <th><?php echo tr('Wh') ?></th>
                 </tr>
                 <tbody id="feed-stats"></tbody>
             </table>
@@ -237,32 +237,32 @@
     <br>
     
     <div class="input-prepend input-append">
-        <button class="btn" id="showcsv" ><?php echo _('Show CSV Output') ?></button>
-        <span class="add-on csvoptions"><?php echo _('Time format') ?>:</span>
+        <button class="btn" id="showcsv" ><?php echo tr('Show CSV Output') ?></button>
+        <span class="add-on csvoptions"><?php echo tr('Time format') ?>:</span>
         <select id="csvtimeformat" class="csvoptions">
-            <option value="unix"><?php echo _('Unix timestamp') ?></option>
-            <option value="seconds"><?php echo _('Seconds since start') ?></option>
-            <option value="datestr"><?php echo _('Date-time string') ?></option>
+            <option value="unix"><?php echo tr('Unix timestamp') ?></option>
+            <option value="seconds"><?php echo tr('Seconds since start') ?></option>
+            <option value="datestr"><?php echo tr('Date-time string') ?></option>
         </select>
-        <span class="add-on csvoptions"><?php echo _('Null values') ?>:</span>
+        <span class="add-on csvoptions"><?php echo tr('Null values') ?>:</span>
         <select id="csvnullvalues" class="csvoptions">
-            <option value="show"><?php echo _('Show') ?></option>
-            <option value="lastvalue"><?php echo _('Replace with last value') ?></option>
-            <option value="remove"><?php echo _('Remove whole line') ?></option>
+            <option value="show"><?php echo tr('Show') ?></option>
+            <option value="lastvalue"><?php echo tr('Replace with last value') ?></option>
+            <option value="remove"><?php echo tr('Remove whole line') ?></option>
         </select>
-        <span class="add-on csvoptions"><?php echo _('Headers') ?>:</span>
+        <span class="add-on csvoptions"><?php echo tr('Headers') ?>:</span>
         <select id="csvheaders" class="csvoptions">
-            <option value="showNameTag"><?php echo _('Show name and tag') ?></option>
-            <option value="showName"><?php echo _('Show name') ?></option>
-            <option value="hide"><?php echo _('Hide') ?></option>
+            <option value="showNameTag"><?php echo tr('Show name and tag') ?></option>
+            <option value="showName"><?php echo tr('Show name') ?></option>
+            <option value="hide"><?php echo tr('Hide') ?></option>
         </select>
     </div>
 
     <div class="input-prepend">
-    <button id="download-csv" class="csvoptions btn "><?php echo _('Download') ?></button>
+    <button id="download-csv" class="csvoptions btn "><?php echo tr('Download') ?></button>
     </div>
     <div class="input-append"><!-- just to match the styling of the other items -->
-        <button onclick="copyToClipboardCustomMsg(document.getElementById('csv'), 'copy-csv-feedback','<?php echo _('Copied') ?>')" class="csvoptions btn hidden" id="copy-csv" type="button"><?php echo _('Copy') ?> <i class="icon-share-alt"></i></button>
+        <button onclick="copyToClipboardCustomMsg(document.getElementById('csv'), 'copy-csv-feedback','<?php echo tr('Copied') ?>')" class="csvoptions btn hidden" id="copy-csv" type="button"><?php echo tr('Copy') ?> <i class="icon-share-alt"></i></button>
     </div>
 
     <span id="copy-csv-feedback" class="csvoptions"></span>
@@ -303,20 +303,20 @@
     var feeds = false;
 
     var _lang = <?php
-        $lang['Select a feed'] = _('Select a feed');
-        $lang['Please select a feed from the Feeds List'] = _('Please select a feed from the Feeds List');
-        $lang['Select graph'] = _('Select graph');
-        $lang['Show CSV Output'] = _('Show CSV Output');
-        $lang['Hide CSV Output'] = _('Hide CSV Output');
-        $lang['Lines'] = _('Lines');
-        $lang['Bars'] = _('Bars');
-        $lang['Points'] = _('Points');
-        $lang['Steps'] = _('Steps');
-        $lang['Histogram'] = _('Histogram');
-        $lang['Move up'] = _('Move up');
-        $lang['Move down'] = _('Move down');
-        $lang['Window'] = _('Window');
-        $lang['Length'] = _('Length');
+        $lang['Select a feed'] = tr('Select a feed');
+        $lang['Please select a feed from the Feeds List'] = tr('Please select a feed from the Feeds List');
+        $lang['Select graph'] = tr('Select graph');
+        $lang['Show CSV Output'] = tr('Show CSV Output');
+        $lang['Hide CSV Output'] = tr('Hide CSV Output');
+        $lang['Lines'] = tr('Lines');
+        $lang['Bars'] = tr('Bars');
+        $lang['Points'] = tr('Points');
+        $lang['Steps'] = tr('Steps');
+        $lang['Histogram'] = tr('Histogram');
+        $lang['Move up'] = tr('Move up');
+        $lang['Move down'] = tr('Move down');
+        $lang['Window'] = tr('Window');
+        $lang['Length'] = tr('Length');
         echo json_encode($lang) . ';';
         echo "\n";
     ?>;
@@ -420,11 +420,11 @@
 
     <?php
     $translations = array(
-        "Received data not in correct format. Check the logs for more details" => _("Received data not in correct format. Check the logs for more details"),
-        "Request error" => _("Request error"),
-        "User" => _("User"),
-        "Browser" => _("Browser"),
-        "Authentication Required" => _("Authentication Required")
+        "Received data not in correct format. Check the logs for more details" => tr("Received data not in correct format. Check the logs for more details"),
+        "Request error" => tr("Request error"),
+        "User" => tr("User"),
+        "Browser" => tr("Browser"),
+        "Authentication Required" => tr("Authentication Required")
     );
     printf("var translations = %s;\n",json_encode($translations));
     ?>
