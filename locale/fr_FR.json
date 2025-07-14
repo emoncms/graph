@@ -30,7 +30,6 @@
     "Length": "Longueur",
     "Received data not in correct format. Check the logs for more details": "Les données reçues ne sont pas de format correct. Vérifier les journaux pour plus de détails",
     "Request error": "Erreur de requête",
-    "Remove missing": "Retirer les manquants",
     "Graphs": "Graphiques",
     "Data viewer": "Visualiseur de données",
     "Day": "Jour",
@@ -99,5 +98,14 @@
     "Copy": "Copier",
     "User": "Utilisateur",
     "Browser": "Navigateur",
-    "Authentication Required": "Authentification requise"
+    "Authentication Required": "Authentification requise",
+    "D": "D",
+    "W": "W",
+    "M": "M",
+    "Y": "Y",
+    "Remove null values": "Remove null values",
+    "Max fill length": "Max fill length",
+    "s": "s",
+    "DP": "DP",
+    "Steps": "Steps"
 }
