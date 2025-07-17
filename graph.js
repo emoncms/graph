@@ -1031,7 +1031,7 @@ function graph_draw()
             out += "<td>"+feedlist[z].stats.diff.toFixed(dp)+"</td>";
             out += "<td>"+feedlist[z].stats.mean.toFixed(dp)+"</td>";
             out += "<td>"+feedlist[z].stats.stdev.toFixed(dp)+"</td>";
-            out += "<td>"+Math.round((feedlist[z].stats.mean*time_in_window)/3600)+"</td>";
+            out += "<td>"+Math.round(feedlist[z].stats.kwh*1000)+"</td>";
             out += "</tr>";
         }
         $("#feed-stats").html(out);
