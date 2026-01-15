@@ -237,8 +237,12 @@ function graph_init_editor()
     if (menu.width>=576) menu.show_l3();
     // 5. Enable l3 menu so that collapsing and re-expanding works
     if (menu.obj.setup!=undefined) {
-        menu.obj.setup.l2.graph.l3 = []
-        menu.active_l3 = true;
+        if (menu.obj.setup.l2!=undefined) {
+            if (menu.obj.setup.l2.graph!=undefined) {
+                menu.obj.setup.l2.graph.l3 = []
+                menu.active_l3 = true;
+            }
+        }
     }
     if (session_write) load_saved_graphs_menu();
     // ---------------------------------------------------------------
@@ -577,7 +581,16 @@ function graph_init_editor()
         $(".feed-options-show-stats").removeClass('hide');
         event.preventDefault();
     });
-        
+
+    // Reload feeds if remove-null is changed or remove-null-max-duration is changed
+    $(".remove-null").change(function(){
+        graph_reload();
+    });
+    
+    $(".remove-null-max-duration").change(function(){
+        graph_reload();
+    });
+
     /**
      * show sidebar if mobile view hiding sidebar
      */
@@ -749,6 +762,15 @@ function checkFeedlistData(response){
 }
 
 function set_feedlist() {
+
+
+    var remove_null = false;
+    var remove_null_max_duration = 900;
+    if (!embed) {
+        remove_null = $(".remove-null")[0].checked;
+        remove_null_max_duration = $(".remove-null-max-duration").val();
+    }
+
     for (var z in feedlist)
     {
         var scale = $(".scale[feedid="+feedlist[z].id+"]").val();
@@ -760,7 +782,12 @@ function set_feedlist() {
         if (feedlist[z].postprocessed==false) {
             feedlist[z].postprocessed = true;
             console.log("postprocessing feed "+feedlist[z].id+" "+feedlist[z].name);
-            
+
+            // Remove null values
+            if (remove_null) {
+                feedlist[z].data = remove_null_values(feedlist[z].data, view.interval, remove_null_max_duration);
+            }
+
             // Apply a scale to feed values
             if (feedlist[z].scale!=undefined && feedlist[z].scale!=1.0) {
                 for (var i=0; i<feedlist[z].data.length; i++) {
@@ -777,7 +804,8 @@ function set_feedlist() {
                         feedlist[z].data[i][1] = feedlist[z].data[i][1] + 1*feedlist[z].offset;
                     }
                 }
-            } 
+            }
+             
         }
     }
     // call graph_draw() once feedlist is altered
@@ -931,6 +959,8 @@ function graph_draw()
     if (!embed) $("#window-info").html("<b>"+_lang['Window']+":</b> "+printdate(view.start)+" <b>→</b> "+printdate(view.end)+"<br><b>"+_lang['Length']+":</b> "+hours+"h"+mins+" ("+time_in_window+" seconds)");
 
     plotdata = [];
+    let num_left = 0;
+    let num_right = 0;
     for (var z in feedlist) {
 
         var data = feedlist[z].data;
@@ -958,13 +988,26 @@ function graph_draw()
         plot.id = feedlist[z].id;
         plot.index = z;
         plotdata.push(plot);
+
+        if (feedlist[z].yaxis == 1) {
+            num_left++;
+        } else if (feedlist[z].yaxis == 2) {
+            num_right++;
+        }
     }
-    if (plotdata.length > 1) {
-        // show right yaxis options if required
+
+    if (num_left > 0) {
+        $('#yaxis_left').show()
+    } else {
+        $('#yaxis_left').hide();
+    }
+
+    if (num_right > 0) {
         $('#yaxis_right').show()
     } else {
-        $('#yaxis_right').hide()
+        $('#yaxis_right').hide();
     }
+
     plot_statistics = $.plot($('#placeholder'), plotdata, options);
 
     if (!embed) {
@@ -1860,4 +1903,21 @@ function download_data(filename, data) {
 function arrayMove(array,old_index, new_index){
     array.splice(new_index, 0, array.splice(old_index, 1)[0]);
     return array;
+}
+
+// Remove null values from feed data
+function remove_null_values(data, interval, max_duration = 900) {
+    var last_valid_pos = 0;
+    for (var pos = 0; pos < data.length; pos++) {
+        if (data[pos][1] != null) {
+            let null_time = (pos - last_valid_pos) * interval;
+            if (null_time < max_duration) {
+                for (var x = last_valid_pos + 1; x < pos; x++) {
+                    data[x][1] = data[last_valid_pos][1];
+                }
+            }
+            last_valid_pos = pos;
+        }
+    }
+    return data;
 }

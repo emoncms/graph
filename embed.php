@@ -1,4 +1,5 @@
 <?php
+defined('EMONCMS_EXEC') or die('Restricted access');
     /*
     All Emoncms code is released under the GNU Affero General Public License.
     See COPYRIGHT.txt and LICENSE.txt.
@@ -24,7 +25,7 @@
          $min_feed_interval = (int) $settings['feed']['min_feed_interval'];
     }
 
-    $js_css_version = 5;
+    $js_css_version = 6;
 ?>
 
 <!--[if IE]><script language="javascript" type="text/javascript" src="<?php echo $path;?>Lib/flot/excanvas.min.js"></script><![endif]-->
@@ -63,16 +64,16 @@
 
 <div id="navigation" style="padding-bottom:2px;" >
     <div class="input-prepend input-append" style="margin-bottom:0 !important; margin-left:2px;">
-        <button class='btn graph_time_refresh' title="<?php echo _('Refresh') ?>"><i class="icon-repeat"></i></button>
+        <button class='btn graph_time_refresh' title="<?php echo tr('Refresh') ?>"><i class="icon-repeat"></i></button>
         <select class='btn graph_time' style="width:90px; padding-left:5px">
-            <option value='1'><?php echo _('1 hour') ?></option>
-            <option value='6'><?php echo _('6 hours') ?></option>
-            <option value='12'><?php echo _('12 hours') ?></option>
-            <option value='24'><?php echo _('24 hours') ?></option>
-            <option value='168' selected><?php echo _('1 Week') ?></option>
-            <option value='336'><?php echo _('2 Weeks') ?></option>        
-            <option value='720'><?php echo _('Month') ?></option>
-            <option value='8760'><?php echo _('Year') ?></option>
+            <option value='1'><?php echo tr('1 hour') ?></option>
+            <option value='6'><?php echo tr('6 hours') ?></option>
+            <option value='12'><?php echo tr('12 hours') ?></option>
+            <option value='24'><?php echo tr('24 hours') ?></option>
+            <option value='168' selected><?php echo tr('1 Week') ?></option>
+            <option value='336'><?php echo tr('2 Weeks') ?></option>        
+            <option value='720'><?php echo tr('Month') ?></option>
+            <option value='8760'><?php echo tr('Year') ?></option>
         </select>
     </div>
     <!--
@@ -109,20 +110,20 @@
     var lookahead = "<?php echo $lookahead; ?>";
 
     var _lang = <?php
-        $lang['Select a feed'] = _('Select a feed');
-        $lang['Please select a feed from the Feeds List'] = _('Please select a feed from the Feeds List');
-        $lang['Select graph'] = _('Select graph');
-        $lang['Show CSV Output'] = _('Show CSV Output');
-        $lang['Hide CSV Output'] = _('Hide CSV Output');
-        $lang['Lines'] = _('Lines');
-        $lang['Bars'] = _('Bars');
-        $lang['Points'] = _('Points');
-        $lang['Steps'] = _('Steps');
-        $lang['Histogram'] = _('Histogram');
-        $lang['Move up'] = _('Move up');
-        $lang['Move down'] = _('Move down');
-        $lang['Window'] = _('Window');
-        $lang['Length'] = _('Length');
+        $lang['Select a feed'] = tr('Select a feed');
+        $lang['Please select a feed from the Feeds List'] = tr('Please select a feed from the Feeds List');
+        $lang['Select graph'] = tr('Select graph');
+        $lang['Show CSV Output'] = tr('Show CSV Output');
+        $lang['Hide CSV Output'] = tr('Hide CSV Output');
+        $lang['Lines'] = tr('Lines');
+        $lang['Bars'] = tr('Bars');
+        $lang['Points'] = tr('Points');
+        $lang['Steps'] = tr('Steps');
+        $lang['Histogram'] = tr('Histogram');
+        $lang['Move up'] = tr('Move up');
+        $lang['Move down'] = tr('Move down');
+        $lang['Window'] = tr('Window');
+        $lang['Length'] = tr('Length');
         echo json_encode($lang) . ';';
         echo "\n";
     ?>

@@ -4,7 +4,7 @@ global $session;
 if ($session["read"] || $session['public_userid']) {
     // Initial graph menu item placement
     $menu["setup"]["l2"]['graph'] = array(
-        "name"=>_("Graphs"),
+        "name"=>tr("Graphs"),
         "href"=>"graph",
         "order"=>3, 
         "icon"=>"show_chart"
