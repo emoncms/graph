@@ -15,6 +15,7 @@ defined('EMONCMS_EXEC') or die('Restricted access');
     $fullwidth = true;
     
     $graphid = get("graphid");
+    $lookahead = get("lookahead");
     
     $apikey = "";
     if (isset($_GET['apikey'])) $apikey = $_GET['apikey'];
@@ -106,6 +107,7 @@ defined('EMONCMS_EXEC') or die('Restricted access');
     embed = true;
     
     var graphid = "<?php echo $graphid; ?>";
+    var lookahead = "<?php echo $lookahead; ?>";
 
     var _lang = <?php
         $lang['Select a feed'] = tr('Select a feed');
@@ -147,6 +149,16 @@ defined('EMONCMS_EXEC') or die('Restricted access');
             yaxismax2 = result.yaxismax2;
             feedlist = result.feedlist;
             
+            // attempt to update time selector to match the view
+            var hours = Math.floor((view.end - view.start) / 3600 / 1000);
+            dropdown = $('.graph_time').children()
+            for (var i = dropdown.length - 1; i > 0; i--) {
+                if (hours >= dropdown[i].value) {
+                    $('.graph_time').val(dropdown[i].value);
+                    break;
+                }
+            }
+
             // show settings
             showmissing = result.showmissing;
             showtag = result.showtag;
@@ -155,7 +167,7 @@ defined('EMONCMS_EXEC') or die('Restricted access');
             if (floatingtime) {
                 var timewindow = view.end - view.start;
                 var now = Math.round(+new Date * 0.001)*1000;
-                view.end = now;
+                view.end = now + lookahead * 3600 * 1000;
                 view.start = view.end - timewindow;
             }
 
@@ -171,6 +183,18 @@ defined('EMONCMS_EXEC') or die('Restricted access');
             datetimepickerInit();
             graph_resize();
             graph_reload();
+
+            // automatic refresh every 60s < interval / 5 < 1 hour
+            var refresh = Math.min(Math.max(60, view.interval / 5), 3600);
+            window.setInterval(function() {
+              if (floatingtime) {
+                var timewindow = view.end - view.start;
+                var now = Math.round(+new Date * 0.001)*1000;
+                view.end = now + lookahead * 3600 * 1000;
+                view.start = view.end - timewindow;
+              }
+              graph_reload();
+            }, refresh * 1000); // ms
         }
     });
     
