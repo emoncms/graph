@@ -281,7 +281,13 @@ defined('EMONCMS_EXEC') or die('Restricted access');
     if (apikey!="") apikeystr = "&apikey="+apikey;
 </script>
 
+<script src="<?php echo $path;?>Modules/graph/graph.utils.js?v=<?php echo $v; ?>"></script>
+<script src="<?php echo $path;?>Modules/graph/graph.legend.js?v=<?php echo $v; ?>"></script>
 <script src="<?php echo $path;?>Modules/graph/graph.js?v=<?php echo $v; ?>"></script>
+<script src="<?php echo $path;?>Modules/graph/graph.csv.js?v=<?php echo $v; ?>"></script>
+<script src="<?php echo $path;?>Modules/graph/graph.histogram.js?v=<?php echo $v; ?>"></script>
+<script src="<?php echo $path;?>Modules/graph/graph.saved.js?v=<?php echo $v; ?>"></script>
+<script src="<?php echo $path;?>Modules/graph/graph.editor.js?v=<?php echo $v; ?>"></script>
 <script src="<?php echo $path;?>Lib/moment.min.js?v=1"></script>
 <script>
     var _user = {

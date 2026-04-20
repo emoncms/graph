@@ -99,7 +99,12 @@ defined('EMONCMS_EXEC') or die('Restricted access');
 </script>
 
 <script language="javascript" type="text/javascript" src="<?php echo $path;?>Lib/moment.min.js?v=<?php echo $js_css_version; ?>"></script>
+<script language="javascript" type="text/javascript" src="<?php echo $path;?>Modules/graph/graph.utils.js?v=<?php echo $js_css_version; ?>"></script>
+<script language="javascript" type="text/javascript" src="<?php echo $path;?>Modules/graph/graph.legend.js?v=<?php echo $js_css_version; ?>"></script>
 <script language="javascript" type="text/javascript" src="<?php echo $path;?>Modules/graph/graph.js?v=<?php echo $js_css_version; ?>"></script>
+<script language="javascript" type="text/javascript" src="<?php echo $path;?>Modules/graph/graph.csv.js?v=<?php echo $js_css_version; ?>"></script>
+<script language="javascript" type="text/javascript" src="<?php echo $path;?>Modules/graph/graph.histogram.js?v=<?php echo $js_css_version; ?>"></script>
+<script language="javascript" type="text/javascript" src="<?php echo $path;?>Modules/graph/graph.saved.js?v=<?php echo $js_css_version; ?>"></script>
 
 <script>
     $("body").css("background","none");
