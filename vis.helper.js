@@ -98,50 +98,47 @@ var view =
 
 function stats(data)
 {
-    var sum = 0;
-    var i=0;
-    var minval = 0;
-    var maxval = 0;
-    var npoints = 0;
-    var npointsnull = 0;
-    
-    var val = null;
-    for (var z in data)
+    let sum = 0;
+    let i = 0;
+    let minval = 0;
+    let maxval = 0;
+    let npoints = 0;
+    let npointsnull = 0;
+
+    for (const z in data)
     {
-        var val = data[z][1];                        // 1) only calculated based on present values
-        //if (data[z][1]!=null) val = data[z][1];    // 2) if value is missing use last value
-        if (val!=null) 
+        const val = data[z][1];
+        if (val !== null)
         {
-            if (i==0) {
+            if (i === 0) {
                 maxval = val;
                 minval = val;
             }
-            if (val>maxval) maxval = val;
-            if (val<minval) minval = val;
+            if (val > maxval) maxval = val;
+            if (val < minval) minval = val;
             sum += val;
             i++;
         }
-        if (data[z][1]==null) npointsnull++;
-        
-        npoints ++;
+        if (data[z][1] === null) npointsnull++;
+        npoints++;
     }
-    var mean = sum / i;
-    sum = 0, i=0;
-    for (z in data)
+    const mean = sum / i;
+    sum = 0; i = 0;
+    for (const z in data)
     {
         sum += (data[z][1] - mean) * (data[z][1] - mean);
         i++;
     }
-    var stdev = Math.sqrt(sum / i);
-    
+    const stdev = Math.sqrt(sum / i);
+
     return {
-        "minval":minval,
-        "maxval":maxval,
-        "diff":maxval-minval,
-        "mean":mean,
-        "stdev":stdev,
-        "npointsnull":npointsnull,
-        "npoints":npoints
+        "minval": minval,
+        "maxval": maxval,
+        "diff": maxval - minval,
+        "mean": mean,
+        "stdev": stdev,
+        "npointsnull": npointsnull,
+        "npoints": npoints
     };
 };
 
@@ -161,36 +158,33 @@ var urlParams;
 
 function tooltip(x, y, contents, bgColour)
 {
-    var offset = 15; // use higher values for a little spacing between `x,y` and tooltip
-    var elem = $('<div id="tooltip">' + contents + '</div>').css({
+    const offset = 15;
+    const elem = $('<div id="tooltip">' + contents + '</div>').css({
         position: 'absolute',
         display: 'none',
-        'font-weight':'bold',
+        'font-weight': 'bold',
         border: '1px solid rgb(255, 221, 221)',
         padding: '2px',
         'background-color': bgColour,
         opacity: '0.8'
     }).appendTo("body").fadeIn(200);
 
-    var elemY = y - elem.height() - offset;
-    var elemX = x - elem.width()  - offset;
-    if (elemY < 0) { elemY = 0; } 
-    if (elemX < 0) { elemX = 0; } 
-    elem.css({
-        top: elemY,
-        left: elemX
-    });
+    let elemY = y - elem.height() - offset;
+    let elemX = x - elem.width() - offset;
+    if (elemY < 0) elemY = 0;
+    if (elemX < 0) elemX = 0;
+    elem.css({ top: elemY, left: elemX });
 };
 
-function parseTimepickerTime(timestr){
-    var tmp = timestr.split(" ");
-    if (tmp.length!=2) return false;
+function parseTimepickerTime(timestr) {
+    const tmp = timestr.split(" ");
+    if (tmp.length !== 2) return false;
 
-    var date = tmp[0].split("/");
-    if (date.length!=3) return false;
+    const date = tmp[0].split("/");
+    if (date.length !== 3) return false;
 
-    var time = tmp[1].split(":");
-    if (time.length!=3) return false;
+    const time = tmp[1].split(":");
+    if (time.length !== 3) return false;
 
-    return new Date(date[2],date[1]-1,date[0],time[0],time[1],time[2],0).getTime() / 1000;
+    return new Date(date[2], date[1] - 1, date[0], time[0], time[1], time[2], 0).getTime() / 1000;
 }

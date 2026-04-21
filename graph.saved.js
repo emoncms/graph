@@ -162,8 +162,8 @@ function load_saved_graphs_menu()
                 if (typeof list === 'undefined' || typeof property === 'undefined' || typeof value === 'undefined') {
                     return -1
                 }
-                for (n in list) {
-                    var item = list[n]
+                for (const n in list) {
+                    const item = list[n]
                     if (item.hasOwnProperty(property)) {
                         if (item[property] === value) {
                             return n
@@ -288,8 +288,8 @@ $(function(){
 function load_saved_graph(graph) {
     // @todo: unload_saved_graph()
 
-    if(typeof graph === 'undefined') return;
-    if (graph.mode==undefined) graph.mode = 'interval';
+    if (typeof graph === 'undefined') return;
+    if (graph.mode == undefined) graph.mode = 'interval';
 
     // view settings
     view.start = graph.start;
@@ -298,17 +298,17 @@ function load_saved_graph(graph) {
     view.mode = graph.mode;
     view.limitinterval = graph.limitinterval;
     view.fixinterval = graph.fixinterval;
-    floatingtime = graph.floatingtime,
+    floatingtime = graph.floatingtime;
     yaxismin = graph.yaxismin;
     yaxismin2 = graph.yaxismin2 || 'auto';
     yaxismax = graph.yaxismax;
     yaxismax2 = graph.yaxismax2 || 'auto';
 
     // CSV display settings
-    csvtimeformat = (typeof(graph.csvtimeformat)==="undefined" ? "datestr" : graph.csvtimeformat);
-    csvnullvalues = (typeof(graph.csvnullvalues)==="undefined" ? "show" : graph.csvnullvalues);
-    csvheaders = (typeof(graph.csvheaders)==="undefined" ? "showNameTag" : graph.csvheaders);
-    var tmpCsv = (typeof(graph.showcsv)==="undefined" ? "0" : graph.showcsv.toString());
+    csvtimeformat = (typeof graph.csvtimeformat === 'undefined' ? 'datestr' : graph.csvtimeformat);
+    csvnullvalues = (typeof graph.csvnullvalues === 'undefined' ? 'show' : graph.csvnullvalues);
+    csvheaders = (typeof graph.csvheaders === 'undefined' ? 'showNameTag' : graph.csvheaders);
+    const tmpCsv = (typeof graph.showcsv === 'undefined' ? '0' : graph.showcsv.toString());
 
     // show settings
     showmissing = graph.showmissing;
@@ -316,15 +316,15 @@ function load_saved_graph(graph) {
     showlegend = graph.showlegend;
 
     // graph details
-    current_graph_id = graph.id
-    current_graph_name = graph.name
+    current_graph_id = graph.id;
+    current_graph_name = graph.name;
 
     // feedlist
     feedlist = graph.feedlist;
 
     if (floatingtime) {
-        var timewindow = view.end - view.start;
-        var now = Math.round(+new Date * 0.001)*1000;
+        const timewindow = view.end - view.start;
+        const now = Math.round(+new Date() * 0.001) * 1000;
         view.end = now;
         view.start = view.end - timewindow;
     }
@@ -340,7 +340,7 @@ function load_saved_graph(graph) {
     $("#showlegend")[0].checked = showlegend;
 
     $("#request-type").val(view.mode);
-    if (view.mode!="interval") {
+    if (view.mode !== "interval") {
         $(".fixed-interval-options").hide();
     } else {
         $(".fixed-interval-options").show();
@@ -356,14 +356,14 @@ function load_saved_graph(graph) {
     csvShowHide(tmpCsv);
 }
 
-function get_graph_data () {
+function get_graph_data() {
 
-    var now = Math.round(+new Date * 0.001)*1000;
-    if (Math.abs(now - view.end)<120000) {
+    const now = Math.round(+new Date() * 0.001) * 1000;
+    if (Math.abs(now - view.end) < 120000) {
         floatingtime = 1;
     }
 
-    var graph_to_save = {
+    const graph_to_save = {
         name: current_graph_name,
         start: view.start,
         end: view.end,
@@ -391,8 +391,8 @@ function get_graph_data () {
 
 function graph_update(data) {
     // Clean feedlist of data and stats that dont need to be saved
-    for (var i in data.feedlist) {
-        delete data.feedlist[i].data
+    for (const i in data.feedlist) {
+        delete data.feedlist[i].data;
         delete data.feedlist[i].stats;
     }
 

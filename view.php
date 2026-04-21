@@ -12,7 +12,7 @@ defined('EMONCMS_EXEC') or die('Restricted access');
 
     global $path, $embed, $session, $settings;
     $userid = 0;
-    $v = 28;
+    $v = 30;
     
     $feedidsLH = "";
     if (isset($_GET['feedidsLH'])) $feedidsLH = $_GET['feedidsLH'];
@@ -54,7 +54,6 @@ defined('EMONCMS_EXEC') or die('Restricted access');
 -->
 <script src="<?php echo $path; ?>Lib/flot/jquery.flot.stack.min.js"></script>
 
-<script>var min_feed_interval = <?php echo $min_feed_interval; ?>;</script>
 <script src="<?php echo $path;?>Modules/graph/vis.helper.js?v=<?php echo $v; ?>"></script>
 <script src="<?php echo $path;?>Lib/misc/clipboard.js?v=<?php echo $v; ?>"></script>
 <script src="<?php echo $path; ?>Lib/bootstrap-datetimepicker-0.0.11/js/bootstrap-datetimepicker.min.js"></script>
@@ -275,12 +274,6 @@ defined('EMONCMS_EXEC') or die('Restricted access');
 </div>
 
 
-<script>
-    var apikey = "<?php echo $apikey; ?>";
-    var apikeystr = "";
-    if (apikey!="") apikeystr = "&apikey="+apikey;
-</script>
-
 <script src="<?php echo $path;?>Modules/graph/graph.utils.js?v=<?php echo $v; ?>"></script>
 <script src="<?php echo $path;?>Modules/graph/graph.legend.js?v=<?php echo $v; ?>"></script>
 <script src="<?php echo $path;?>Modules/graph/graph.js?v=<?php echo $v; ?>"></script>
@@ -289,25 +282,28 @@ defined('EMONCMS_EXEC') or die('Restricted access');
 <script src="<?php echo $path;?>Modules/graph/graph.saved.js?v=<?php echo $v; ?>"></script>
 <script src="<?php echo $path;?>Modules/graph/graph.editor.js?v=<?php echo $v; ?>"></script>
 <script src="<?php echo $path;?>Lib/moment.min.js?v=1"></script>
-<script>
-    var _user = {
-        lang : "<?php if (isset($_SESSION['lang'])) echo $_SESSION['lang']; ?>"
-    }
-    _locale_loaded = function (event){
-        // callback when locale file loaded
-        graph_reload(); // redraw xaxis with correct monthNames and dayNames
-    }
-</script>
 <script src="<?php echo $path; ?>Lib/user_locale.js"></script>
 <script src="<?php echo $path; ?>Lib/misc/gettext.js"></script>
-
 <script>
+    // PHP-injected configuration
+    var min_feed_interval = <?php echo $min_feed_interval; ?>;
+    var apikey = "<?php echo $apikey; ?>";
+    var apikeystr = apikey !== "" ? "&apikey=" + apikey : "";
+
     var session_write = <?php echo $session["write"]; ?>;
     var userid = <?php echo $userid; ?>;
     var feedidsLH = "<?php echo $feedidsLH; ?>";
     var feedidsRH = "<?php echo $feedidsRH; ?>";
     var load_savegraphs = "<?php echo $load_saved; ?>";
     var feeds = false;
+
+    var _user = {
+        lang: "<?php if (isset($_SESSION['lang'])) echo $_SESSION['lang']; ?>"
+    };
+    _locale_loaded = function(event) {
+        // callback when locale file loaded
+        graph_reload(); // redraw xaxis with correct monthNames and dayNames
+    };
 
     var _lang = <?php
         $lang['Select a feed'] = tr('Select a feed');
@@ -327,102 +323,96 @@ defined('EMONCMS_EXEC') or die('Restricted access');
         echo json_encode($lang) . ';';
         echo "\n";
     ?>;
-    
-    // Load public feeds for a particular user
-    if (public_userid) {
-    
-        var public_username_str = "";
-        if (public_userid) public_username_str = public_username+"/";    
-    
-        $.ajax({
-            url: path+public_username_str+"feed/list.json", async: false, dataType: "json",
-            success: function(data_in) { feeds = data_in; }
-        });
-    } else {
-        // Load user feeds    
-        $.ajax({
-            url: path+"feed/list.json"+apikeystr, async: false, dataType: "json",
-            success: function(data_in) { feeds = data_in; }
-        });
-    }
 
     // stops a part upgrade error - this change requires emoncms/emoncms repo to also be updated
     // keep button hidden if new version of clipboard.js is not available
     if (typeof copyToClipboardCustomMsg === 'function') {
         document.getElementById('copy-csv').classList.remove('hidden');
     } else {
-        copyToClipboardCustomMsg = function () {}
+        copyToClipboardCustomMsg = function() {};
     }
-    
-    if (load_savegraphs=="") {
+
+    // Load public feeds for a particular user
+    if (public_userid) {
+        const public_username_str = public_userid ? public_username + "/" : "";
+        $.ajax({
+            url: path + public_username_str + "feed/list.json", async: false, dataType: "json",
+            success: function(data_in) { feeds = data_in; }
+        });
+    } else {
+        // Load user feeds
+        $.ajax({
+            url: path + "feed/list.json" + apikeystr, async: false, dataType: "json",
+            success: function(data_in) { feeds = data_in; }
+        });
+    }
+
+    if (load_savegraphs === "") {
 
         // Assign active feedid from URL
-        var urlparts = window.location.pathname.split("graph/");
-        if (urlparts.length==2) {
-            var feedids = urlparts[1].split(",");
-                for (var z in feedids) {
-                    var feedid = parseInt(feedids[z]);
-                     
-                    if (feedid) {
-                        var f = getfeed(feedid);
-                    if (f==false) f = getfeedpublic(feedid);
-                    if (f!=false) feedlist.push({id:feedid, name:f.name, tag:f.tag, yaxis:1, fill:0, scale: 1.0, average:0, delta:0, dp:1, plottype:'lines'});
-                      }
+        const urlparts = window.location.pathname.split("graph/");
+        if (urlparts.length === 2) {
+            const feedids = urlparts[1].split(",");
+            for (const z in feedids) {
+                const feedid = parseInt(feedids[z]);
+                if (feedid) {
+                    let f = getfeed(feedid);
+                    if (f === false) f = getfeedpublic(feedid);
+                    if (f !== false) feedlist.push({id:feedid, name:f.name, tag:f.tag, yaxis:1, fill:0, scale:1.0, average:0, delta:0, dp:1, plottype:'lines'});
                 }
+            }
         }
-        
+
         // Left hand feed ids property
-        if (feedidsLH!="") {
-            var feedids = feedidsLH.split(",");
-                for (var z in feedids) {
-                    var feedid = parseInt(feedids[z]);
-                     
-                    if (feedid) {
-                        var f = getfeed(feedid);
-                    if (f==false) f = getfeedpublic(feedid);
-                    if (f!=false) feedlist.push({id:feedid, name:f.name, tag:f.tag, yaxis:1, fill:0, scale: 1.0, average:0, delta:0, dp:1, plottype:'lines'});
-                      }
+        if (feedidsLH !== "") {
+            const feedids = feedidsLH.split(",");
+            for (const z in feedids) {
+                const feedid = parseInt(feedids[z]);
+                if (feedid) {
+                    let f = getfeed(feedid);
+                    if (f === false) f = getfeedpublic(feedid);
+                    if (f !== false) feedlist.push({id:feedid, name:f.name, tag:f.tag, yaxis:1, fill:0, scale:1.0, average:0, delta:0, dp:1, plottype:'lines'});
                 }
+            }
         }
 
         // Right hand feed ids property
-        if (feedidsRH!="") {
-            var feedids = feedidsRH.split(",");
-                for (var z in feedids) {
-                    var feedid = parseInt(feedids[z]);
-                     
-                    if (feedid) {
-                        var f = getfeed(feedid);
-                    if (f==false) f = getfeedpublic(feedid);
-                    if (f!=false) feedlist.push({id:feedid, name:f.name, tag:f.tag, yaxis:2, fill:0, scale: 1.0, average:0, delta:0, dp:1, plottype:'lines'});
-                      }
+        if (feedidsRH !== "") {
+            const feedids = feedidsRH.split(",");
+            for (const z in feedids) {
+                const feedid = parseInt(feedids[z]);
+                if (feedid) {
+                    let f = getfeed(feedid);
+                    if (f === false) f = getfeedpublic(feedid);
+                    if (f !== false) feedlist.push({id:feedid, name:f.name, tag:f.tag, yaxis:2, fill:0, scale:1.0, average:0, delta:0, dp:1, plottype:'lines'});
                 }
+            }
         }
     }
 
     graph_init_editor();
     load_feed_selector();
-    
+
     graph_resize();
-    
-    var timeWindow = 3600000*24.0*7;
-    var now = Math.round(+new Date * 0.001)*1000;
+
+    const timeWindow = 3600000 * 24.0 * 7;
+    const now = Math.round(+new Date() * 0.001) * 1000;
     view.start = now - timeWindow;
     view.end = now;
     view.calc_interval();
-    
+
     graph_reload();
 
     $(function(){
         // manually add hide/show
-        $('#tables').collapse()
+        $('#tables').collapse();
 
         // trigger hide/show
-        $('.feed-options-title').on('click', function (event) {
+        $('.feed-options-title').on('click', function(event) {
             event.preventDefault();
             event.target.querySelector('.caret').classList.toggle('open');
             $('#tables').collapse('toggle');
-        })
+        });
     });
 
     <?php
@@ -433,7 +423,7 @@ defined('EMONCMS_EXEC') or die('Restricted access');
         "Browser" => tr("Browser"),
         "Authentication Required" => tr("Authentication Required")
     );
-    printf("var translations = %s;\n",json_encode($translations));
+    printf("var translations = %s;\n", json_encode($translations));
     ?>
 
 </script>

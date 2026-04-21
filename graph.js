@@ -175,32 +175,32 @@ function reloadDatetimePrep()
 }
 
 function pushfeedlist(feedid, yaxis) {
-    var f = getfeed(feedid);
-    var dp=0;
+    let f = getfeed(feedid);
+    let dp = 0;
 
-    if (f==false) f = getfeedpublic(feedid);
-    if (f!=false) {
-        if (f.value % 1 !== 0 ) dp=1;
-        feedlist.push({id:feedid, name:f.name, tag:f.tag, yaxis:yaxis, fill:0, scale: 1.0, offset: 0.0, delta:0, average:0, dp:dp, plottype:'lines'});
+    if (f === false) f = getfeedpublic(feedid);
+    if (f !== false) {
+        if (f.value % 1 !== 0) dp = 1;
+        feedlist.push({id:feedid, name:f.name, tag:f.tag, yaxis:yaxis, fill:0, scale:1.0, offset:0.0, delta:0, average:0, dp:dp, plottype:'lines'});
     }
 }
 
 function graph_reload()
 {
-    var ds = new Date(view.start);
-    var de = new Date(view.end);
+    const ds = new Date(view.start);
+    const de = new Date(view.end);
     
     // Round start and end time
     if (view.mode=="daily" || view.mode=="weekly") {
         view.start = (new Date(ds.getFullYear(), ds.getMonth(), ds.getDate(), 0,0,0,0)).getTime();
         view.end = (new Date(de.getFullYear(), de.getMonth(), de.getDate(), 0,0,0,0)).getTime();
     } else if (view.mode=="monthly") {
-        var month_offset = 0;
+        let month_offset = 0;
         if (ds.getMonth()==de.getMonth()) month_offset = 1; 
         view.start = (new Date(ds.getFullYear(), ds.getMonth(), 1, 0,0,0,0)).getTime();
         view.end = (new Date(de.getFullYear(), de.getMonth()+month_offset, 1, 0,0,0,0)).getTime();
     } else if (view.mode=="annual") {
-        var year_offset = 0;
+        let year_offset = 0;
         if (ds.getFullYear()==de.getFullYear()) year_offset = 1; 
         view.start = (new Date(ds.getFullYear(), 0, 1, 0,0,0,0)).getTime();
         view.end = (new Date(de.getFullYear()+1, 0, 1, 0,0,0,0)).getTime();
@@ -222,18 +222,18 @@ function graph_reload()
     $("#request-limitinterval").attr("checked",view.limitinterval);
 
     // Convert feedlist into csv properties
-    var ids = [];
-    var averages = [];
-    var deltas = [];
-    for (var z in feedlist) {
+    const ids = [];
+    const averages = [];
+    const deltas = [];
+    for (const z in feedlist) {
         ids.push(feedlist[z].id);
         if (feedlist[z].average==false) feedlist[z].average = 0;
-        averages.push(feedlist[z].average)
+        averages.push(feedlist[z].average);
         if (feedlist[z].delta==false) feedlist[z].delta = 0;
-        deltas.push(feedlist[z].delta)
+        deltas.push(feedlist[z].delta);
     }
     
-    var data = {
+    const data = {
         ids: ids.join(','),
         start: view.start,
         end: view.end,
@@ -264,7 +264,7 @@ function graph_reload()
         $('#cloned_toggle').remove();
 
         // get feedlist data
-        $.getJSON(path+"feed/data.json", data, addFeedlistData)
+        $.getJSON(path + "feed/data.json", data, addFeedlistData)
         .fail(handleFeedlistDataError)
         .done(checkFeedlistData);
     }
@@ -272,11 +272,11 @@ function graph_reload()
 
 function addFeedlistData(response){
     // loop through feedlist and add response data to data property
-    var valid = false;
-    for (i in feedlist) {
-        let feed = feedlist[i];
-        for (j in response) {
-            let item = response[j];
+    let valid = false;
+    for (const i in feedlist) {
+        const feed = feedlist[i];
+        for (const j in response) {
+            const item = response[j];
             if (parseInt(feed.id) === parseInt(item.feedid) && item.data!=undefined) {
                 feed.postprocessed = false;
                 feed.data = item.data;
@@ -334,23 +334,17 @@ function checkFeedlistData(response){
 
 function set_feedlist() {
 
+    const remove_null = embed ? false : $(".remove-null")[0].checked;
+    const remove_null_max_duration = embed ? 900 : $(".remove-null-max-duration").val();
 
-    var remove_null = false;
-    var remove_null_max_duration = 900;
-    if (!embed) {
-        remove_null = $(".remove-null")[0].checked;
-        remove_null_max_duration = $(".remove-null-max-duration").val();
-    }
-
-    for (var z in feedlist)
-    {
-        var scale = $(".scale[feedid="+feedlist[z].id+"]").val();
-        if (scale!=undefined) feedlist[z].scale = scale;
-        var offset = $(".offset[feedid="+feedlist[z].id+"]").val();
-        if (offset!=undefined) feedlist[z].offset = offset;
+    for (const z in feedlist) {
+        const scale = $(".scale[feedid="+feedlist[z].id+"]").val();
+        if (scale !== undefined) feedlist[z].scale = scale;
+        const offset = $(".offset[feedid="+feedlist[z].id+"]").val();
+        if (offset !== undefined) feedlist[z].offset = offset;
         
         // check to ensure feed scaling and data are only applied once
-        if (feedlist[z].postprocessed==false) {
+        if (feedlist[z].postprocessed === false) {
             feedlist[z].postprocessed = true;
             console.log("postprocessing feed "+feedlist[z].id+" "+feedlist[z].name);
 
@@ -360,32 +354,88 @@ function set_feedlist() {
             }
 
             // Apply a scale to feed values
-            if (feedlist[z].scale!=undefined && feedlist[z].scale!=1.0) {
-                for (var i=0; i<feedlist[z].data.length; i++) {
-                    if (feedlist[z].data[i][1]!=null) {
+            if (feedlist[z].scale !== undefined && feedlist[z].scale != 1.0) {
+                for (let i = 0; i < feedlist[z].data.length; i++) {
+                    if (feedlist[z].data[i][1] !== null) {
                         feedlist[z].data[i][1] = feedlist[z].data[i][1] * feedlist[z].scale;
                     }
                 }
             }
             
-            // Apply a offset to feed values
-            if (feedlist[z].offset!=undefined && feedlist[z].offset!=0.0) {
-                for (var i=0; i<feedlist[z].data.length; i++) {
-                    if (feedlist[z].data[i][1]!=null) {
-                        feedlist[z].data[i][1] = feedlist[z].data[i][1] + 1*feedlist[z].offset;
+            // Apply an offset to feed values
+            if (feedlist[z].offset !== undefined && feedlist[z].offset != 0.0) {
+                for (let i = 0; i < feedlist[z].data.length; i++) {
+                    if (feedlist[z].data[i][1] !== null) {
+                        feedlist[z].data[i][1] = feedlist[z].data[i][1] + 1 * feedlist[z].offset;
                     }
                 }
             }
-             
         }
     }
     // call graph_draw() once feedlist is altered
     graph_draw();
 }
 
+//----------------------------------------------------------------------------------------
+// buildFeedControlsHTML - builds the HTML for the feed options control table rows
+//----------------------------------------------------------------------------------------
+function buildFeedControlsHTML(feedlist) {
+    const defaultLinecolor = '000';
+    let out = '';
+    for (let z = 0; z < feedlist.length; z++) {
+        const feed = feedlist[z];
+        const plotTypes = ['lines', 'bars', 'points', 'steps'];
+        const plotTypeLabels = [_lang['Lines'], _lang['Bars'], _lang['Points'], _lang['Steps']];
+        const plottypeOptions = plotTypes.map((type, i) =>
+            `<option value='${type}'${feed.plottype === type ? ' selected' : ''}>${plotTypeLabels[i]}</option>`
+        ).join('');
+        out += `<tr>
+            <td>
+                ${z > 0 ? `<a class='move-feed' title='${_lang['Move up']}' feedid=${z} moveby=-1><i class='icon-arrow-up'></i></a>` : ''}
+                ${z < feedlist.length - 1 ? `<a class='move-feed' title='${_lang['Move down']}' feedid=${z} moveby=1><i class='icon-arrow-down'></i></a>` : ''}
+            </td>
+            <td>${getFeedName(feed)}</td>
+            <td><select class='plottype' feedid=${feed.id} style='width:80px'>${plottypeOptions}</select></td>
+            <td><input class='linecolor' feedid=${feed.id} style='width:50px' type='color' value='#${defaultLinecolor}'></td>
+            <td><input class='fill' type='checkbox' feedid=${feed.id}></td>
+            <td><input class='stack' type='checkbox' feedid=${feed.id}></td>
+            <td style='text-align:center'><input class='scale' feedid=${feed.id} type='text' style='width:50px' value='1.0'></td>
+            <td style='text-align:center'><input class='offset' feedid=${feed.id} type='text' style='width:50px' value='0.0'></td>
+            <td style='text-align:center'><input class='delta' feedid=${feed.id} type='checkbox'></td>
+            <td style='text-align:center'><input class='average' feedid=${feed.id} type='checkbox'></td>
+            <td><select feedid=${feed.id} class='decimalpoints' style='width:50px'><option>0</option><option>1</option><option>2</option><option>3</option></select></td>
+            <td><button feedid=${feed.id} class='histogram'>${_lang['Histogram']} <i class='icon-signal'></i></button></td>
+        </tr>`;
+    }
+    return out;
+}
+
+//----------------------------------------------------------------------------------------
+// buildFeedStatsHTML - builds the HTML for the feed statistics table rows
+//----------------------------------------------------------------------------------------
+function buildFeedStatsHTML(feedlist, time_in_window) {
+    let out = '';
+    for (const feed of feedlist) {
+        const quality = Math.round(100 * (1 - (feed.stats.npointsnull / feed.stats.npoints)));
+        const dp = feed.dp;
+        out += `<tr>
+            <td></td>
+            <td>${getFeedName(feed)}</td>
+            <td>${quality}% (${feed.stats.npoints - feed.stats.npointsnull}/${feed.stats.npoints})</td>
+            <td>${!isNaN(Number(feed.stats.minval)) ? feed.stats.minval.toFixed(dp) : ''}</td>
+            <td>${!isNaN(Number(feed.stats.maxval)) ? feed.stats.maxval.toFixed(dp) : ''}</td>
+            <td>${feed.stats.diff.toFixed(dp)}</td>
+            <td>${feed.stats.mean.toFixed(dp)}</td>
+            <td>${feed.stats.stdev.toFixed(dp)}</td>
+            <td>${Math.round((feed.stats.mean * time_in_window) / 3600)}</td>
+        </tr>`;
+    }
+    return out;
+}
+
 function graph_draw()
 {
-    var options = {
+    const options = {
         lines: { fill: false },
         xaxis: {
             mode: "time",
@@ -434,38 +484,37 @@ function graph_draw()
     if (yaxismax!='auto' && yaxismax!='') { options.yaxes[0].max = yaxismax; }
     if (yaxismax2!='auto' && yaxismax2!='') { options.yaxes[1].max = yaxismax2; }
     
-    var time_in_window = (view.end - view.start) / 1000;
-    var hours = Math.floor(time_in_window / 3600);
-    var mins = Math.round(((time_in_window / 3600) - hours)*60);
-    if (mins!=0) {
-        if (mins<10) mins = "0"+mins;
+    const time_in_window = (view.end - view.start) / 1000;
+    const hours = Math.floor(time_in_window / 3600);
+    let mins = Math.round(((time_in_window / 3600) - hours) * 60);
+    if (mins !== 0) {
+        if (mins < 10) mins = "0" + mins;
     } else {
         mins = "";
     }
 
-    if (!embed) $("#window-info").html("<b>"+_lang['Window']+":</b> "+printdate(view.start)+" <b>→</b> "+printdate(view.end)+"<br><b>"+_lang['Length']+":</b> "+hours+"h"+mins+" ("+time_in_window+" seconds)");
+    if (!embed) $("#window-info").html(`<b>${_lang['Window']}:</b> ${printdate(view.start)} <b>→</b> ${printdate(view.end)}<br><b>${_lang['Length']}:</b> ${hours}h${mins} (${time_in_window} seconds)`);
 
     plotdata = [];
     let num_left = 0;
     let num_right = 0;
-    for (var z in feedlist) {
+    for (const z in feedlist) {
 
-        var data = feedlist[z].data;
+        let data = feedlist[z].data;
         // Hide missing data (only affects the plot view)
         if (!showmissing) {
-            var tmp = [];
-            for (var n in data) {
-                if (data[n][1]!=null) tmp.push(data[n]);
+            const tmp = [];
+            for (const n in data) {
+                if (data[n][1] !== null) tmp.push(data[n]);
             }
             data = tmp;
         }
         // Add series to plot
-        var label = "";
-        if (showtag) label += feedlist[z].tag+": ";
+        let label = "";
+        if (showtag) label += feedlist[z].tag + ": ";
         label += feedlist[z].name;
-        // label += ' '+getFeedUnit(feedlist[z].id);
-        var stacked = (typeof(feedlist[z].stack) !== "undefined" && feedlist[z].stack);
-        var plot = {label:label, data:data, yaxis:feedlist[z].yaxis, color: feedlist[z].color, stack: stacked};
+        const stacked = (typeof feedlist[z].stack !== "undefined" && feedlist[z].stack);
+        const plot = {label:label, data:data, yaxis:feedlist[z].yaxis, color:feedlist[z].color, stack:stacked};
 
         if (feedlist[z].plottype=="lines") { plot.lines = { show: true, fill: (feedlist[z].fill ? (stacked ? 1.0 : 0.5) : 0.0), fill: feedlist[z].fill } };
         if (feedlist[z].plottype=="bars") { plot.bars = { align: "center", fill: (feedlist[z].fill ? (stacked ? 1.0 : 0.5) : 0.0), show: true, barWidth: view.interval * 1000 * 0.75 } };
@@ -499,87 +548,27 @@ function graph_draw()
 
     if (!embed) {
 
-        for (var z in feedlist) {
+        for (const z in feedlist) {
             feedlist[z].stats = stats(feedlist[z].data);
         }
 
-        var default_linecolor = "000";
-        var out = "";
-        for (var z in feedlist) {
-            var dp = feedlist[z].dp;
-
-            out += "<tr>";
-            out += "<td>";
-            if (z > 0) {
-                out += "<a class='move-feed' title='"+_lang['Move up']+"' feedid="+z+" moveby=-1 ><i class='icon-arrow-up'></i></a>";
-            }
-            if (z < feedlist.length-1) {
-                out += "<a class='move-feed' title='"+_lang['Move down']+"' feedid="+z+" moveby=1 ><i class='icon-arrow-down'></i></a>";
-            }
-            out += "</td>";
-
-            out += "<td>"+getFeedName(feedlist[z])+"</td>";
-            out += "<td><select class='plottype' feedid="+feedlist[z].id+" style='width:80px'>";
-
-            var selected = "";
-            if (feedlist[z].plottype == "lines") selected = "selected"; else selected = "";
-            out += "<option value='lines' "+selected+">"+_lang['Lines']+"</option>";
-            if (feedlist[z].plottype == "bars") selected = "selected"; else selected = "";
-            out += "<option value='bars' "+selected+">"+_lang['Bars']+"</option>";
-            if (feedlist[z].plottype == "points") selected = "selected"; else selected = "";
-            out += "<option value='points' "+selected+">"+_lang['Points']+"</option>";
-            if (feedlist[z].plottype == "steps") selected = "selected"; else selected = "";
-            out += "<option value='steps' "+selected+">"+_lang['Steps']+"</option>";
-            out += "</select></td>";
-            out += "<td><input class='linecolor' feedid="+feedlist[z].id+" style='width:50px' type='color' value='#"+default_linecolor+"'></td>";
-            out += "<td><input class='fill' type='checkbox' feedid="+feedlist[z].id+"></td>";
-            out += "<td><input class='stack' type='checkbox' feedid="+feedlist[z].id+"></td>";
-
-            for (var i=0; i<11; i++) out += "<option>"+i+"</option>";
-            out += "</select></td>";
-            out += "<td style='text-align:center'><input class='scale' feedid="+feedlist[z].id+" type='text' style='width:50px' value='1.0' /></td>";
-            out += "<td style='text-align:center'><input class='offset' feedid="+feedlist[z].id+" type='text' style='width:50px' value='0.0' /></td>";
-            out += "<td style='text-align:center'><input class='delta' feedid="+feedlist[z].id+" type='checkbox'/></td>";
-            out += "<td style='text-align:center'><input class='average' feedid="+feedlist[z].id+" type='checkbox'/></td>";
-            out += "<td><select feedid="+feedlist[z].id+" class='decimalpoints' style='width:50px'><option>0</option><option>1</option><option>2</option><option>3</option></select></td>";
-            out += "<td><button feedid="+feedlist[z].id+" class='histogram'>"+_lang['Histogram']+" <i class='icon-signal'></i></button></td>";
-            // out += "<td><a href='"+apiurl+"'><button class='btn btn-link'>API REF</button></a></td>";
-            out += "</tr>";
-        }
-        $("#feed-controls").html(out);
-
-        var out = "";
-        for (var z in feedlist) {
-            out += "<tr>";
-            out += "<td></td>";
-            out += "<td>"+getFeedName(feedlist[z])+"</td>";
-            var quality = Math.round(100 * (1-(feedlist[z].stats.npointsnull/feedlist[z].stats.npoints)));
-            out += "<td>"+quality+"% ("+(feedlist[z].stats.npoints-feedlist[z].stats.npointsnull)+"/"+feedlist[z].stats.npoints+")</td>";
-            var dp = feedlist[z].dp;
-            if(!isNaN(Number(feedlist[z].stats.minval))) out += "<td>"+feedlist[z].stats.minval.toFixed(dp)+"</td>";
-            if(!isNaN(Number(feedlist[z].stats.maxval))) out += "<td>"+feedlist[z].stats.maxval.toFixed(dp)+"</td>";
-            out += "<td>"+feedlist[z].stats.diff.toFixed(dp)+"</td>";
-            out += "<td>"+feedlist[z].stats.mean.toFixed(dp)+"</td>";
-            out += "<td>"+feedlist[z].stats.stdev.toFixed(dp)+"</td>";
-            out += "<td>"+Math.round((feedlist[z].stats.mean*time_in_window)/3600)+"</td>";
-            out += "</tr>";
-        }
-        $("#feed-stats").html(out);
+        $("#feed-controls").html(buildFeedControlsHTML(feedlist));
+        $("#feed-stats").html(buildFeedStatsHTML(feedlist, time_in_window));
 
         if (feedlist.length) $(".feed-options").show(); else $(".feed-options").hide();
 
-        for (var z in feedlist) {
+        for (const z in feedlist) {
             $(".decimalpoints[feedid="+feedlist[z].id+"]").val(feedlist[z].dp);
-            if ($(".average[feedid="+feedlist[z].id+"]")[0]!=undefined)
+            if ($(".average[feedid="+feedlist[z].id+"]")[0] !== undefined)
                 $(".average[feedid="+feedlist[z].id+"]")[0].checked = feedlist[z].average;
-            if ($(".delta[feedid="+feedlist[z].id+"]")[0]!=undefined)
+            if ($(".delta[feedid="+feedlist[z].id+"]")[0] !== undefined)
                 $(".delta[feedid="+feedlist[z].id+"]")[0].checked = feedlist[z].delta;
             $(".scale[feedid="+feedlist[z].id+"]").val(feedlist[z].scale);
-            $(".offset[feedid="+feedlist[z].id+"]").val(feedlist[z].offset);   
+            $(".offset[feedid="+feedlist[z].id+"]").val(feedlist[z].offset);
             $(".linecolor[feedid="+feedlist[z].id+"]").val(feedlist[z].color);
-            if ($(".fill[feedid="+feedlist[z].id+"]")[0]!=undefined)
+            if ($(".fill[feedid="+feedlist[z].id+"]")[0] !== undefined)
                 $(".fill[feedid="+feedlist[z].id+"]")[0].checked = feedlist[z].fill;
-            if ($(".stack[feedid="+feedlist[z].id+"]")[0]!=undefined)
+            if ($(".stack[feedid="+feedlist[z].id+"]")[0] !== undefined)
                 $(".stack[feedid="+feedlist[z].id+"]")[0].checked = feedlist[z].stack;
         }
 
@@ -636,12 +625,9 @@ function getfeedindex(id)
     return false;
 }
 
-function getFeedUnit(id){
-    let unit = ''
-    for(let key in feeds) {
-        if (feeds[key].id == id){
-            unit = feeds[key].unit || ''
-        }
+function getFeedUnit(id) {
+    for (const key in feeds) {
+        if (feeds[key].id == id) return feeds[key].unit || '';
     }
-    return unit
+    return '';
 }

@@ -4,54 +4,57 @@
 //----------------------------------------------------------------------------------------
 
 //----------------------------------------------------------------------------------------
+// buildFeedSelectorHTML - builds the HTML for the sidebar feed selector table
+// Returns { html, feedsbytag, numberoftags }
+//----------------------------------------------------------------------------------------
+function buildFeedSelectorHTML(feeds) {
+    const feedsbytag = {};
+    let numberoftags = 0;
+    for (const feed of feeds) {
+        if (feedsbytag[feed.tag] === undefined) {
+            feedsbytag[feed.tag] = [];
+            numberoftags++;
+        }
+        feedsbytag[feed.tag].push(feed);
+    }
+
+    let out = `<colgroup>
+        <col span='1' style='width: 70%;'>
+        <col span='1' style='width: 15%;'>
+        <col span='1' style='width: 15%;'>
+    </colgroup>`;
+
+    for (const tag in feedsbytag) {
+        const tagname = tag || 'undefined';
+        out += `<thead>
+            <tr class='tagheading' data-tag='${tagname}' tabindex='0'>
+                <th colspan='3'><span class='caret'></span>${tagname}</th>
+            </tr>
+        </thead>
+        <tbody class='tagbody' data-tag='${tagname}'>`;
+        for (const feed of feedsbytag[tag]) {
+            let name = feed.name;
+            if (name && name.length > 20) name = name.substr(0, 20) + '..';
+            out += `<tr style='color:#666'>
+                <th class='feed-title' title='${name}' data-feedid='${feed.id}' tabindex='0'><span class='text-truncate d-inline-block'>${name}</span></th>
+                <td><input class='feed-select-left' data-feedid='${feed.id}' type='checkbox'></td>
+                <td><input class='feed-select-right' data-feedid='${feed.id}' type='checkbox'></td>
+            </tr>`;
+        }
+        out += '</tbody>';
+    }
+    return { html: out, feedsbytag, numberoftags };
+}
+
+//----------------------------------------------------------------------------------------
 // Side bar feed selector and events associated with editor only, not loaded in embed mode
 //----------------------------------------------------------------------------------------
 function graph_init_editor()
 {
     if (!feeds) feeds = feedlist;
 
-    var numberoftags = 0;
-    feedsbytag = {};
-    for (var z in feeds) {
-        if (feedsbytag[feeds[z].tag]==undefined) {
-            feedsbytag[feeds[z].tag] = [];
-            numberoftags++;
-        }
-        feedsbytag[feeds[z].tag].push(feeds[z]);
-    }
-
     // Draw sidebar feed selector -------------------------------------------
-
-    var out = "";
-    out += "<colgroup>";
-    out += "<col span='1' style='width: 70%;'>";
-    out += "<col span='1' style='width: 15%;'>";
-    out += "<col span='1' style='width: 15%;'>";
-    out += "</colgroup>";
-
-    for (var tag in feedsbytag) {
-       tagname = tag;
-       if (tag=="") tagname = "undefined";
-       out += "<thead>";
-       out += "<tr class='tagheading' data-tag='"+tagname+"' tabindex='0'>";
-       out += "<th colspan='3'><span class='caret'></span>"+tagname+"</th>";
-       out += "</tr>";
-       out += "</thead>";
-       out += "<tbody class='tagbody' data-tag='"+tagname+"'>";
-       for (var z in feedsbytag[tag])
-       {
-           out += "<tr style='color:#666'>";
-           var name = feedsbytag[tag][z].name;
-           if (name && name.length>20) {
-               name = name.substr(0,20)+"..";
-           }
-           out += "<th class='feed-title' title='"+name+"' data-feedid='"+feedsbytag[tag][z].id+"' tabindex='0'><span class='text-truncate d-inline-block'>"+name+"</span></th>";
-           out += "<td><input class='feed-select-left' data-feedid='"+feedsbytag[tag][z].id+"' type='checkbox'></td>";
-           out += "<td><input class='feed-select-right' data-feedid='"+feedsbytag[tag][z].id+"' type='checkbox'></td>";
-           out += "</tr>";
-       }
-       out += "</tbody>";
-    }
+    const { html, feedsbytag, numberoftags } = buildFeedSelectorHTML(feeds);
 
     // ---------------------------------------------------------------
     // Writting direct to the menu system here
@@ -61,14 +64,14 @@ function graph_init_editor()
     // 2. Clear original hidden element
     $("#sidebar_html").html("");
     // 3. Populate with feed list selector
-    $("#feeds").html(out);
+    $("#feeds").html(html);
     // 4. Show l3 menu
-    if (menu.width>=576) menu.show_l3();
+    if (menu.width >= 576) menu.show_l3();
     // 5. Enable l3 menu so that collapsing and re-expanding works
-    if (menu.obj.setup!=undefined) {
-        if (menu.obj.setup.l2!=undefined) {
-            if (menu.obj.setup.l2.graph!=undefined) {
-                menu.obj.setup.l2.graph.l3 = []
+    if (menu.obj.setup != undefined) {
+        if (menu.obj.setup.l2 != undefined) {
+            if (menu.obj.setup.l2.graph != undefined) {
+                menu.obj.setup.l2.graph.l3 = [];
                 menu.active_l3 = true;
             }
         }
@@ -76,7 +79,7 @@ function graph_init_editor()
     if (session_write) load_saved_graphs_menu();
     // ---------------------------------------------------------------
 
-    if (feeds.length>12 && numberoftags>2) {
+    if (feeds.length > 12 && numberoftags > 2) {
         $(".tagbody").hide();
     }
 
@@ -106,21 +109,21 @@ function graph_init_editor()
         showmissing = false;
         showtag = true;
         showlegend = true;
-        floatingtime=1;
-        yaxismin="auto";
-        yaxismax="auto";
-        yaxismin2="auto";
-        yaxismax2="auto";
-        csvtimeformat="datestr";
-        csvnullvalues="show";
-        csvheaders="showNameTag";
+        floatingtime = 1;
+        yaxismin = "auto";
+        yaxismax = "auto";
+        yaxismin2 = "auto";
+        yaxismax2 = "auto";
+        csvtimeformat = "datestr";
+        csvnullvalues = "show";
+        csvheaders = "showNameTag";
         current_graph_id = "";
         current_graph_name = "";
         previousPoint = 0;
         active_histogram_feed = 0;
 
-        var timeWindow = 3600000*24.0*7;
-        var now = Math.round(+new Date * 0.001)*1000;
+        const timeWindow = 3600000 * 24.0 * 7;
+        const now = Math.round(+new Date() * 0.001) * 1000;
         view.start = now - timeWindow;
         view.end = now;
         view.calc_interval();
@@ -223,42 +226,42 @@ function graph_init_editor()
     });
 
     $("body").on("click",".feed-select-left",function(){
-        var feedid = $(this).data("feedid");
-        var checked = $(this)[0].checked;
+        const feedid = $(this).data("feedid");
+        const checked = $(this)[0].checked;
 
-        var loaded = false;
-        for (var z in feedlist) {
-           if (feedlist[z].id==feedid) {
-               if (!checked) {
-                   feedlist.splice(z,1);
-               } else {
-                   feedlist[z].yaxis = 1;
-                   loaded = true;
-                   $(".feed-select-right[data-feedid="+feedid+"]")[0].checked = false;
-               }
-           }
+        let loaded = false;
+        for (const z in feedlist) {
+            if (feedlist[z].id == feedid) {
+                if (!checked) {
+                    feedlist.splice(z, 1);
+                } else {
+                    feedlist[z].yaxis = 1;
+                    loaded = true;
+                    $(".feed-select-right[data-feedid="+feedid+"]")[0].checked = false;
+                }
+            }
         }
-        if (loaded==false && checked) pushfeedlist(feedid, 1);
+        if (!loaded && checked) pushfeedlist(feedid, 1);
         graph_reload();
     });
 
     $("body").on("click",".feed-select-right",function(){
-        var feedid = $(this).data("feedid");
-        var checked = $(this)[0].checked;
+        const feedid = $(this).data("feedid");
+        const checked = $(this)[0].checked;
 
-        var loaded = false;
-        for (var z in feedlist) {
-           if (feedlist[z].id==feedid) {
-               if (!checked) {
-                   feedlist.splice(z,1);
-               } else {
-                   feedlist[z].yaxis = 2;
-                   loaded = true;
-                   $(".feed-select-left[data-feedid="+feedid+"]")[0].checked = false;
-               }
-           }
+        let loaded = false;
+        for (const z in feedlist) {
+            if (feedlist[z].id == feedid) {
+                if (!checked) {
+                    feedlist.splice(z, 1);
+                } else {
+                    feedlist[z].yaxis = 2;
+                    loaded = true;
+                    $(".feed-select-left[data-feedid="+feedid+"]")[0].checked = false;
+                }
+            }
         }
-        if (loaded==false && checked) pushfeedlist(feedid, 2);
+        if (!loaded && checked) pushfeedlist(feedid, 2);
         graph_reload();
     });
 
