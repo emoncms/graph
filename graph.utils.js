@@ -70,3 +70,25 @@ function remove_null_values(data, interval, max_duration = 900) {
     }
     return data;
 }
+
+function scale_values(data, scale) {
+    if (scale !== undefined && scale != 1.0) {
+        for (let i = 0; i < data.length; i++) {
+            if (data[i][1] !== null) {
+                data[i][1] = data[i][1] * scale;
+            }
+        }
+    }
+    return data;
+}
+
+function offset_values(data, offset) {
+    if (offset !== undefined && offset != 0.0) {
+        for (let i = 0; i < data.length; i++) {
+            if (data[i][1] !== null) {
+                data[i][1] = data[i][1] + 1 * offset;
+            }
+        }
+    }
+    return data;
+}

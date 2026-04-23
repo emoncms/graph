@@ -286,8 +286,8 @@ function addFeedlistData(response){
             }
         }
     }
-    // alter feedlist base on user selection
-    if (valid) set_feedlist();
+    
+    if (valid) processFeedlistData();
 }
 function handleFeedlistDataError(jqXHR, error, message){
     error = error === 'parsererror' ? _('Received data not in correct format. Check the logs for more details'): error;
@@ -332,7 +332,7 @@ function checkFeedlistData(response){
     }
 }
 
-function set_feedlist() {
+function processFeedlistData() {
 
     const remove_null = embed ? false : $(".remove-null")[0].checked;
     const remove_null_max_duration = embed ? 900 : $(".remove-null-max-duration").val();
@@ -340,6 +340,7 @@ function set_feedlist() {
     for (const z in feedlist) {
         const scale = $(".scale[feedid="+feedlist[z].id+"]").val();
         if (scale !== undefined) feedlist[z].scale = scale;
+
         const offset = $(".offset[feedid="+feedlist[z].id+"]").val();
         if (offset !== undefined) feedlist[z].offset = offset;
         
@@ -354,22 +355,10 @@ function set_feedlist() {
             }
 
             // Apply a scale to feed values
-            if (feedlist[z].scale !== undefined && feedlist[z].scale != 1.0) {
-                for (let i = 0; i < feedlist[z].data.length; i++) {
-                    if (feedlist[z].data[i][1] !== null) {
-                        feedlist[z].data[i][1] = feedlist[z].data[i][1] * feedlist[z].scale;
-                    }
-                }
-            }
+            feedlist[z].data = scale_values(feedlist[z].data, feedlist[z].scale);
             
             // Apply an offset to feed values
-            if (feedlist[z].offset !== undefined && feedlist[z].offset != 0.0) {
-                for (let i = 0; i < feedlist[z].data.length; i++) {
-                    if (feedlist[z].data[i][1] !== null) {
-                        feedlist[z].data[i][1] = feedlist[z].data[i][1] + 1 * feedlist[z].offset;
-                    }
-                }
-            }
+            feedlist[z].data = offset_values(feedlist[z].data, feedlist[z].offset);
         }
     }
     // call graph_draw() once feedlist is altered

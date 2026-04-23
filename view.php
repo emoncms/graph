@@ -65,8 +65,8 @@ defined('EMONCMS_EXEC') or die('Restricted access');
 <div id="navigation" style="padding-bottom:5px;">
 
     <div class="input-prepend input-append" style="margin-bottom:0 !important">
-        <button class='btn graph_time_refresh' title="<?php echo tr('Refresh') ?>"><i class="icon-repeat"></i></button>
-        <select class='btn graph_time' style="width:110px; padding-left:5px">
+        <button class='app-btn graph_time_refresh' title="<?php echo tr('Refresh') ?>"><i class="icon-repeat"></i></button>
+        <select class='app-btn graph_time' style="width:110px; padding-left:5px">
             <option value='1'><?php echo tr('1 hour') ?></option>
             <option value='6'><?php echo tr('6 hours') ?></option>
             <option value='12'><?php echo tr('12 hours') ?></option>
@@ -78,16 +78,16 @@ defined('EMONCMS_EXEC') or die('Restricted access');
         </select>
     </div>
     <!--
-    <button class='btn graph_time' type='button' data-time='1' title="<?php echo tr('Day') ?>"><?php echo tr('D') ?></button>
-    <button class='btn graph_time' type='button' data-time='7' title="<?php echo tr('Week') ?>"><?php echo tr('W') ?></button>
-    <button class='btn graph_time' type='button' data-time='30' title="<?php echo tr('Month') ?>"><?php echo tr('M') ?></button>
-    <button class='btn graph_time' type='button' data-time='365' title="<?php echo tr('Year') ?>"><?php echo tr('Y') ?></button>
+    <button class='app-btn graph_time' type='button' data-time='1' title="<?php echo tr('Day') ?>"><?php echo tr('D') ?></button>
+    <button class='app-btn graph_time' type='button' data-time='7' title="<?php echo tr('Week') ?>"><?php echo tr('W') ?></button>
+    <button class='app-btn graph_time' type='button' data-time='30' title="<?php echo tr('Month') ?>"><?php echo tr('M') ?></button>
+    <button class='app-btn graph_time' type='button' data-time='365' title="<?php echo tr('Year') ?>"><?php echo tr('Y') ?></button>
     -->
     
-    <button id='graph_zoomin' class='btn' title="<?php echo tr('Zoom In') ?>">+</button>
-    <button id='graph_zoomout' class='btn' title="<?php echo tr('Zoom Out') ?>">-</button>
-    <button id='graph_left' class='btn' title="<?php echo tr('Earlier') ?>"><</button>
-    <button id='graph_right' class='btn' title="<?php echo tr('Later') ?>">></button>
+    <button id='graph_zoomin' class='app-btn' title="<?php echo tr('Zoom In') ?>">+</button>
+    <button id='graph_zoomout' class='app-btn' title="<?php echo tr('Zoom Out') ?>">-</button>
+    <button id='graph_left' class='app-btn' title="<?php echo tr('Earlier') ?>"><</button>
+    <button id='graph_right' class='app-btn' title="<?php echo tr('Later') ?>">></button>
     
     <div id="showcontrols" class="input-prepend input-append">
     <span class="add-on"><?php echo tr('Show') ?></span>
@@ -111,7 +111,7 @@ defined('EMONCMS_EXEC') or die('Restricted access');
         <input id="histogram-resolution" type="text" style="width:60px"/>
     </div>
     
-    <button id="histogram-back" class="btn" style="float:right"><?php echo tr('Back to main view') ?></button>
+    <button id="histogram-back" class="app-btn" style="float:right"><?php echo tr('Back to main view') ?></button>
 </div>
 <div id="legend"></div>
 <div id="placeholder_bound" style="width:100%; height:400px;">
@@ -162,7 +162,7 @@ defined('EMONCMS_EXEC') or die('Restricted access');
             <input class="yaxis-minmax" id="yaxis-min" type="text" value="auto">
             <span class="yaxis-minmax-label add-on"><?php echo tr('max') ?></span>
             <input class="yaxis-minmax" id="yaxis-max" type="text" value="auto">
-            <button class="btn reset-yaxis"><?php echo tr('Reset') ?></button>
+            <button class="app-btn reset-yaxis"><?php echo tr('Reset') ?></button>
         </div>
         <div id="yaxis_right" class="input-append input-prepend">
             <span id="yaxis-right" class="add-on"><?php echo tr('Y-axis').' ('.tr('Right').')' ?>:</span>
@@ -170,10 +170,10 @@ defined('EMONCMS_EXEC') or die('Restricted access');
             <input class="yaxis-minmax" id="yaxis-min2" type="text" value="auto">
             <span class="yaxis-minmax-label add-on"><?php echo tr('max') ?></span>
             <input class="yaxis-minmax" id="yaxis-max2" type="text" value="auto">
-            <button class="btn reset-yaxis"><?php echo tr('Reset') ?></button>
+            <button class="app-btn reset-yaxis"><?php echo tr('Reset') ?></button>
         </div>
-        <button id="reload" class="btn" style="vertical-align:top"><?php echo tr('Reload') ?></button>
-        <button id="clear" class="btn" style="vertical-align:top"><?php echo tr('Clear All') ?></button>
+        <button id="reload" class="app-btn" style="vertical-align:top"><?php echo tr('Reload') ?></button>
+        <button id="clear" class="app-btn" style="vertical-align:top"><?php echo tr('Clear All') ?></button>
     </div>
 
     <!-- 
@@ -237,7 +237,7 @@ defined('EMONCMS_EXEC') or die('Restricted access');
     <br>
     
     <div class="input-prepend input-append">
-        <button class="btn" id="showcsv" ><?php echo tr('Show CSV Output') ?></button>
+        <button class="app-btn" id="showcsv" ><?php echo tr('Show CSV Output') ?></button>
         <span class="add-on csvoptions"><?php echo tr('Time format') ?>:</span>
         <select id="csvtimeformat" class="csvoptions">
             <option value="unix"><?php echo tr('Unix timestamp') ?></option>
@@ -274,16 +274,19 @@ defined('EMONCMS_EXEC') or die('Restricted access');
 </div>
 
 
-<script src="<?php echo $path;?>Modules/graph/graph.utils.js?v=<?php echo $v; ?>"></script>
-<script src="<?php echo $path;?>Modules/graph/graph.legend.js?v=<?php echo $v; ?>"></script>
-<script src="<?php echo $path;?>Modules/graph/graph.js?v=<?php echo $v; ?>"></script>
-<script src="<?php echo $path;?>Modules/graph/graph.csv.js?v=<?php echo $v; ?>"></script>
-<script src="<?php echo $path;?>Modules/graph/graph.histogram.js?v=<?php echo $v; ?>"></script>
-<script src="<?php echo $path;?>Modules/graph/graph.saved.js?v=<?php echo $v; ?>"></script>
-<script src="<?php echo $path;?>Modules/graph/graph.editor.js?v=<?php echo $v; ?>"></script>
-<script src="<?php echo $path;?>Lib/moment.min.js?v=1"></script>
-<script src="<?php echo $path; ?>Lib/user_locale.js"></script>
-<script src="<?php echo $path; ?>Lib/misc/gettext.js"></script>
+<?php
+load_js("Modules/graph/graph.utils.js");
+load_js("Modules/graph/graph.legend.js");
+load_js("Modules/graph/graph.js");
+load_js("Modules/graph/graph.csv.js");
+load_js("Modules/graph/graph.histogram.js");
+load_js("Modules/graph/graph.saved.js");
+load_js("Modules/graph/graph.editor.js");
+load_js("Lib/moment.min.js");
+load_js("Lib/user_locale.js");
+load_js("Lib/misc/gettext.js");
+?>
+
 <script>
     // PHP-injected configuration
     var min_feed_interval = <?php echo $min_feed_interval; ?>;
