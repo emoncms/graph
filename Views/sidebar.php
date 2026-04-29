@@ -1,4 +1,36 @@
-<div class="htop"></div><h3 class="l3-title mx-3"><?php echo tr('Graph') ?> </h3><table class="table table-condensed mx-3" id="feeds" style="width: 90%;"></table>
+<div class="htop"></div><h3 class="l3-title mx-3"><?php echo tr('Graph') ?> </h3><div id="feed-selector-app"></div>
+
+<script type="text/x-template" id="feed-selector-template">
+    <table id="feeds" class="table table-condensed mx-3" style="width: 90%;">
+        <colgroup>
+            <col span='1' style='width: 70%;'>
+            <col span='1' style='width: 15%;'>
+            <col span='1' style='width: 15%;'>
+        </colgroup>
+        <template v-for="(tagFeeds, tag) in feedsByTag">
+            <thead>
+                <tr class='tagheading' :data-tag='tag' tabindex='0'
+                    @click="toggleTag(tag)" @keyup.enter="toggleTag(tag)">
+                    <th colspan='3'><span class='caret'></span>{{tag}}</th>
+                </tr>
+            </thead>
+            <tbody class='tagbody' :data-tag='tag' v-show="!collapsedTags[tag]">
+                <tr v-for="feed in tagFeeds" style='color:#666'>
+                    <th class='feed-title' :title='truncateName(feed.name)' :data-feedid='feed.id' tabindex='0'
+                        @click="onFeedTitleClick(feed.id)" @keyup.enter="onFeedTitleClick(feed.id)">
+                        <span class='text-truncate d-inline-block'>{{truncateName(feed.name)}}</span>
+                    </th>
+                    <td><input class='feed-select-left' :data-feedid='feed.id' type='checkbox'
+                        :checked='leftChecked.has(feed.id)'
+                        @change="onLeftChange(feed.id, $event.target.checked)"></td>
+                    <td><input class='feed-select-right' :data-feedid='feed.id' type='checkbox'
+                        :checked='rightChecked.has(feed.id)'
+                        @change="onRightChange(feed.id, $event.target.checked)"></td>
+                </tr>
+            </tbody>
+        </template>
+    </table>
+</script>
 
 <div id="my_graphs" class="px-3" v-cloak>
     <h4>

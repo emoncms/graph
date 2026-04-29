@@ -4,46 +4,100 @@
 //----------------------------------------------------------------------------------------
 
 //----------------------------------------------------------------------------------------
-// buildFeedSelectorHTML - builds the HTML for the sidebar feed selector table
-// Returns { html, feedsbytag, numberoftags }
+// initFeedSelectorApp - mounts a Vue root instance on #feed-selector-app in the sidebar.
+// Must be called after the sidebar HTML has been moved into the live DOM.
+// Returns the Vue instance and reassigns graphState.feedlist to Vue's reactive copy.
 //----------------------------------------------------------------------------------------
-function buildFeedSelectorHTML(feeds) {
-    const feedsbytag = {};
-    let numberoftags = 0;
+var feedSelectorApp = null;
+
+function initFeedSelectorApp(feeds, feedlist) {
+    // Compute initial per-tag collapsed state: collapse all tags when there are many
+    // feeds and many tags, but keep expanded any tag that already has a selected feed.
+    const tagMap = {};
     for (const feed of feeds) {
-        if (feedsbytag[feed.tag] === undefined) {
-            feedsbytag[feed.tag] = [];
-            numberoftags++;
+        const tag = feed.tag || 'undefined';
+        if (!tagMap[tag]) tagMap[tag] = [];
+        tagMap[tag].push(feed);
+    }
+    const numberoftags = Object.keys(tagMap).length;
+    const collapsedTags = {};
+    if (feeds.length > 12 && numberoftags > 2) {
+        const selectedTags = new Set(feedlist.map(f => f.tag || 'undefined'));
+        for (const tag in tagMap) {
+            collapsedTags[tag] = !selectedTags.has(tag);
         }
-        feedsbytag[feed.tag].push(feed);
     }
 
-    let out = `<colgroup>
-        <col span='1' style='width: 70%;'>
-        <col span='1' style='width: 15%;'>
-        <col span='1' style='width: 15%;'>
-    </colgroup>`;
-
-    for (const tag in feedsbytag) {
-        const tagname = tag || 'undefined';
-        out += `<thead>
-            <tr class='tagheading' data-tag='${tagname}' tabindex='0'>
-                <th colspan='3'><span class='caret'></span>${tagname}</th>
-            </tr>
-        </thead>
-        <tbody class='tagbody' data-tag='${tagname}'>`;
-        for (const feed of feedsbytag[tag]) {
-            let name = feed.name;
-            if (name && name.length > 20) name = name.substr(0, 20) + '..';
-            out += `<tr style='color:#666'>
-                <th class='feed-title' title='${name}' data-feedid='${feed.id}' tabindex='0'><span class='text-truncate d-inline-block'>${name}</span></th>
-                <td><input class='feed-select-left' data-feedid='${feed.id}' type='checkbox'></td>
-                <td><input class='feed-select-right' data-feedid='${feed.id}' type='checkbox'></td>
-            </tr>`;
-        }
-        out += '</tbody>';
-    }
-    return { html: out, feedsbytag, numberoftags };
+    feedSelectorApp = new Vue({
+        el: '#feed-selector-app',
+        data: {
+            feeds: feeds,
+            feedlist: feedlist,
+            collapsedTags: collapsedTags
+        },
+        computed: {
+            feedsByTag() {
+                const result = {};
+                for (const feed of this.feeds) {
+                    const tag = feed.tag || 'undefined';
+                    if (!result[tag]) result[tag] = [];
+                    result[tag].push(feed);
+                }
+                return result;
+            },
+            leftChecked() {
+                return new Set(this.feedlist.filter(f => f.yaxis == 1).map(f => f.id));
+            },
+            rightChecked() {
+                return new Set(this.feedlist.filter(f => f.yaxis == 2).map(f => f.id));
+            }
+        },
+        methods: {
+            truncateName(name) {
+                if (name && name.length > 20) return name.substr(0, 20) + '..';
+                return name;
+            },
+            toggleTag(tag) {
+                this.$set(this.collapsedTags, tag, !this.collapsedTags[tag]);
+            },
+            onFeedTitleClick(feedid) {
+                // clicking the feed title toggles the left (primary) axis checkbox
+                this.onLeftChange(feedid, !this.leftChecked.has(feedid));
+            },
+            onLeftChange(feedid, checked) {
+                let loaded = false;
+                for (let z = this.feedlist.length - 1; z >= 0; z--) {
+                    if (this.feedlist[z].id == feedid) {
+                        if (!checked) {
+                            this.feedlist.splice(z, 1);
+                        } else {
+                            this.$set(this.feedlist[z], 'yaxis', 1);
+                            loaded = true;
+                        }
+                    }
+                }
+                if (!loaded && checked) pushfeedlist(feedid, 1);
+                graph_reload();
+            },
+            onRightChange(feedid, checked) {
+                let loaded = false;
+                for (let z = this.feedlist.length - 1; z >= 0; z--) {
+                    if (this.feedlist[z].id == feedid) {
+                        if (!checked) {
+                            this.feedlist.splice(z, 1);
+                        } else {
+                            this.$set(this.feedlist[z], 'yaxis', 2);
+                            loaded = true;
+                        }
+                    }
+                }
+                if (!loaded && checked) pushfeedlist(feedid, 2);
+                graph_reload();
+            }
+        },
+        template: '#feed-selector-template'
+    });
+    return feedSelectorApp;
 }
 
 //----------------------------------------------------------------------------------------
@@ -53,9 +107,6 @@ function graph_init_editor()
 {
     if (!graphState.feeds) graphState.feeds = graphState.feedlist;
 
-    // Draw sidebar feed selector -------------------------------------------
-    const { html, feedsbytag, numberoftags } = buildFeedSelectorHTML(graphState.feeds);
-
     // ---------------------------------------------------------------
     // Writting direct to the menu system here
     // ---------------------------------------------------------------
@@ -63,8 +114,9 @@ function graph_init_editor()
     $(".menu-l3").html($("#sidebar_html").html());
     // 2. Clear original hidden element
     $("#sidebar_html").html("");
-    // 3. Populate with feed list selector
-    $("#feeds").html(html);
+    // 3. Mount Vue feed selector on #feed-selector-app (now in the live DOM)
+    feedSelectorApp = initFeedSelectorApp(graphState.feeds, graphState.feedlist);
+    graphState.feedlist = feedSelectorApp.feedlist;
     // 4. Show l3 menu
     if (menu.width >= 576) menu.show_l3();
     // 5. Enable l3 menu so that collapsing and re-expanding works
@@ -78,10 +130,6 @@ function graph_init_editor()
     }
     if (session_write) load_saved_graphs_menu();
     // ---------------------------------------------------------------
-
-    if (graphState.feeds.length > 12 && numberoftags > 2) {
-        $(".tagbody").hide();
-    }
 
     $("#info").show();
     if ($("#showmissing")[0]!=undefined) $("#showmissing")[0].checked = graphState.showmissing;
@@ -101,7 +149,8 @@ function graph_init_editor()
 
     $("#clear").click(function(){
 
-        graphState.feedlist = [];
+        feedSelectorApp.feedlist.splice(0);
+        graphState.feedlist = feedSelectorApp.feedlist;
         plotdata = [];
         graphState.skipmissing = 0;
         requesttype = "interval";
@@ -128,7 +177,6 @@ function graph_init_editor()
         view.end = now;
         view.calc_interval();
 
-        load_feed_selector();
         graph_reload();
     });
 
@@ -136,66 +184,6 @@ function graph_init_editor()
         csvShowHide("swap");
     });
     $(".csvoptions").hide();
-
-    $("body").on("click keyup",".feed-title", function(event){
-        let enterKey = 13;
-        if((event.type === 'keyup' && event.which === enterKey) || event.type === 'click') {
-            var feedid = $(this).data("feedid");
-            $('.feed-select-left[data-feedid="' + feedid + '"]').click();
-            event.preventDefault();
-        }
-    });
-
-    $("body").on("click",".feed-select-left",function(){
-        const feedid = $(this).data("feedid");
-        const checked = $(this)[0].checked;
-
-        let loaded = false;
-        for (const z in graphState.feedlist) {
-            if (graphState.feedlist[z].id == feedid) {
-                if (!checked) {
-                    graphState.feedlist.splice(z, 1);
-                } else {
-                    graphState.feedlist[z].yaxis = 1;
-                    loaded = true;
-                    $(".feed-select-right[data-feedid="+feedid+"]")[0].checked = false;
-                }
-            }
-        }
-        if (!loaded && checked) pushfeedlist(feedid, 1);
-        graph_reload();
-    });
-
-    $("body").on("click",".feed-select-right",function(){
-        const feedid = $(this).data("feedid");
-        const checked = $(this)[0].checked;
-
-        let loaded = false;
-        for (const z in graphState.feedlist) {
-            if (graphState.feedlist[z].id == feedid) {
-                if (!checked) {
-                    graphState.feedlist.splice(z, 1);
-                } else {
-                    graphState.feedlist[z].yaxis = 2;
-                    loaded = true;
-                    $(".feed-select-left[data-feedid="+feedid+"]")[0].checked = false;
-                }
-            }
-        }
-        if (!loaded && checked) pushfeedlist(feedid, 2);
-        graph_reload();
-    });
-
-    $("body").on("click keyup",".tagheading",function(event){
-        let enterKey = 13;
-
-        if((event.type === 'keyup' && event.which === enterKey) || event.type === 'click') {
-            var tag = $(this).data("tag");
-            var e = $(".tagbody[data-tag='"+tag+"']");
-            if (e.is(":visible")) e.hide(); else e.show();
-            event.preventDefault();
-        }
-    });
 
     $("#showmissing").click(function(){
         graphState.showmissing = $("#showmissing")[0].checked;
@@ -330,24 +318,11 @@ function graph_init_editor()
 }
 
 function load_feed_selector() {
-    for (const z in graphState.feeds) {
-        const feedid = graphState.feeds[z].id;
-        $(".feed-select-left[data-feedid="+feedid+"]")[0].checked = false;
-        $(".feed-select-right[data-feedid="+feedid+"]")[0].checked = false;
-    }
-
-    for (let z=0; z<graphState.feedlist.length; z++) {
-        const feedid = graphState.feedlist[z].id;
-        let tag = graphState.feedlist[z].tag;
-        if (tag=="") tag = "undefined";
-
-        if (graphState.feedlist[z].yaxis==1) {
-            if ($(".feed-select-left[data-feedid="+feedid+"]")[0])
-                $(".feed-select-left[data-feedid="+feedid+"]")[0].checked = true; $(".tagbody[data-tag='"+tag+"']").show();
-        }
-        if (graphState.feedlist[z].yaxis==2) {
-            if ($(".feed-select-left[data-feedid="+feedid+"]")[0])
-                $(".feed-select-right[data-feedid="+feedid+"]")[0].checked = true; $(".tagbody[data-tag='"+tag+"']").show();
-        }
+    // Checkbox state is driven by Vue reactivity via feedSelectorApp.feedlist.
+    // Ensure tag sections containing selected feeds are expanded.
+    if (!feedSelectorApp) return;
+    for (const feed of graphState.feedlist) {
+        const tag = feed.tag || 'undefined';
+        feedSelectorApp.$set(feedSelectorApp.collapsedTags, tag, false);
     }
 }
