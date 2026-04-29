@@ -10,6 +10,7 @@ import {
     getfeed,
 } from './graph.chart.js';
 import { initFeedControlsApp }  from './graph.feedcontrols.js';
+import './graph.histogram.js';
 import { initSavedGraphsApp }   from './graph.saved.js';
 import { printCsv, csvShowHide } from './graph.csv.js';
 import { downloadData }          from './graph.utils.js';
