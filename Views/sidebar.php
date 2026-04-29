@@ -21,10 +21,10 @@
                         <span class='text-truncate d-inline-block'>{{truncateName(feed.name)}}</span>
                     </th>
                     <td><input class='feed-select-left' :data-feedid='feed.id' type='checkbox'
-                        :checked='leftChecked.has(feed.id)'
+                        :checked='leftChecked.has(+feed.id)'
                         @change="onLeftChange(feed.id, $event.target.checked)"></td>
                     <td><input class='feed-select-right' :data-feedid='feed.id' type='checkbox'
-                        :checked='rightChecked.has(feed.id)'
+                        :checked='rightChecked.has(+feed.id)'
                         @change="onRightChange(feed.id, $event.target.checked)"></td>
                 </tr>
             </tbody>

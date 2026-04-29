@@ -48,8 +48,8 @@ function initFeedSelectorApp(feeds, feedlist) {
                 }
                 return result;
             },
-            leftChecked()  { return new Set(this.feedlist.filter(f => f.yaxis == 1).map(f => f.id)); },
-            rightChecked() { return new Set(this.feedlist.filter(f => f.yaxis == 2).map(f => f.id)); },
+            leftChecked()  { return new Set(this.feedlist.filter(f => f.yaxis == 1).map(f => +f.id)); },
+            rightChecked() { return new Set(this.feedlist.filter(f => f.yaxis == 2).map(f => +f.id)); },
         },
         methods: {
             truncateName(name) { return name && name.length > 20 ? name.substr(0, 20) + '..' : name; },
@@ -84,11 +84,20 @@ function initFeedSelectorApp(feeds, feedlist) {
 }
 
 /**
- * Expand tag groups that contain a currently-selected feed.
- * Called after loading a saved graph to ensure selected feeds are visible.
+ * Sync the feed selector app after a saved graph is loaded:
+ * - Splices the new feedlist into the Vue app's reactive array in-place
+ *   (replacing its contents without swapping the reference Vue tracks).
+ * - Expands collapsed tag groups for any currently-selected feed.
  */
 export function loadFeedSelector() {
     if (!feedSelectorApp) return;
+
+    // Replace the Vue app's feedlist contents in-place so reactivity fires.
+    feedSelectorApp.feedlist.splice(0, feedSelectorApp.feedlist.length, ...state.feedlist);
+    // Keep state pointing at the same reactive array the Vue app owns.
+    state.feedlist = feedSelectorApp.feedlist;
+
+    // Expand tag groups that contain a selected feed.
     for (const feed of state.feedlist) {
         const tag = feed.tag || 'undefined';
         feedSelectorApp.$set(feedSelectorApp.collapsedTags, tag, false);
