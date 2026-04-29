@@ -29,17 +29,16 @@ defined('EMONCMS_EXEC') or die('Restricted access');
 
 <!--[if IE]><script language="javascript" type="text/javascript" src="<?php echo $path;?>Lib/flot/excanvas.min.js"></script><![endif]-->
 <script>var min_feed_interval = <?php echo $min_feed_interval; ?>;</script>
-<script language="javascript" type="text/javascript" src="<?php echo $path;?>Lib/flot/jquery.flot.min.js"></script>
-<script language="javascript" type="text/javascript" src="<?php echo $path;?>Lib/flot/jquery.flot.time.min.js"></script>
-<script language="javascript" type="text/javascript" src="<?php echo $path;?>Lib/flot/jquery.flot.selection.min.js"></script>
-<script language="javascript" type="text/javascript" src="<?php echo $path;?>Lib/flot/jquery.flot.touch.min.js"></script>
-<script language="javascript" type="text/javascript" src="<?php echo $path;?>Lib/flot/jquery.flot.togglelegend.min.js"></script>
-<script language="javascript" type="text/javascript" src="<?php echo $path; ?>Lib/flot/jquery.flot.stack.min.js"></script>
-<script language="javascript" type="text/javascript" src="<?php echo $path;?>Modules/graph/vis.helper.js?v=<?php echo $js_css_version; ?>"></script>
-<link href="<?php echo $path; ?>Lib/bootstrap-datetimepicker-0.0.11/css/bootstrap-datetimepicker.min.css" rel="stylesheet">
-<script language="javascript" type="text/javascript" src="<?php echo $path; ?>Lib/bootstrap-datetimepicker-0.0.11/js/bootstrap-datetimepicker.min.js"></script>
-<link href="<?php echo $path; ?>Modules/graph/graph.css?v=<?php echo $js_css_version; ?>" rel="stylesheet">
-<script src="<?php echo $path; ?>Lib/vue.min.js?v=<?php echo $js_css_version; ?>"></script>
+
+<?php
+load_css("Lib/bootstrap-datetimepicker-0.0.11/css/bootstrap-datetimepicker.min.css");
+load_css("Modules/graph/graph.css");
+load_js("Lib/flot/jquery.flot.merged.js");
+load_js("Lib/flot/jquery.flot.stack.min.js");
+load_js("Modules/graph/vis.helper.js");
+load_js("Lib/bootstrap-datetimepicker-0.0.11/js/bootstrap-datetimepicker.min.js");
+load_js("Lib/vue.min.js");
+?>
 
 <div id='navigation-timemanual' style='right:1px; display: none;'>
     <div class='input-prepend input-append' style='margin-bottom:5px' >
@@ -98,13 +97,14 @@ defined('EMONCMS_EXEC') or die('Restricted access');
     if (apikey!="") apikeystr = "&apikey="+apikey;
 </script>
 
-<script language="javascript" type="text/javascript" src="<?php echo $path;?>Lib/moment.min.js?v=<?php echo $js_css_version; ?>"></script>
-<script language="javascript" type="text/javascript" src="<?php echo $path;?>Modules/graph/graph.utils.js?v=<?php echo $js_css_version; ?>"></script>
-<script language="javascript" type="text/javascript" src="<?php echo $path;?>Modules/graph/graph.legend.js?v=<?php echo $js_css_version; ?>"></script>
-<script language="javascript" type="text/javascript" src="<?php echo $path;?>Modules/graph/graph.js?v=<?php echo $js_css_version; ?>"></script>
-<script language="javascript" type="text/javascript" src="<?php echo $path;?>Modules/graph/graph.csv.js?v=<?php echo $js_css_version; ?>"></script>
-<script language="javascript" type="text/javascript" src="<?php echo $path;?>Modules/graph/graph.histogram.js?v=<?php echo $js_css_version; ?>"></script>
-<script language="javascript" type="text/javascript" src="<?php echo $path;?>Modules/graph/graph.saved.js?v=<?php echo $js_css_version; ?>"></script>
+<?php
+load_js("Modules/graph/graph.utils.js");
+load_js("Modules/graph/graph.legend.js");
+load_js("Modules/graph/graph.js");
+load_js("Lib/moment.min.js");
+load_js("Lib/user_locale.js");
+load_js("Lib/misc/gettext.js");
+?>
 
 <script>
     $("body").css("background","none");
