@@ -39,6 +39,13 @@ defined('EMONCMS_EXEC') or die('Restricted access');
     [v-cloak] {
         visibility: hidden
     }
+    #feed-options-table input {
+        margin-bottom: 0;
+    }
+
+    #feed-options-table select {
+        margin-bottom: 0;
+    }
 </style>
 <?php
 load_css("Lib/bootstrap-datetimepicker-0.0.11/css/bootstrap-datetimepicker.min.css");
@@ -198,15 +205,15 @@ load_js("Lib/vue.min.js");
                             <col style="width:40px">
                             <col>
                             <col style="width:100px">
-                            <col style="width:58px">
-                            <col style="width:52px">
-                            <col style="width:58px">
+                            <col style="width:65px">
+                            <col style="width:55px">
+                            <col style="width:65px">
                             <col style="width:72px">
                             <col style="width:72px">
-                            <col style="width:58px">
-                            <col style="width:80px">
+                            <col style="width:70px">
+                            <col style="width:100px">
                             <col style="width:50px">
-                            <col style="width:122px">
+                            <col style="width:130px">
                         </colgroup>
                         <thead>
                             <tr>
@@ -295,9 +302,9 @@ load_js("Lib/vue.min.js");
                                         <option>3</option>
                                     </select>
                                 </td>
-                                <td>
-                                    <button :feedid="feed.id" class="histogram app-btn-sm">
-                                        <?php echo tr('Histogram') ?> <i class="icon-signal"></i>
+                                <td style="text-align:center">
+                                    <button :feedid="feed.id" class="histogram app-btn">
+                                        <?php echo tr('Histogram') ?>
                                     </button>
                                 </td>
                             </tr>
@@ -313,7 +320,7 @@ load_js("Lib/vue.min.js");
                             <col style="width:72px">
                             <col style="width:65px">
                             <col style="width:65px">
-                            <col style="width:65px">
+                            <col style="width:75px">
                             <col style="width:65px">
                         </colgroup>
                         <thead>
