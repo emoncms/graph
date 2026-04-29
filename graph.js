@@ -25,6 +25,8 @@ const graphState = Vue.observable({
     current_graph_name: '',
     skipmissing: 0,
     active_histogram_feed: 0,
+    showStats: false,
+    time_in_window: 0,
 });
 
 // Non-reactive module-level variables (transient state, jQuery instances, config flags)
@@ -360,29 +362,6 @@ function processFeedlistData() {
     graph_draw();
 }
 
-//----------------------------------------------------------------------------------------
-// buildFeedStatsHTML - builds the HTML for the feed statistics table rows
-//----------------------------------------------------------------------------------------
-function buildFeedStatsHTML(feedlist, time_in_window) {
-    let out = '';
-    for (const feed of feedlist) {
-        const quality = Math.round(100 * (1 - (feed.stats.npointsnull / feed.stats.npoints)));
-        const dp = feed.dp;
-        out += `<tr>
-            <td></td>
-            <td>${getFeedName(feed)}</td>
-            <td>${quality}% (${feed.stats.npoints - feed.stats.npointsnull}/${feed.stats.npoints})</td>
-            <td>${!isNaN(Number(feed.stats.minval)) ? feed.stats.minval.toFixed(dp) : ''}</td>
-            <td>${!isNaN(Number(feed.stats.maxval)) ? feed.stats.maxval.toFixed(dp) : ''}</td>
-            <td>${feed.stats.diff.toFixed(dp)}</td>
-            <td>${feed.stats.mean.toFixed(dp)}</td>
-            <td>${feed.stats.stdev.toFixed(dp)}</td>
-            <td>${Math.round((feed.stats.mean * time_in_window) / 3600)}</td>
-        </tr>`;
-    }
-    return out;
-}
-
 function graph_draw()
 {
     const options = {
@@ -435,6 +414,7 @@ function graph_draw()
     if (graphState.yaxismax2!='auto' && graphState.yaxismax2!='') { options.yaxes[1].max = graphState.yaxismax2; }
     
     const time_in_window = (view.end - view.start) / 1000;
+    graphState.time_in_window = time_in_window;
     const hours = Math.floor(time_in_window / 3600);
     let mins = Math.round(((time_in_window / 3600) - hours) * 60);
     if (mins !== 0) {
@@ -499,10 +479,8 @@ function graph_draw()
     if (!embed) {
 
         for (const z in graphState.feedlist) {
-            graphState.feedlist[z].stats = stats(graphState.feedlist[z].data);
+            Vue.set(graphState.feedlist[z], 'stats', stats(graphState.feedlist[z].data));
         }
-
-        $("#feed-stats").html(buildFeedStatsHTML(graphState.feedlist, time_in_window));
 
         if (graphState.feedlist.length) $(".feed-options").show(); else $(".feed-options").hide();
 

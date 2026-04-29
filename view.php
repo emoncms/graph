@@ -194,7 +194,7 @@ load_js("Lib/vue.min.js");
 
         <div id="tables">
             <div id="feed-controls-app" v-cloak>
-                <table id="feed-options-table" class="table">
+                <table id="feed-options-table" class="table" v-show="!showStats">
                     <thead>
                         <tr>
                             <th></th>
@@ -290,22 +290,36 @@ load_js("Lib/vue.min.js");
                         </tr>
                     </tbody>
                 </table>
+
+                <table id="feed-stats-table" class="table" v-show="showStats">
+                    <thead>
+                        <tr>
+                            <th></th>
+                            <th><?php echo tr('Feed') ?></th>
+                            <th><?php echo tr('Quality') ?></th>
+                            <th><?php echo tr('Min') ?></th>
+                            <th><?php echo tr('Max') ?></th>
+                            <th><?php echo tr('Diff') ?></th>
+                            <th><?php echo tr('Mean') ?></th>
+                            <th><?php echo tr('Stdev') ?></th>
+                            <th><?php echo tr('Wh') ?></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="feed in feedlist" v-if="feed.stats" :key="feed.id">
+                            <td></td>
+                            <td v-html="feedName(feed)"></td>
+                            <td>{{ feedQuality(feed) }}% ({{ feed.stats.npoints - feed.stats.npointsnull }}/{{ feed.stats.npoints }})</td>
+                            <td>{{ !isNaN(Number(feed.stats.minval)) ? feed.stats.minval.toFixed(feed.dp) : '' }}</td>
+                            <td>{{ !isNaN(Number(feed.stats.maxval)) ? feed.stats.maxval.toFixed(feed.dp) : '' }}</td>
+                            <td>{{ feed.stats.diff.toFixed(feed.dp) }}</td>
+                            <td>{{ feed.stats.mean.toFixed(feed.dp) }}</td>
+                            <td>{{ feed.stats.stdev.toFixed(feed.dp) }}</td>
+                            <td>{{ feedWh(feed) }}</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
-            
-            <table id="feed-stats-table" class="table hide">
-                <tr>
-                    <th></th>
-                    <th><?php echo tr('Feed') ?></th>
-                    <th><?php echo tr('Quality') ?></th>
-                    <th><?php echo tr('Min') ?></th>
-                    <th><?php echo tr('Max') ?></th>
-                    <th><?php echo tr('Diff') ?></th>
-                    <th><?php echo tr('Mean') ?></th>
-                    <th><?php echo tr('Stdev') ?></th>
-                    <th><?php echo tr('Wh') ?></th>
-                </tr>
-                <tbody id="feed-stats"></tbody>
-            </table>
         </div>
     </div>
     <br>

@@ -10,7 +10,9 @@ function initFeedControlsApp() {
             return { state: graphState };
         },
         computed: {
-            feedlist() { return this.state.feedlist; },
+            feedlist()      { return this.state.feedlist; },
+            showStats()     { return this.state.showStats; },
+            time_in_window(){ return this.state.time_in_window; },
         },
         methods: {
             feedName(feed) {
@@ -42,6 +44,12 @@ function initFeedControlsApp() {
             // graph_reload().  Updating graphState here is enough — no immediate redraw.
             setScale(feed, e)    { feed.scale    = e.target.value; },
             setOffset(feed, e)   { feed.offset   = e.target.value; },
+            feedQuality(feed) {
+                return Math.round(100 * (1 - (feed.stats.npointsnull / feed.stats.npoints)));
+            },
+            feedWh(feed) {
+                return Math.round((feed.stats.mean * this.time_in_window) / 3600);
+            },
         },
     });
 }

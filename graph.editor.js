@@ -293,16 +293,14 @@ function graph_init_editor()
     });
 
     $(".feed-options-show-stats").click(function(event){
-        $("#feed-options-table").hide();
-        $("#feed-stats-table").show();
+        graphState.showStats = true;
         $(".feed-options-show-options").removeClass('hide');
         $(".feed-options-show-stats").addClass('hide');
         event.preventDefault();
     });
 
     $(".feed-options-show-options").click(function(event){
-        $("#feed-options-table").show();
-        $("#feed-stats-table").hide();
+        graphState.showStats = false;
         $(".feed-options-show-options").addClass('hide');
         $(".feed-options-show-stats").removeClass('hide');
         event.preventDefault();
