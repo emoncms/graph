@@ -69,7 +69,6 @@
 /* end of sidebar #mygraphs */
 
 .feed-options {
-    background-color:#eee;
     overflow-x: scroll;
 }
 table#feeds thead tr th .caret{
@@ -80,43 +79,20 @@ table#feeds thead tr th .caret{
 table#feeds tbody tr th {
     font-weight: normal
 }
-.feed-options-header {
-    height:40px;
-    background-color:#ccc;
-    font-weight:bold;
-    color:#fff;
-    position: relative;
-}
-.feed-options-header .caret {
-    /* margin: 1.2em 0 0 .7em; */
-    margin: .5em .6em .5em .3em;
-    transition: transform 300ms ease-in-out;
-    transform: rotate(0deg);
-}
-.feed-options-header .caret.open {
-    transform: rotate(-90deg);
-}
-.feed-options-title:link,
-.feed-options-title:focus {
-    padding:10px;
-    color: white;
-    display: block;
-    text-decoration: none;
-    outline: 0;
-}
-.feed-options-title:hover {
-    color: currentColor;
-    opacity: .8;
-}
-.feed-options-title:active{
-    opacity: 1!important;
-}
 .feed-options-show-options,
-.feed-options-show-stats{
-    margin: 5px;
-    position: absolute;
-    right: 0;
-    z-index: 2;
+.feed-options-show-stats {
+    margin-left: auto;
+    flex-shrink: 0;
+}
+/* .hide has no !important so app-btn display:inline-flex wins — override here */
+.feed-options-show-options.hide,
+.feed-options-show-stats.hide {
+    display: none !important;
+}
+#feed-options-table td input[type="checkbox"],
+#feed-stats-table td input[type="checkbox"] {
+    display: block;
+    margin: 0 auto;
 }
 
 .feed-options #tables {

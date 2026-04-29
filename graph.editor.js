@@ -297,6 +297,7 @@ function graph_init_editor()
         $(".feed-options-show-options").removeClass('hide');
         $(".feed-options-show-stats").addClass('hide');
         event.preventDefault();
+        event.stopPropagation();
     });
 
     $(".feed-options-show-options").click(function(event){
@@ -304,6 +305,7 @@ function graph_init_editor()
         $(".feed-options-show-options").addClass('hide');
         $(".feed-options-show-stats").removeClass('hide');
         event.preventDefault();
+        event.stopPropagation();
     });
 
     // Reload feeds if remove-null is changed or remove-null-max-duration is changed
