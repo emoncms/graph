@@ -35,8 +35,10 @@ load_css("Lib/bootstrap-datetimepicker-0.0.11/css/bootstrap-datetimepicker.min.c
 load_css("Modules/graph/graph.css");
 load_js("Lib/flot/jquery.flot.merged.js");
 load_js("Lib/flot/jquery.flot.stack.min.js");
-load_js("Modules/graph/vis.helper.js");
 load_js("Lib/bootstrap-datetimepicker-0.0.11/js/bootstrap-datetimepicker.min.js");
+load_js("Lib/moment.min.js");
+load_js("Lib/user_locale.js");
+load_js("Lib/misc/gettext.js");
 load_js("Lib/vue.min.js");
 ?>
 
@@ -97,19 +99,10 @@ load_js("Lib/vue.min.js");
     if (apikey!="") apikeystr = "&apikey="+apikey;
 </script>
 
-<?php
-load_js("Modules/graph/graph.utils.js");
-load_js("Modules/graph/graph.legend.js");
-load_js("Modules/graph/graph.js");
-load_js("Lib/moment.min.js");
-load_js("Lib/user_locale.js");
-load_js("Lib/misc/gettext.js");
-?>
+<script type="module" src="<?php echo $path; ?>Modules/graph/graph.js"></script>
 
 <script>
-    $("body").css("background","none");
-    embed = true;
-    
+    var embed = true;
     var graphid = "<?php echo $graphid; ?>";
 
     var _lang = <?php
@@ -130,54 +123,5 @@ load_js("Lib/misc/gettext.js");
         echo json_encode($lang) . ';';
         echo "\n";
     ?>
-    
-    $.ajax({
-        url: path+"/graph/get?id="+graphid,
-        async: true,
-        dataType: "json",
-        success: function(result) {
-            
-            if (result.mode==undefined) result.mode = 'interval';
-            
-            view.start = result.start;
-            view.end = result.end;
-            view.mode = result.mode;
-            view.interval = result.interval;
-            view.limitinterval = result.limitinterval;
-            view.fixinterval = result.fixinterval;
-            graphState.floatingtime = result.floatingtime,
-            graphState.yaxismin = result.yaxismin;
-            graphState.yaxismax = result.yaxismax;
-            graphState.yaxismin2 = result.yaxismin2;
-            graphState.yaxismax2 = result.yaxismax2;
-            graphState.feedlist = result.feedlist;
-            
-            // show settings
-            graphState.showmissing = result.showmissing;
-            graphState.showtag = result.showtag;
-            graphState.showlegend = result.showlegend;
-            
-            if (graphState.floatingtime) {
-                var timewindow = view.end - view.start;
-                var now = Math.round(+new Date * 0.001)*1000;
-                view.end = now;
-                view.start = view.end - timewindow;
-            }
-
-            if (result.source != undefined && result.source == 'groups'){
-                vis_mode = 'groups';
-                 $.ajax({url: path + "/group/mygroups.json", async: false, dataType: "json", success: function (data_in) {
-                    groups = data_in;
-                }});                
-            }
-            else
-                vis_mode = 'user';
-
-            datetimepickerInit();
-            graph_resize();
-            graph_reload();
-        }
-    });
-    
 
 </script>

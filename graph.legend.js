@@ -1,89 +1,79 @@
-//----------------------------------------------------------------------------------------
-// graph.legend.js - Custom legend rendering and interaction
-//----------------------------------------------------------------------------------------
+// graph.legend.js
+// Custom legend rendering and click-to-toggle interaction.
+// Imports the Flot plot instance getter from graph.chart.js.
+// `path` is an emoncms global set before any scripts run.
 
-function group_legend_values(_flot, placeholder) {
-    var legend = document.getElementById('legend');
-    var current_legend = placeholder[0].nextSibling;
-    if (!current_legend) {
-        legend.innerHTML = '';
-        return;
-    }
-    var current_legend_labels = current_legend.querySelector('table tbody');
-    var rows = Object.values(current_legend_labels.childNodes);
-    var left = [];
-    var right = [];
-    var output = "";
+import { getPlotInstance } from './graph.chart.js';
+import { state } from './graph.state.js';
 
-    for (n in rows){
-        var row = rows[n];
-        var isRight = row.querySelector('.label-right');
-        if (isRight){
-            right.push(row);
-        } else {
-            left.push(row);
-        }
-    }
+/**
+ * Hook for Flot: rebuild the #legend div from the plot's internal legend table,
+ * splitting entries into left-axis and right-axis columns.
+ * Pass this as a Flot `hooks.draw` callback.
+ * @param {Object} _flot      — Flot plot instance (unused, we use getPlotInstance())
+ * @param {jQuery} placeholder
+ */
+export function buildLegend(_flot, placeholder) {
+    const legend = document.getElementById('legend');
+    const flotLegend = placeholder[0].nextSibling;
+    if (!flotLegend) { legend.innerHTML = ''; return; }
 
-    output += '<div class="grid-container">';
-    output += '    <div class="col left">';
-    output += '      <ul class="unstyled">';
-    output += build_rows(left);
-    output += '      </ul>';
-    output += '    </div>';
-    output += '    <div class="col right">';
-    output += '      <ul class="unstyled">';
-    output += build_rows(right);
-    output += '      </ul>';
-    output += '    </div>';
-    output += '</div>';
-    // populate new legend with html
-    legend.innerHTML = output;
-    // hide old legend
-    current_legend.style.display = 'none';
-    // add onclick events to links within legend
-    var items = legend.querySelectorAll('[data-legend-series]');
-    for(i = 0; i < items.length; i++) {
-        var item = items[i];
-        var link = item.querySelector('a');
-        // handle click of legend link
-        if (!link) continue;
-        link.addEventListener('click', onClickLegendLink)
-    }
+    const rows = Array.from(flotLegend.querySelectorAll('table tbody tr'));
+    const left  = rows.filter(r => !r.querySelector('.label-right'));
+    const right = rows.filter(r =>  r.querySelector('.label-right'));
+
+    legend.innerHTML = [
+        '<div class="grid-container">',
+        '  <div class="col left"><ul class="unstyled">', buildRows(left),  '</ul></div>',
+        '  <div class="col right"><ul class="unstyled">', buildRows(right), '</ul></div>',
+        '</div>'
+    ].join('');
+
+    flotLegend.style.display = 'none';
+
+    legend.querySelectorAll('[data-legend-series] a').forEach(link => {
+        link.addEventListener('click', onClickLegendLink);
+    });
 }
 
+/** Toggle a series visible/hidden when its legend link is clicked. */
 function onClickLegendLink(event) {
     event.preventDefault();
-    var link = event.currentTarget;
-    // toggle opacity of the link
+    const link = event.currentTarget;
     link.classList.toggle('faded');
-    // re-draw the chart with the plot lines hidden/shown
-    var index = link.dataset.index;
-    var current_data = plot_statistics.getData()
-    var feed = graphState.feedlist.find(function(item) { return item.id == this; }, current_data[index].id);
-    if (feed == undefined) return;
-    switch (feed.plottype) {
-        case 'lines': current_data[index].lines.show = !current_data[index].lines.show; break;
-        case 'bars': current_data[index].bars.show = !current_data[index].bars.show; break;
-        case 'points': current_data[index].points.show = !current_data[index].points.show; break;
-        case 'steps': current_data[index].steps.show = !current_data[index].steps.show; break;
-    }
-    plot_statistics.setData(current_data);
-    // re-draw
-    plot_statistics.draw();
+
+    const plot = getPlotInstance();
+    if (!plot) return;
+
+    const index = Number(link.dataset.index);
+    const current = plot.getData();
+    const feed = state.feedlist.find(f => f.id == current[index]?.id);
+    if (!feed) return;
+
+    const series = current[index];
+    const show = !({
+        lines:  series.lines?.show,
+        bars:   series.bars?.show,
+        points: series.points?.show,
+        steps:  series.lines?.show,   // steps reuse lines
+    }[feed.plottype] ?? true);
+
+    if (feed.plottype === 'lines' || feed.plottype === 'steps') series.lines  = { ...series.lines,  show };
+    if (feed.plottype === 'bars')                               series.bars   = { ...series.bars,   show };
+    if (feed.plottype === 'points')                             series.points = { ...series.points, show };
+
+    plot.setData(current);
+    plot.draw();
 }
 
-function build_rows(rows) {
-    var output = "";
-    for (x in rows) {
-        var row = rows[x];
-        var label = row.querySelector('.legendLabel')
-        var span = label.querySelector('span');
-        var index = span.dataset.index;
-        var id = span.dataset.id;
-        var colour = '<div class="legendColorBox">' + row.querySelector('.legendColorBox').innerHTML + '</div>'
-        // add <li> to the html
-        output += '      <li data-legend-series><a href="' + path + 'graph/' + id + '" data-index="' + index + '" data-id="' + id + '">' + colour + label.innerText + '</a></li>';
-    }
-    return output;
+/** Build <li> markup for one column of legend rows. */
+function buildRows(rows) {
+    return rows.map(row => {
+        const label  = row.querySelector('.legendLabel');
+        const span   = label.querySelector('span');
+        const index  = span.dataset.index;
+        const id     = span.dataset.id;
+        const colour = '<div class="legendColorBox">' + row.querySelector('.legendColorBox').innerHTML + '</div>';
+        return `<li data-legend-series><a href="${path}graph/${id}" data-index="${index}" data-id="${id}">${colour}${label.innerText}</a></li>`;
+    }).join('');
 }

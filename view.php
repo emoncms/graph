@@ -39,10 +39,24 @@ defined('EMONCMS_EXEC') or die('Restricted access');
     [v-cloak] {
         visibility: hidden
     }
+    #tables {
+        overflow: hidden;
+        max-height: 2000px;
+        transition: max-height 0.25s ease-in-out;
+    }
+    .tables-collapsed #tables {
+        max-height: 0;
+    }
+    .collapse-icon {
+        display: inline-block;
+        transition: transform 0.2s ease;
+    }
+    .tables-collapsed .collapse-icon {
+        transform: rotate(-90deg);
+    }
     #feed-options-table input {
         margin-bottom: 0;
     }
-
     #feed-options-table select {
         margin-bottom: 0;
     }
@@ -52,9 +66,11 @@ load_css("Lib/bootstrap-datetimepicker-0.0.11/css/bootstrap-datetimepicker.min.c
 load_css("Modules/graph/graph.css");
 load_js("Lib/flot/jquery.flot.merged.js");
 load_js("Lib/flot/jquery.flot.stack.min.js");
-load_js("Modules/graph/vis.helper.js");
 load_js("Lib/misc/clipboard.js");
 load_js("Lib/bootstrap-datetimepicker-0.0.11/js/bootstrap-datetimepicker.min.js");
+load_js("Lib/moment.min.js");
+load_js("Lib/user_locale.js");
+load_js("Lib/misc/gettext.js");
 load_js("Lib/vue.min.js");
 ?>
 
@@ -393,20 +409,7 @@ load_js("Lib/vue.min.js");
     <div id="sidebar_html" class="hide"><?php echo view("Modules/graph/Views/sidebar.php",array()); ?></div>
 </div>
 
-
-<?php
-load_js("Modules/graph/graph.utils.js");
-load_js("Modules/graph/graph.legend.js");
-load_js("Modules/graph/graph.js");
-load_js("Modules/graph/graph.csv.js");
-load_js("Modules/graph/graph.histogram.js");
-load_js("Modules/graph/graph.saved.js");
-load_js("Modules/graph/graph.editor.js");
-load_js("Modules/graph/graph.feedcontrols.js");
-load_js("Lib/moment.min.js");
-load_js("Lib/user_locale.js");
-load_js("Lib/misc/gettext.js");
-?>
+<script type="module" src="<?php echo $path; ?>Modules/graph/graph.js"></script>
 
 <script>
     // PHP-injected configuration
@@ -447,100 +450,12 @@ load_js("Lib/misc/gettext.js");
         echo "\n";
     ?>;
 
-    // stops a part upgrade error - this change requires emoncms/emoncms repo to also be updated
     // keep button hidden if new version of clipboard.js is not available
     if (typeof copyToClipboardCustomMsg === 'function') {
         document.getElementById('copy-csv').classList.remove('hidden');
     } else {
         copyToClipboardCustomMsg = function() {};
     }
-
-    // Load public feeds for a particular user
-    if (public_userid) {
-        const public_username_str = public_userid ? public_username + "/" : "";
-        $.ajax({
-            url: path + public_username_str + "feed/list.json", async: false, dataType: "json",
-            success: function(data_in) { graphState.feeds = data_in; }
-        });
-    } else {
-        // Load user feeds
-        $.ajax({
-            url: path + "feed/list.json" + apikeystr, async: false, dataType: "json",
-            success: function(data_in) { graphState.feeds = data_in; }
-        });
-    }
-
-    if (load_savegraphs === "") {
-
-        // Assign active feedid from URL
-        const urlparts = window.location.pathname.split("graph/");
-        if (urlparts.length === 2) {
-            const feedids = urlparts[1].split(",");
-            for (const z in feedids) {
-                const feedid = parseInt(feedids[z]);
-                if (feedid) {
-                    let f = getfeed(feedid);
-                    if (f === false) f = getfeedpublic(feedid);
-                    if (f !== false) graphState.feedlist.push({id:feedid, name:f.name, tag:f.tag, yaxis:1, fill:0, scale:1.0, average:0, delta:0, dp:1, plottype:'lines'});
-                }
-            }
-        }
-
-        // Left hand feed ids property
-        if (feedidsLH !== "") {
-            const feedids = feedidsLH.split(",");
-            for (const z in feedids) {
-                const feedid = parseInt(feedids[z]);
-                if (feedid) {
-                    let f = getfeed(feedid);
-                    if (f === false) f = getfeedpublic(feedid);
-                    if (f !== false) graphState.feedlist.push({id:feedid, name:f.name, tag:f.tag, yaxis:1, fill:0, scale:1.0, average:0, delta:0, dp:1, plottype:'lines'});
-                }
-            }
-        }
-
-        // Right hand feed ids property
-        if (feedidsRH !== "") {
-            const feedids = feedidsRH.split(",");
-            for (const z in feedids) {
-                const feedid = parseInt(feedids[z]);
-                if (feedid) {
-                    let f = getfeed(feedid);
-                    if (f === false) f = getfeedpublic(feedid);
-                    if (f !== false) graphState.feedlist.push({id:feedid, name:f.name, tag:f.tag, yaxis:2, fill:0, scale:1.0, average:0, delta:0, dp:1, plottype:'lines'});
-                }
-            }
-        }
-    }
-
-    graph_init_editor();
-    initFeedControlsApp();
-    load_feed_selector();
-
-    graph_resize();
-
-    const timeWindow = 3600000 * 24.0 * 7;
-    const now = Math.round(+new Date() * 0.001) * 1000;
-    view.start = now - timeWindow;
-    view.end = now;
-    view.calc_interval();
-
-    graph_reload();
-
-    $(function(){
-        // manually add hide/show
-        $('#tables').collapse();
-
-        // trigger hide/show on the whole header bar
-        $('.feed-options-header').on('click', function(event) {
-            var icon = document.querySelector('.feed-options-header .collapse-icon');
-            if (icon) {
-                icon.classList.toggle('icon-chevron-down');
-                icon.classList.toggle('icon-chevron-right');
-            }
-            $('#tables').collapse('toggle');
-        });
-    });
 
     <?php
     $translations = array(
