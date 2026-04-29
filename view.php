@@ -193,22 +193,104 @@ load_js("Lib/vue.min.js");
         </div>
 
         <div id="tables">
-            <table id="feed-options-table" class="table">
-                <tr>
-                    <th></th>
-                    <th><?php echo tr('Feed') ?></th>
-                    <th><?php echo tr('Type') ?></th>
-                    <th><?php echo tr('Color') ?></th>
-                    <th><?php echo tr('Fill') ?></th>
-                    <th><?php echo tr('Stack') ?></th>
-                    <th style='text-align:center'><?php echo tr('Scale') ?></th>
-                    <th style='text-align:center'><?php echo tr('Offset') ?></th>
-                    <th style='text-align:center'><?php echo tr('Delta') ?></th>
-                    <th style='text-align:center'><?php echo tr('Average') ?></th>
-                    <th><?php echo tr('DP') ?></th><th style="width:120px"></th>
-                </tr>
-                <tbody id="feed-controls"></tbody>
-            </table>
+            <div id="feed-controls-app" v-cloak>
+                <table id="feed-options-table" class="table">
+                    <thead>
+                        <tr>
+                            <th></th>
+                            <th><?php echo tr('Feed') ?></th>
+                            <th><?php echo tr('Type') ?></th>
+                            <th><?php echo tr('Color') ?></th>
+                            <th><?php echo tr('Fill') ?></th>
+                            <th><?php echo tr('Stack') ?></th>
+                            <th style="text-align:center"><?php echo tr('Scale') ?></th>
+                            <th style="text-align:center"><?php echo tr('Offset') ?></th>
+                            <th style="text-align:center"><?php echo tr('Delta') ?></th>
+                            <th style="text-align:center"><?php echo tr('Average') ?></th>
+                            <th><?php echo tr('DP') ?></th>
+                            <th style="width:120px"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="(feed, z) in feedlist" :key="feed.id">
+                            <td>
+                                <a v-if="z > 0"
+                                   @click="moveFeed(z, -1)"
+                                   title="<?php echo tr('Move up') ?>"
+                                   style="cursor:pointer"><i class="icon-arrow-up"></i></a>
+                                <a v-if="z < feedlist.length - 1"
+                                   @click="moveFeed(z, 1)"
+                                   title="<?php echo tr('Move down') ?>"
+                                   style="cursor:pointer"><i class="icon-arrow-down"></i></a>
+                            </td>
+                            <td v-html="feedName(feed)"></td>
+                            <td>
+                                <select style="width:80px"
+                                        :value="feed.plottype"
+                                        @change="setPlottype(feed, $event)">
+                                    <option value="lines"><?php echo tr('Lines') ?></option>
+                                    <option value="bars"><?php echo tr('Bars') ?></option>
+                                    <option value="points"><?php echo tr('Points') ?></option>
+                                    <option value="steps"><?php echo tr('Steps') ?></option>
+                                </select>
+                            </td>
+                            <td>
+                                <input type="color"
+                                       style="width:50px"
+                                       :value="feedColor(feed)"
+                                       @input="setColor(feed, $event)">
+                            </td>
+                            <td>
+                                <input type="checkbox"
+                                       :checked="!!feed.fill"
+                                       @change="setFill(feed, $event)">
+                            </td>
+                            <td>
+                                <input type="checkbox"
+                                       :checked="!!feed.stack"
+                                       @change="setStack(feed, $event)">
+                            </td>
+                            <td style="text-align:center">
+                                <input type="text"
+                                       style="width:50px"
+                                       :value="feed.scale"
+                                       @change="setScale(feed, $event)">
+                            </td>
+                            <td style="text-align:center">
+                                <input type="text"
+                                       style="width:50px"
+                                       :value="feed.offset"
+                                       @change="setOffset(feed, $event)">
+                            </td>
+                            <td style="text-align:center">
+                                <input type="checkbox"
+                                       :checked="!!feed.delta"
+                                       @change="setDelta(feed, $event)">
+                            </td>
+                            <td style="text-align:center">
+                                <input type="checkbox"
+                                       :checked="!!feed.average"
+                                       @change="setAverage(feed, $event)">
+                            </td>
+                            <td>
+                                <select style="width:50px"
+                                        :value="feed.dp"
+                                        @change="setDp(feed, $event)">
+                                    <option>0</option>
+                                    <option>1</option>
+                                    <option>2</option>
+                                    <option>3</option>
+                                </select>
+                            </td>
+                            <td>
+                                <button :feedid="feed.id" class="histogram">
+                                    <?php echo tr('Histogram') ?> <i class="icon-signal"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
             
             <table id="feed-stats-table" class="table hide">
                 <tr>
@@ -274,6 +356,7 @@ load_js("Modules/graph/graph.csv.js");
 load_js("Modules/graph/graph.histogram.js");
 load_js("Modules/graph/graph.saved.js");
 load_js("Modules/graph/graph.editor.js");
+load_js("Modules/graph/graph.feedcontrols.js");
 load_js("Lib/moment.min.js");
 load_js("Lib/user_locale.js");
 load_js("Lib/misc/gettext.js");
@@ -385,6 +468,7 @@ load_js("Lib/misc/gettext.js");
     }
 
     graph_init_editor();
+    initFeedControlsApp();
     load_feed_selector();
 
     graph_resize();

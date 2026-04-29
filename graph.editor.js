@@ -137,77 +137,6 @@ function graph_init_editor()
     });
     $(".csvoptions").hide();
 
-    $("body").on("click",".average",function(){
-        const feedid = $(this).attr("feedid");
-
-        for (const z in graphState.feedlist) {
-            if (graphState.feedlist[z].id==feedid) {
-                graphState.feedlist[z].average = $(this)[0].checked ? 1 : 0;
-                break;
-            }
-        }
-        graph_draw();
-    });
-
-    $("body").on("click", ".move-feed", function(){
-        const feedid = $(this).attr("feedid")*1;
-        const curpos = parseInt(feedid);
-        const moveby = parseInt($(this).attr("moveby"));
-        const newpos = curpos + moveby;
-        if (newpos>=0 && newpos<graphState.feedlist.length){
-            graphState.feedlist = arrayMove(graphState.feedlist,curpos,newpos);
-            graph_draw();
-        }
-    });
-
-    $("body").on("click",".delta",function(){
-        const feedid = $(this).attr("feedid");
-
-        for (const z in graphState.feedlist) {
-            if (graphState.feedlist[z].id==feedid) {
-                graphState.feedlist[z].delta = $(this)[0].checked ? 1 : 0;
-                break;
-            }
-        }
-        graph_draw();
-    });
-
-    $("body").on("change",".linecolor",function(){
-        const feedid = $(this).attr("feedid");
-
-        for (const z in graphState.feedlist) {
-            if (graphState.feedlist[z].id==feedid) {
-                graphState.feedlist[z].color = $(this).val();
-                break;
-            }
-        }
-        graph_draw();
-    });
-
-    $("body").on("change",".fill",function(){
-        const feedid = $(this).attr("feedid");
-
-        for (const z in graphState.feedlist) {
-            if (graphState.feedlist[z].id==feedid) {
-                graphState.feedlist[z].fill = $(this)[0].checked;
-                break;
-            }
-        }
-        graph_draw();
-    });
-
-    $("body").on("change",".stack",function(){
-        const feedid = $(this).attr("feedid");
-
-        for (const z in graphState.feedlist) {
-            if (graphState.feedlist[z].id==feedid) {
-                graphState.feedlist[z].stack = $(this)[0].checked;
-                break;
-            }
-        }
-        graph_draw();
-    });
-
     $("body").on("click keyup",".feed-title", function(event){
         let enterKey = 13;
         if((event.type === 'keyup' && event.which === enterKey) || event.type === 'click') {
@@ -316,31 +245,6 @@ function graph_init_editor()
         graph_reload();
     });
 
-    $("body").on("change",".decimalpoints",function(){
-        const feedid = $(this).attr("feedid");
-        const dp = $(this).val();
-
-        for (const z in graphState.feedlist) {
-            if (graphState.feedlist[z].id == feedid) {
-                graphState.feedlist[z].dp = dp;
-                graph_draw();
-                break;
-            }
-        }
-    });
-
-    $("body").on("change",".plottype",function(){
-        const feedid = $(this).attr("feedid");
-        const plottype = $(this).val();
-
-        for (const z in graphState.feedlist) {
-            if (graphState.feedlist[z].id == feedid) {
-                graphState.feedlist[z].plottype = plottype;
-                graph_draw();
-                break;
-            }
-        }
-    });
     // left axis
     $("body").on("change","#yaxis-min",function(){
         graphState.yaxismin = $(this).val();

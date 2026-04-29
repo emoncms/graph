@@ -339,12 +339,6 @@ function processFeedlistData() {
     const remove_null_max_duration = embed ? 900 : $(".remove-null-max-duration").val();
 
     for (const z in graphState.feedlist) {
-        const scale = $(".scale[feedid="+graphState.feedlist[z].id+"]").val();
-        if (scale !== undefined) graphState.feedlist[z].scale = scale;
-
-        const offset = $(".offset[feedid="+graphState.feedlist[z].id+"]").val();
-        if (offset !== undefined) graphState.feedlist[z].offset = offset;
-        
         // check to ensure feed scaling and data are only applied once
         if (graphState.feedlist[z].postprocessed === false) {
             graphState.feedlist[z].postprocessed = true;
@@ -364,40 +358,6 @@ function processFeedlistData() {
     }
     // call graph_draw() once feedlist is altered
     graph_draw();
-}
-
-//----------------------------------------------------------------------------------------
-// buildFeedControlsHTML - builds the HTML for the feed options control table rows
-//----------------------------------------------------------------------------------------
-function buildFeedControlsHTML(feedlist) {
-    const defaultLinecolor = '000';
-    let out = '';
-    for (let z = 0; z < feedlist.length; z++) {
-        const feed = feedlist[z];
-        const plotTypes = ['lines', 'bars', 'points', 'steps'];
-        const plotTypeLabels = [_lang['Lines'], _lang['Bars'], _lang['Points'], _lang['Steps']];
-        const plottypeOptions = plotTypes.map((type, i) =>
-            `<option value='${type}'${feed.plottype === type ? ' selected' : ''}>${plotTypeLabels[i]}</option>`
-        ).join('');
-        out += `<tr>
-            <td>
-                ${z > 0 ? `<a class='move-feed' title='${_lang['Move up']}' feedid=${z} moveby=-1><i class='icon-arrow-up'></i></a>` : ''}
-                ${z < feedlist.length - 1 ? `<a class='move-feed' title='${_lang['Move down']}' feedid=${z} moveby=1><i class='icon-arrow-down'></i></a>` : ''}
-            </td>
-            <td>${getFeedName(feed)}</td>
-            <td><select class='plottype' feedid=${feed.id} style='width:80px'>${plottypeOptions}</select></td>
-            <td><input class='linecolor' feedid=${feed.id} style='width:50px' type='color' value='#${defaultLinecolor}'></td>
-            <td><input class='fill' type='checkbox' feedid=${feed.id}></td>
-            <td><input class='stack' type='checkbox' feedid=${feed.id}></td>
-            <td style='text-align:center'><input class='scale' feedid=${feed.id} type='text' style='width:50px' value='1.0'></td>
-            <td style='text-align:center'><input class='offset' feedid=${feed.id} type='text' style='width:50px' value='0.0'></td>
-            <td style='text-align:center'><input class='delta' feedid=${feed.id} type='checkbox'></td>
-            <td style='text-align:center'><input class='average' feedid=${feed.id} type='checkbox'></td>
-            <td><select feedid=${feed.id} class='decimalpoints' style='width:50px'><option>0</option><option>1</option><option>2</option><option>3</option></select></td>
-            <td><button feedid=${feed.id} class='histogram'>${_lang['Histogram']} <i class='icon-signal'></i></button></td>
-        </tr>`;
-    }
-    return out;
 }
 
 //----------------------------------------------------------------------------------------
@@ -542,25 +502,9 @@ function graph_draw()
             graphState.feedlist[z].stats = stats(graphState.feedlist[z].data);
         }
 
-        $("#feed-controls").html(buildFeedControlsHTML(graphState.feedlist));
         $("#feed-stats").html(buildFeedStatsHTML(graphState.feedlist, time_in_window));
 
         if (graphState.feedlist.length) $(".feed-options").show(); else $(".feed-options").hide();
-
-        for (const z in graphState.feedlist) {
-            $(".decimalpoints[feedid="+graphState.feedlist[z].id+"]").val(graphState.feedlist[z].dp);
-            if ($(".average[feedid="+graphState.feedlist[z].id+"]")[0] !== undefined)
-                $(".average[feedid="+graphState.feedlist[z].id+"]")[0].checked = graphState.feedlist[z].average;
-            if ($(".delta[feedid="+graphState.feedlist[z].id+"]")[0] !== undefined)
-                $(".delta[feedid="+graphState.feedlist[z].id+"]")[0].checked = graphState.feedlist[z].delta;
-            $(".scale[feedid="+graphState.feedlist[z].id+"]").val(graphState.feedlist[z].scale);
-            $(".offset[feedid="+graphState.feedlist[z].id+"]").val(graphState.feedlist[z].offset);
-            $(".linecolor[feedid="+graphState.feedlist[z].id+"]").val(graphState.feedlist[z].color);
-            if ($(".fill[feedid="+graphState.feedlist[z].id+"]")[0] !== undefined)
-                $(".fill[feedid="+graphState.feedlist[z].id+"]")[0].checked = graphState.feedlist[z].fill;
-            if ($(".stack[feedid="+graphState.feedlist[z].id+"]")[0] !== undefined)
-                $(".stack[feedid="+graphState.feedlist[z].id+"]")[0].checked = graphState.feedlist[z].stack;
-        }
 
         if (graphState.showcsv) printcsv();
     }
