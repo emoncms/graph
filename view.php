@@ -40,24 +40,16 @@ defined('EMONCMS_EXEC') or die('Restricted access');
         visibility: hidden
     }
 </style>
-<link href="<?php echo $path; ?>Lib/bootstrap-datetimepicker-0.0.11/css/bootstrap-datetimepicker.min.css" rel="stylesheet">
-<link href="<?php echo $path; ?>Modules/graph/graph.css?v=<?php echo $v; ?>" rel="stylesheet">
-
-<script src="<?php echo $path;?>Lib/flot/jquery.flot.merged.js"></script>
-<!-- <script src="<?php echo $path;?>Lib/flot/jquery.flot.min.js"></script>
-<script src="<?php echo $path;?>Lib/flot/jquery.flot.time.min.js"></script>
-<script src="<?php echo $path;?>Lib/flot/jquery.flot.selection.min.js"></script>
-<script src="<?php echo $path;?>Lib/flot/jquery.flot.touch.min.js"></script>
-<script src="<?php echo $path;?>Lib/flot/jquery.flot.togglelegend.min.js"></script>
-<script src="<?php echo $path;?>Lib/flot/jquery.flot.resize.min.js"></script>
-<script src="<?php echo $path; ?>Lib/flot/jquery.flot.stack.min.js"></script>
--->
-<script src="<?php echo $path; ?>Lib/flot/jquery.flot.stack.min.js"></script>
-
-<script src="<?php echo $path;?>Modules/graph/vis.helper.js?v=<?php echo $v; ?>"></script>
-<script src="<?php echo $path;?>Lib/misc/clipboard.js?v=<?php echo $v; ?>"></script>
-<script src="<?php echo $path; ?>Lib/bootstrap-datetimepicker-0.0.11/js/bootstrap-datetimepicker.min.js"></script>
-<script src="<?php echo $path; ?>Lib/vue.min.js?v=<?php echo $v; ?>"></script>
+<?php
+load_css("Lib/bootstrap-datetimepicker-0.0.11/css/bootstrap-datetimepicker.min.css");
+load_css("Modules/graph/graph.css");
+load_js("Lib/flot/jquery.flot.merged.js");
+load_js("Lib/flot/jquery.flot.stack.min.js");
+load_js("Modules/graph/vis.helper.js");
+load_js("Lib/misc/clipboard.js");
+load_js("Lib/bootstrap-datetimepicker-0.0.11/js/bootstrap-datetimepicker.min.js");
+load_js("Lib/vue.min.js");
+?>
 
 <h3><?php echo tr('Data viewer'); ?></h3>
 <div id="error" style="display:none"></div>
