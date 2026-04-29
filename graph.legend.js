@@ -60,7 +60,7 @@ function onClickLegendLink(event) {
     // re-draw the chart with the plot lines hidden/shown
     var index = link.dataset.index;
     var current_data = plot_statistics.getData()
-    var feed = feedlist.find(function(item) { return item.id == this; }, current_data[index].id);
+    var feed = graphState.feedlist.find(function(item) { return item.id == this; }, current_data[index].id);
     if (feed == undefined) return;
     switch (feed.plottype) {
         case 'lines': current_data[index].lines.show = !current_data[index].lines.show; break;

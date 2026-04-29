@@ -1,63 +1,64 @@
 //----------------------------------------------------------------------------------------
 // graph.js used by both view.php and embed.php
 //----------------------------------------------------------------------------------------
-var feeds = [];
-feedlist = [];
+
+//----------------------------------------------------------------------------------------
+// Shared reactive state - readable and writable by both Vue components and non-Vue code.
+// Vue.observable() ensures mutations trigger component re-renders (Phase 3 Vue components).
+//----------------------------------------------------------------------------------------
+const graphState = Vue.observable({
+    feeds: [],
+    feedlist: [],
+    showmissing: false,
+    showtag: true,
+    showlegend: true,
+    showcsv: 0,
+    floatingtime: 1,
+    yaxismin: 'auto',
+    yaxismax: 'auto',
+    yaxismin2: 'auto',
+    yaxismax2: 'auto',
+    csvtimeformat: 'datestr',
+    csvnullvalues: 'show',
+    csvheaders: 'showNameTag',
+    current_graph_id: '',
+    current_graph_name: '',
+    skipmissing: 0,
+    active_histogram_feed: 0,
+});
+
+// Non-reactive module-level variables (transient state, jQuery instances, config flags)
 var plotdata = [];
 var datetimepicker1;
 var datetimepicker2;
-
 var embed = false;
-
-var skipmissing = 0;
-var requesttype = "interval";
-var showcsv = 0;
-
-var showmissing = false;
-var showtag = true;
-var showlegend = true;
-
-var floatingtime=1;
-var yaxismin="auto";
-var yaxismax="auto";
-var yaxismin2="auto";
-var yaxismax2="auto";
-
-var csvtimeformat="datestr";
-var csvnullvalues="show";
-var csvheaders="showNameTag";
-
-var current_graph_id = "";
-var current_graph_name = "";
-
-var previousPoint = 0;
-var active_histogram_feed = 0;
-
+var requesttype = 'interval';
 var saveGraphsApp = false;
 var panning = false;
+var previousPoint = 0;
 
 //----------------------------------------------------------------------------------------
 // Events shared by both view and embed mode
 //----------------------------------------------------------------------------------------
-$("#graph_zoomout").click(function () {floatingtime=0; view.zoomout(); graph_reload();});
-$("#graph_zoomin").click(function () {floatingtime=0; view.zoomin(); graph_reload();});
-$('#graph_right').click(function () {floatingtime=0; view.panright(); graph_reload();});
-$('#graph_left').click(function () {floatingtime=0; view.panleft(); graph_reload();});
+$("#graph_zoomout").click(function () {graphState.floatingtime=0; view.zoomout(); graph_reload();});
+$("#graph_zoomin").click(function () {graphState.floatingtime=0; view.zoomin(); graph_reload();});
+$('#graph_right').click(function () {graphState.floatingtime=0; view.panright(); graph_reload();});
+$('#graph_left').click(function () {graphState.floatingtime=0; view.panleft(); graph_reload();});
 $('.graph_time').change(function () {
-    floatingtime=1;
+    graphState.floatingtime=1;
     view.timewindow($(this).val()/24.0);
     view.calc_interval();
     graph_reload();
 });
 $('.graph_time_refresh').click(function () {
-    floatingtime=1;
+    graphState.floatingtime=1;
     view.timewindow($('.graph_time').val()/24.0);
     view.calc_interval();
     graph_reload();
 });
 // Graph zooming
 $('#placeholder').bind("plotselected", function (event, ranges) {
-    floatingtime=0;
+    graphState.floatingtime=0;
     view.start = ranges.xaxis.from;
     view.end = ranges.xaxis.to;
     view.calc_interval();
@@ -70,8 +71,8 @@ $('#placeholder').bind("plothover", function (event, pos, item) {
     if (item) {
         var z = item.dataIndex;
         if (previousPoint != item.datapoint) {
-            var dp=feedlist[item.seriesIndex].dp;
-            var feedid = feedlist[item.seriesIndex].id;
+            var dp=graphState.feedlist[item.seriesIndex].dp;
+            var feedid = graphState.feedlist[item.seriesIndex].id;
             previousPoint = item.datapoint;
 
             $("#tooltip").remove();
@@ -181,7 +182,7 @@ function pushfeedlist(feedid, yaxis) {
     if (f === false) f = getfeedpublic(feedid);
     if (f !== false) {
         if (f.value % 1 !== 0) dp = 1;
-        feedlist.push({id:feedid, name:f.name, tag:f.tag, yaxis:yaxis, fill:0, scale:1.0, offset:0.0, delta:0, average:0, dp:dp, plottype:'lines'});
+        graphState.feedlist.push({id:feedid, name:f.name, tag:f.tag, yaxis:yaxis, fill:0, scale:1.0, offset:0.0, delta:0, average:0, dp:dp, plottype:'lines'});
     }
 }
 
@@ -225,19 +226,19 @@ function graph_reload()
     const ids = [];
     const averages = [];
     const deltas = [];
-    for (const z in feedlist) {
-        ids.push(feedlist[z].id);
-        if (feedlist[z].average==false) feedlist[z].average = 0;
-        averages.push(feedlist[z].average);
-        if (feedlist[z].delta==false) feedlist[z].delta = 0;
-        deltas.push(feedlist[z].delta);
+    for (const z in graphState.feedlist) {
+        ids.push(graphState.feedlist[z].id);
+        if (graphState.feedlist[z].average==false) graphState.feedlist[z].average = 0;
+        averages.push(graphState.feedlist[z].average);
+        if (graphState.feedlist[z].delta==false) graphState.feedlist[z].delta = 0;
+        deltas.push(graphState.feedlist[z].delta);
     }
     
     const data = {
         ids: ids.join(','),
         start: view.start,
         end: view.end,
-        skipmissing: skipmissing,
+        skipmissing: graphState.skipmissing,
         limitinterval: view.limitinterval,
         apikey: apikey,
         average: averages.join(','),
@@ -273,8 +274,8 @@ function graph_reload()
 function addFeedlistData(response){
     // loop through feedlist and add response data to data property
     let valid = false;
-    for (const i in feedlist) {
-        const feed = feedlist[i];
+    for (const i in graphState.feedlist) {
+        const feed = graphState.feedlist[i];
         for (const j in response) {
             const item = response[j];
             if (parseInt(feed.id) === parseInt(item.feedid) && item.data!=undefined) {
@@ -324,7 +325,7 @@ function checkFeedlistData(response){
         $('#error').html(errorstr).show();
         if( badfeeds.length )
             $('#remove_missing').click(() => {
-                feedlist = feedlist.filter((feed)=>!badfeeds.find((id)=>feed.id === id));
+                graphState.feedlist = graphState.feedlist.filter((feed)=>!badfeeds.find((id)=>feed.id === id));
                 graph_reload();
             });
     } else {
@@ -337,28 +338,28 @@ function processFeedlistData() {
     const remove_null = embed ? false : $(".remove-null")[0].checked;
     const remove_null_max_duration = embed ? 900 : $(".remove-null-max-duration").val();
 
-    for (const z in feedlist) {
-        const scale = $(".scale[feedid="+feedlist[z].id+"]").val();
-        if (scale !== undefined) feedlist[z].scale = scale;
+    for (const z in graphState.feedlist) {
+        const scale = $(".scale[feedid="+graphState.feedlist[z].id+"]").val();
+        if (scale !== undefined) graphState.feedlist[z].scale = scale;
 
-        const offset = $(".offset[feedid="+feedlist[z].id+"]").val();
-        if (offset !== undefined) feedlist[z].offset = offset;
+        const offset = $(".offset[feedid="+graphState.feedlist[z].id+"]").val();
+        if (offset !== undefined) graphState.feedlist[z].offset = offset;
         
         // check to ensure feed scaling and data are only applied once
-        if (feedlist[z].postprocessed === false) {
-            feedlist[z].postprocessed = true;
-            console.log("postprocessing feed "+feedlist[z].id+" "+feedlist[z].name);
+        if (graphState.feedlist[z].postprocessed === false) {
+            graphState.feedlist[z].postprocessed = true;
+            console.log("postprocessing feed "+graphState.feedlist[z].id+" "+graphState.feedlist[z].name);
 
             // Remove null values
             if (remove_null) {
-                feedlist[z].data = remove_null_values(feedlist[z].data, view.interval, remove_null_max_duration);
+                graphState.feedlist[z].data = remove_null_values(graphState.feedlist[z].data, view.interval, remove_null_max_duration);
             }
 
             // Apply a scale to feed values
-            feedlist[z].data = scale_values(feedlist[z].data, feedlist[z].scale);
+            graphState.feedlist[z].data = scale_values(graphState.feedlist[z].data, graphState.feedlist[z].scale);
             
             // Apply an offset to feed values
-            feedlist[z].data = offset_values(feedlist[z].data, feedlist[z].offset);
+            graphState.feedlist[z].data = offset_values(graphState.feedlist[z].data, graphState.feedlist[z].offset);
         }
     }
     // call graph_draw() once feedlist is altered
@@ -465,13 +466,13 @@ function graph_draw()
         }
     }
 
-    if (showlegend) options.legend.show = true;
+    if (graphState.showlegend) options.legend.show = true;
     
-    if (yaxismin!='auto' && yaxismin!='') { options.yaxes[0].min = yaxismin; }
-    if (yaxismin2!='auto' && yaxismin2!='') {  options.yaxes[1].min = yaxismin2; }
+    if (graphState.yaxismin!='auto' && graphState.yaxismin!='') { options.yaxes[0].min = graphState.yaxismin; }
+    if (graphState.yaxismin2!='auto' && graphState.yaxismin2!='') { options.yaxes[1].min = graphState.yaxismin2; }
 
-    if (yaxismax!='auto' && yaxismax!='') { options.yaxes[0].max = yaxismax; }
-    if (yaxismax2!='auto' && yaxismax2!='') { options.yaxes[1].max = yaxismax2; }
+    if (graphState.yaxismax!='auto' && graphState.yaxismax!='') { options.yaxes[0].max = graphState.yaxismax; }
+    if (graphState.yaxismax2!='auto' && graphState.yaxismax2!='') { options.yaxes[1].max = graphState.yaxismax2; }
     
     const time_in_window = (view.end - view.start) / 1000;
     const hours = Math.floor(time_in_window / 3600);
@@ -487,11 +488,11 @@ function graph_draw()
     plotdata = [];
     let num_left = 0;
     let num_right = 0;
-    for (const z in feedlist) {
+    for (const z in graphState.feedlist) {
 
-        let data = feedlist[z].data;
+        let data = graphState.feedlist[z].data;
         // Hide missing data (only affects the plot view)
-        if (!showmissing) {
+        if (!graphState.showmissing) {
             const tmp = [];
             for (const n in data) {
                 if (data[n][1] !== null) tmp.push(data[n]);
@@ -500,23 +501,23 @@ function graph_draw()
         }
         // Add series to plot
         let label = "";
-        if (showtag) label += feedlist[z].tag + ": ";
-        label += feedlist[z].name;
-        const stacked = (typeof feedlist[z].stack !== "undefined" && feedlist[z].stack);
-        const plot = {label:label, data:data, yaxis:feedlist[z].yaxis, color:feedlist[z].color, stack:stacked};
+        if (graphState.showtag) label += graphState.feedlist[z].tag + ": ";
+        label += graphState.feedlist[z].name;
+        const stacked = (typeof graphState.feedlist[z].stack !== "undefined" && graphState.feedlist[z].stack);
+        const plot = {label:label, data:data, yaxis:graphState.feedlist[z].yaxis, color:graphState.feedlist[z].color, stack:stacked};
 
-        if (feedlist[z].plottype=="lines") { plot.lines = { show: true, fill: (feedlist[z].fill ? (stacked ? 1.0 : 0.5) : 0.0), fill: feedlist[z].fill } };
-        if (feedlist[z].plottype=="bars") { plot.bars = { align: "center", fill: (feedlist[z].fill ? (stacked ? 1.0 : 0.5) : 0.0), show: true, barWidth: view.interval * 1000 * 0.75 } };
-        if (feedlist[z].plottype == 'points') plot.points = {show: true, radius: 3};
-        if (feedlist[z].plottype=="steps") { plot.lines = { steps: true, show: true, fill: (feedlist[z].fill ? (stacked ? 1.0 : 0.5) : 0.0), fill: feedlist[z].fill } };
-        plot.isRight = feedlist[z].yaxis === 2;
-        plot.id = feedlist[z].id;
+        if (graphState.feedlist[z].plottype=="lines") { plot.lines = { show: true, fill: (graphState.feedlist[z].fill ? (stacked ? 1.0 : 0.5) : 0.0), fill: graphState.feedlist[z].fill } };
+        if (graphState.feedlist[z].plottype=="bars") { plot.bars = { align: "center", fill: (graphState.feedlist[z].fill ? (stacked ? 1.0 : 0.5) : 0.0), show: true, barWidth: view.interval * 1000 * 0.75 } };
+        if (graphState.feedlist[z].plottype == 'points') plot.points = {show: true, radius: 3};
+        if (graphState.feedlist[z].plottype=="steps") { plot.lines = { steps: true, show: true, fill: (graphState.feedlist[z].fill ? (stacked ? 1.0 : 0.5) : 0.0), fill: graphState.feedlist[z].fill } };
+        plot.isRight = graphState.feedlist[z].yaxis === 2;
+        plot.id = graphState.feedlist[z].id;
         plot.index = z;
         plotdata.push(plot);
 
-        if (feedlist[z].yaxis == 1) {
+        if (graphState.feedlist[z].yaxis == 1) {
             num_left++;
-        } else if (feedlist[z].yaxis == 2) {
+        } else if (graphState.feedlist[z].yaxis == 2) {
             num_right++;
         }
     }
@@ -537,31 +538,31 @@ function graph_draw()
 
     if (!embed) {
 
-        for (const z in feedlist) {
-            feedlist[z].stats = stats(feedlist[z].data);
+        for (const z in graphState.feedlist) {
+            graphState.feedlist[z].stats = stats(graphState.feedlist[z].data);
         }
 
-        $("#feed-controls").html(buildFeedControlsHTML(feedlist));
-        $("#feed-stats").html(buildFeedStatsHTML(feedlist, time_in_window));
+        $("#feed-controls").html(buildFeedControlsHTML(graphState.feedlist));
+        $("#feed-stats").html(buildFeedStatsHTML(graphState.feedlist, time_in_window));
 
-        if (feedlist.length) $(".feed-options").show(); else $(".feed-options").hide();
+        if (graphState.feedlist.length) $(".feed-options").show(); else $(".feed-options").hide();
 
-        for (const z in feedlist) {
-            $(".decimalpoints[feedid="+feedlist[z].id+"]").val(feedlist[z].dp);
-            if ($(".average[feedid="+feedlist[z].id+"]")[0] !== undefined)
-                $(".average[feedid="+feedlist[z].id+"]")[0].checked = feedlist[z].average;
-            if ($(".delta[feedid="+feedlist[z].id+"]")[0] !== undefined)
-                $(".delta[feedid="+feedlist[z].id+"]")[0].checked = feedlist[z].delta;
-            $(".scale[feedid="+feedlist[z].id+"]").val(feedlist[z].scale);
-            $(".offset[feedid="+feedlist[z].id+"]").val(feedlist[z].offset);
-            $(".linecolor[feedid="+feedlist[z].id+"]").val(feedlist[z].color);
-            if ($(".fill[feedid="+feedlist[z].id+"]")[0] !== undefined)
-                $(".fill[feedid="+feedlist[z].id+"]")[0].checked = feedlist[z].fill;
-            if ($(".stack[feedid="+feedlist[z].id+"]")[0] !== undefined)
-                $(".stack[feedid="+feedlist[z].id+"]")[0].checked = feedlist[z].stack;
+        for (const z in graphState.feedlist) {
+            $(".decimalpoints[feedid="+graphState.feedlist[z].id+"]").val(graphState.feedlist[z].dp);
+            if ($(".average[feedid="+graphState.feedlist[z].id+"]")[0] !== undefined)
+                $(".average[feedid="+graphState.feedlist[z].id+"]")[0].checked = graphState.feedlist[z].average;
+            if ($(".delta[feedid="+graphState.feedlist[z].id+"]")[0] !== undefined)
+                $(".delta[feedid="+graphState.feedlist[z].id+"]")[0].checked = graphState.feedlist[z].delta;
+            $(".scale[feedid="+graphState.feedlist[z].id+"]").val(graphState.feedlist[z].scale);
+            $(".offset[feedid="+graphState.feedlist[z].id+"]").val(graphState.feedlist[z].offset);
+            $(".linecolor[feedid="+graphState.feedlist[z].id+"]").val(graphState.feedlist[z].color);
+            if ($(".fill[feedid="+graphState.feedlist[z].id+"]")[0] !== undefined)
+                $(".fill[feedid="+graphState.feedlist[z].id+"]")[0].checked = graphState.feedlist[z].fill;
+            if ($(".stack[feedid="+graphState.feedlist[z].id+"]")[0] !== undefined)
+                $(".stack[feedid="+graphState.feedlist[z].id+"]")[0].checked = graphState.feedlist[z].stack;
         }
 
-        if (showcsv) printcsv();
+        if (graphState.showcsv) printcsv();
     }
 }
 function getFeedName(item) {
@@ -582,9 +583,9 @@ function getFeedName(item) {
 }
 function getfeed(id)
 {
-    for (var z in feeds) {
-        if (feeds[z].id == id) {
-            return feeds[z];
+    for (const z in graphState.feeds) {
+        if (graphState.feeds[z].id == id) {
+            return graphState.feeds[z];
         }
     }
     return false;
@@ -606,8 +607,8 @@ function getfeedpublic(feedid) {
 
 function getfeedindex(id)
 {
-    for (var z in feeds) {
-        if (feeds[z].id == id) {
+    for (const z in graphState.feeds) {
+        if (graphState.feeds[z].id == id) {
             return z;
         }
     }
@@ -615,8 +616,8 @@ function getfeedindex(id)
 }
 
 function getFeedUnit(id) {
-    for (const key in feeds) {
-        if (feeds[key].id == id) return feeds[key].unit || '';
+    for (const key in graphState.feeds) {
+        if (graphState.feeds[key].id == id) return graphState.feeds[key].unit || '';
     }
     return '';
 }

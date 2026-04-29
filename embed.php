@@ -145,19 +145,19 @@ defined('EMONCMS_EXEC') or die('Restricted access');
             view.interval = result.interval;
             view.limitinterval = result.limitinterval;
             view.fixinterval = result.fixinterval;
-            floatingtime = result.floatingtime,
-            yaxismin = result.yaxismin;
-            yaxismax = result.yaxismax;
-            yaxismin2 = result.yaxismin2;
-            yaxismax2 = result.yaxismax2;
-            feedlist = result.feedlist;
+            graphState.floatingtime = result.floatingtime,
+            graphState.yaxismin = result.yaxismin;
+            graphState.yaxismax = result.yaxismax;
+            graphState.yaxismin2 = result.yaxismin2;
+            graphState.yaxismax2 = result.yaxismax2;
+            graphState.feedlist = result.feedlist;
             
             // show settings
-            showmissing = result.showmissing;
-            showtag = result.showtag;
-            showlegend = result.showlegend;
+            graphState.showmissing = result.showmissing;
+            graphState.showtag = result.showtag;
+            graphState.showlegend = result.showlegend;
             
-            if (floatingtime) {
+            if (graphState.floatingtime) {
                 var timewindow = view.end - view.start;
                 var now = Math.round(+new Date * 0.001)*1000;
                 view.end = now;

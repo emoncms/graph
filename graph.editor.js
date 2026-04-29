@@ -51,10 +51,10 @@ function buildFeedSelectorHTML(feeds) {
 //----------------------------------------------------------------------------------------
 function graph_init_editor()
 {
-    if (!feeds) feeds = feedlist;
+    if (!graphState.feeds) graphState.feeds = graphState.feedlist;
 
     // Draw sidebar feed selector -------------------------------------------
-    const { html, feedsbytag, numberoftags } = buildFeedSelectorHTML(feeds);
+    const { html, feedsbytag, numberoftags } = buildFeedSelectorHTML(graphState.feeds);
 
     // ---------------------------------------------------------------
     // Writting direct to the menu system here
@@ -79,14 +79,14 @@ function graph_init_editor()
     if (session_write) load_saved_graphs_menu();
     // ---------------------------------------------------------------
 
-    if (feeds.length > 12 && numberoftags > 2) {
+    if (graphState.feeds.length > 12 && numberoftags > 2) {
         $(".tagbody").hide();
     }
 
     $("#info").show();
-    if ($("#showmissing")[0]!=undefined) $("#showmissing")[0].checked = showmissing;
-    if ($("#showtag")[0]!=undefined) $("#showtag")[0].checked = showtag;
-    if ($("#showlegend")[0]!=undefined) $("#showlegend")[0].checked = showlegend;
+    if ($("#showmissing")[0]!=undefined) $("#showmissing")[0].checked = graphState.showmissing;
+    if ($("#showtag")[0]!=undefined) $("#showtag")[0].checked = graphState.showtag;
+    if ($("#showlegend")[0]!=undefined) $("#showlegend")[0].checked = graphState.showlegend;
 
     datetimepickerInit();
 
@@ -101,26 +101,26 @@ function graph_init_editor()
 
     $("#clear").click(function(){
 
-        feedlist = [];
+        graphState.feedlist = [];
         plotdata = [];
-        skipmissing = 0;
+        graphState.skipmissing = 0;
         requesttype = "interval";
-        showcsv = 0;
-        showmissing = false;
-        showtag = true;
-        showlegend = true;
-        floatingtime = 1;
-        yaxismin = "auto";
-        yaxismax = "auto";
-        yaxismin2 = "auto";
-        yaxismax2 = "auto";
-        csvtimeformat = "datestr";
-        csvnullvalues = "show";
-        csvheaders = "showNameTag";
-        current_graph_id = "";
-        current_graph_name = "";
+        graphState.showcsv = 0;
+        graphState.showmissing = false;
+        graphState.showtag = true;
+        graphState.showlegend = true;
+        graphState.floatingtime = 1;
+        graphState.yaxismin = "auto";
+        graphState.yaxismax = "auto";
+        graphState.yaxismin2 = "auto";
+        graphState.yaxismax2 = "auto";
+        graphState.csvtimeformat = "datestr";
+        graphState.csvnullvalues = "show";
+        graphState.csvheaders = "showNameTag";
+        graphState.current_graph_id = "";
+        graphState.current_graph_name = "";
         previousPoint = 0;
-        active_histogram_feed = 0;
+        graphState.active_histogram_feed = 0;
 
         const timeWindow = 3600000 * 24.0 * 7;
         const now = Math.round(+new Date() * 0.001) * 1000;
@@ -138,15 +138,11 @@ function graph_init_editor()
     $(".csvoptions").hide();
 
     $("body").on("click",".average",function(){
-        var feedid = $(this).attr("feedid");
+        const feedid = $(this).attr("feedid");
 
-        for (var z in feedlist) {
-            if (feedlist[z].id==feedid) {
-                if ($(this)[0].checked) {
-                    feedlist[z].average = 1;
-                } else {
-                    feedlist[z].average = 0;
-                }
+        for (const z in graphState.feedlist) {
+            if (graphState.feedlist[z].id==feedid) {
+                graphState.feedlist[z].average = $(this)[0].checked ? 1 : 0;
                 break;
             }
         }
@@ -154,26 +150,22 @@ function graph_init_editor()
     });
 
     $("body").on("click", ".move-feed", function(){
-        var feedid = $(this).attr("feedid")*1;
-        var curpos = parseInt(feedid);
-        var moveby = parseInt($(this).attr("moveby"));
-        var newpos = curpos + moveby;
-        if (newpos>=0 && newpos<feedlist.length){
-            newfeedlist = arrayMove(feedlist,curpos,newpos);
+        const feedid = $(this).attr("feedid")*1;
+        const curpos = parseInt(feedid);
+        const moveby = parseInt($(this).attr("moveby"));
+        const newpos = curpos + moveby;
+        if (newpos>=0 && newpos<graphState.feedlist.length){
+            graphState.feedlist = arrayMove(graphState.feedlist,curpos,newpos);
             graph_draw();
         }
     });
 
     $("body").on("click",".delta",function(){
-        var feedid = $(this).attr("feedid");
+        const feedid = $(this).attr("feedid");
 
-        for (var z in feedlist) {
-            if (feedlist[z].id==feedid) {
-                if ($(this)[0].checked) {
-                    feedlist[z].delta = 1;
-                } else {
-                    feedlist[z].delta = 0;
-                }
+        for (const z in graphState.feedlist) {
+            if (graphState.feedlist[z].id==feedid) {
+                graphState.feedlist[z].delta = $(this)[0].checked ? 1 : 0;
                 break;
             }
         }
@@ -181,11 +173,11 @@ function graph_init_editor()
     });
 
     $("body").on("change",".linecolor",function(){
-        var feedid = $(this).attr("feedid");
+        const feedid = $(this).attr("feedid");
 
-        for (var z in feedlist) {
-            if (feedlist[z].id==feedid) {
-                feedlist[z].color = $(this).val();
+        for (const z in graphState.feedlist) {
+            if (graphState.feedlist[z].id==feedid) {
+                graphState.feedlist[z].color = $(this).val();
                 break;
             }
         }
@@ -193,11 +185,11 @@ function graph_init_editor()
     });
 
     $("body").on("change",".fill",function(){
-        var feedid = $(this).attr("feedid");
+        const feedid = $(this).attr("feedid");
 
-        for (var z in feedlist) {
-            if (feedlist[z].id==feedid) {
-                feedlist[z].fill = $(this)[0].checked;
+        for (const z in graphState.feedlist) {
+            if (graphState.feedlist[z].id==feedid) {
+                graphState.feedlist[z].fill = $(this)[0].checked;
                 break;
             }
         }
@@ -205,11 +197,11 @@ function graph_init_editor()
     });
 
     $("body").on("change",".stack",function(){
-        var feedid = $(this).attr("feedid");
+        const feedid = $(this).attr("feedid");
 
-        for (var z in feedlist) {
-            if (feedlist[z].id==feedid) {
-                feedlist[z].stack = $(this)[0].checked;
+        for (const z in graphState.feedlist) {
+            if (graphState.feedlist[z].id==feedid) {
+                graphState.feedlist[z].stack = $(this)[0].checked;
                 break;
             }
         }
@@ -230,12 +222,12 @@ function graph_init_editor()
         const checked = $(this)[0].checked;
 
         let loaded = false;
-        for (const z in feedlist) {
-            if (feedlist[z].id == feedid) {
+        for (const z in graphState.feedlist) {
+            if (graphState.feedlist[z].id == feedid) {
                 if (!checked) {
-                    feedlist.splice(z, 1);
+                    graphState.feedlist.splice(z, 1);
                 } else {
-                    feedlist[z].yaxis = 1;
+                    graphState.feedlist[z].yaxis = 1;
                     loaded = true;
                     $(".feed-select-right[data-feedid="+feedid+"]")[0].checked = false;
                 }
@@ -250,12 +242,12 @@ function graph_init_editor()
         const checked = $(this)[0].checked;
 
         let loaded = false;
-        for (const z in feedlist) {
-            if (feedlist[z].id == feedid) {
+        for (const z in graphState.feedlist) {
+            if (graphState.feedlist[z].id == feedid) {
                 if (!checked) {
-                    feedlist.splice(z, 1);
+                    graphState.feedlist.splice(z, 1);
                 } else {
-                    feedlist[z].yaxis = 2;
+                    graphState.feedlist[z].yaxis = 2;
                     loaded = true;
                     $(".feed-select-left[data-feedid="+feedid+"]")[0].checked = false;
                 }
@@ -277,17 +269,17 @@ function graph_init_editor()
     });
 
     $("#showmissing").click(function(){
-        if ($("#showmissing")[0].checked) showmissing = true; else showmissing = false;
+        graphState.showmissing = $("#showmissing")[0].checked;
         graph_draw();
     });
 
     $("#showlegend").click(function(){
-        if ($("#showlegend")[0].checked) showlegend = true; else showlegend = false;
+        graphState.showlegend = $("#showlegend")[0].checked;
         graph_draw();
     });
 
     $("#showtag").click(function(){
-        if ($("#showtag")[0].checked) showtag = true; else showtag = false;
+        graphState.showtag = $("#showtag")[0].checked;
         graph_draw();
     });
 
@@ -325,13 +317,12 @@ function graph_init_editor()
     });
 
     $("body").on("change",".decimalpoints",function(){
-        var feedid = $(this).attr("feedid");
-        var dp = $(this).val();
+        const feedid = $(this).attr("feedid");
+        const dp = $(this).val();
 
-        for (var z in feedlist) {
-            if (feedlist[z].id == feedid) {
-                feedlist[z].dp = dp;
-
+        for (const z in graphState.feedlist) {
+            if (graphState.feedlist[z].id == feedid) {
+                graphState.feedlist[z].dp = dp;
                 graph_draw();
                 break;
             }
@@ -339,13 +330,12 @@ function graph_init_editor()
     });
 
     $("body").on("change",".plottype",function(){
-        var feedid = $(this).attr("feedid");
-        var plottype = $(this).val();
+        const feedid = $(this).attr("feedid");
+        const plottype = $(this).val();
 
-        for (var z in feedlist) {
-            if (feedlist[z].id == feedid) {
-                feedlist[z].plottype = plottype;
-
+        for (const z in graphState.feedlist) {
+            if (graphState.feedlist[z].id == feedid) {
+                graphState.feedlist[z].plottype = plottype;
                 graph_draw();
                 break;
             }
@@ -353,21 +343,21 @@ function graph_init_editor()
     });
     // left axis
     $("body").on("change","#yaxis-min",function(){
-        yaxismin = $(this).val();
+        graphState.yaxismin = $(this).val();
         graph_draw();
     });
 
-    $("body").on("change","#yaxis-max",function(){
-        yaxismax = $(this).val();
+    $('body').on("change","#yaxis-max",function(){
+        graphState.yaxismax = $(this).val();
         graph_draw();
     });
     // right axis
-    $("body").on("change","#yaxis-min2",function(){
-        yaxismin2 = $(this).val();
+    $('body').on("change","#yaxis-min2",function(){
+        graphState.yaxismin2 = $(this).val();
         graph_draw();
     });
-    $("body").on("change","#yaxis-max2",function(){
-        yaxismax2 = $(this).val();
+    $('body').on("change","#yaxis-max2",function(){
+        graphState.yaxismax2 = $(this).val();
         graph_draw();
     });
     $("body").on("click",".reset-yaxis",function(){
@@ -375,17 +365,17 @@ function graph_init_editor()
     })
 
     $("#csvtimeformat").change(function(){
-        csvtimeformat=$(this).val();
+        graphState.csvtimeformat = $(this).val();
         printcsv();
     });
 
     $("#csvnullvalues").change(function(){
-        csvnullvalues=$(this).val();
+        graphState.csvnullvalues = $(this).val();
         printcsv();
     });
 
     $("#csvheaders").change(function(){
-        csvheaders=$(this).val();
+        graphState.csvheaders = $(this).val();
         printcsv();
     });
 
@@ -436,22 +426,22 @@ function graph_init_editor()
 }
 
 function load_feed_selector() {
-    for (var z in feeds) {
-        var feedid = feeds[z].id;
+    for (const z in graphState.feeds) {
+        const feedid = graphState.feeds[z].id;
         $(".feed-select-left[data-feedid="+feedid+"]")[0].checked = false;
         $(".feed-select-right[data-feedid="+feedid+"]")[0].checked = false;
     }
 
-    for (var z=0; z<feedlist.length; z++) {
-        var feedid = feedlist[z].id;
-        var tag = feedlist[z].tag;
+    for (let z=0; z<graphState.feedlist.length; z++) {
+        const feedid = graphState.feedlist[z].id;
+        let tag = graphState.feedlist[z].tag;
         if (tag=="") tag = "undefined";
 
-        if (feedlist[z].yaxis==1) {
+        if (graphState.feedlist[z].yaxis==1) {
             if ($(".feed-select-left[data-feedid="+feedid+"]")[0])
                 $(".feed-select-left[data-feedid="+feedid+"]")[0].checked = true; $(".tagbody[data-tag='"+tag+"']").show();
         }
-        if (feedlist[z].yaxis==2) {
+        if (graphState.feedlist[z].yaxis==2) {
             if ($(".feed-select-left[data-feedid="+feedid+"]")[0])
                 $(".feed-select-right[data-feedid="+feedid+"]")[0].checked = true; $(".tagbody[data-tag='"+tag+"']").show();
         }

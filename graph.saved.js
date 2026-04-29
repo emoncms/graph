@@ -298,46 +298,46 @@ function load_saved_graph(graph) {
     view.mode = graph.mode;
     view.limitinterval = graph.limitinterval;
     view.fixinterval = graph.fixinterval;
-    floatingtime = graph.floatingtime;
-    yaxismin = graph.yaxismin;
-    yaxismin2 = graph.yaxismin2 || 'auto';
-    yaxismax = graph.yaxismax;
-    yaxismax2 = graph.yaxismax2 || 'auto';
+    graphState.floatingtime = graph.floatingtime;
+    graphState.yaxismin = graph.yaxismin;
+    graphState.yaxismin2 = graph.yaxismin2 || 'auto';
+    graphState.yaxismax = graph.yaxismax;
+    graphState.yaxismax2 = graph.yaxismax2 || 'auto';
 
     // CSV display settings
-    csvtimeformat = (typeof graph.csvtimeformat === 'undefined' ? 'datestr' : graph.csvtimeformat);
-    csvnullvalues = (typeof graph.csvnullvalues === 'undefined' ? 'show' : graph.csvnullvalues);
-    csvheaders = (typeof graph.csvheaders === 'undefined' ? 'showNameTag' : graph.csvheaders);
+    graphState.csvtimeformat = (typeof graph.csvtimeformat === 'undefined' ? 'datestr' : graph.csvtimeformat);
+    graphState.csvnullvalues = (typeof graph.csvnullvalues === 'undefined' ? 'show' : graph.csvnullvalues);
+    graphState.csvheaders = (typeof graph.csvheaders === 'undefined' ? 'showNameTag' : graph.csvheaders);
     const tmpCsv = (typeof graph.showcsv === 'undefined' ? '0' : graph.showcsv.toString());
 
     // show settings
-    showmissing = graph.showmissing;
-    showtag = graph.showtag;
-    showlegend = graph.showlegend;
+    graphState.showmissing = graph.showmissing;
+    graphState.showtag = graph.showtag;
+    graphState.showlegend = graph.showlegend;
 
     // graph details
-    current_graph_id = graph.id;
-    current_graph_name = graph.name;
+    graphState.current_graph_id = graph.id;
+    graphState.current_graph_name = graph.name;
 
     // feedlist
-    feedlist = graph.feedlist;
+    graphState.feedlist = graph.feedlist;
 
-    if (floatingtime) {
+    if (graphState.floatingtime) {
         const timewindow = view.end - view.start;
         const now = Math.round(+new Date() * 0.001) * 1000;
         view.end = now;
         view.start = view.end - timewindow;
     }
 
-    $("#yaxis-min").val(yaxismin);
-    $("#yaxis-max").val(yaxismax);
-    $("#yaxis-min2").val(yaxismin2);
-    $("#yaxis-max2").val(yaxismax2);
+    $("#yaxis-min").val(graphState.yaxismin);
+    $("#yaxis-max").val(graphState.yaxismax);
+    $("#yaxis-min2").val(graphState.yaxismin2);
+    $("#yaxis-max2").val(graphState.yaxismax2);
     $("#request-fixinterval")[0].checked = view.fixinterval;
     $("#request-limitinterval")[0].checked = view.limitinterval;
-    $("#showmissing")[0].checked = showmissing;
-    $("#showtag")[0].checked = showtag;
-    $("#showlegend")[0].checked = showlegend;
+    $("#showmissing")[0].checked = graphState.showmissing;
+    $("#showtag")[0].checked = graphState.showtag;
+    $("#showlegend")[0].checked = graphState.showlegend;
 
     $("#request-type").val(view.mode);
     if (view.mode !== "interval") {
@@ -350,9 +350,9 @@ function load_saved_graph(graph) {
     graph_reload();
     load_feed_selector();
     // Placed after graph load as values only available after the graph is redrawn
-    $("#csvtimeformat").val(csvtimeformat);
-    $("#csvnullvalues").val(csvnullvalues);
-    $("#csvheaders").val(csvheaders);
+    $("#csvtimeformat").val(graphState.csvtimeformat);
+    $("#csvnullvalues").val(graphState.csvnullvalues);
+    $("#csvheaders").val(graphState.csvheaders);
     csvShowHide(tmpCsv);
 }
 
@@ -360,31 +360,31 @@ function get_graph_data() {
 
     const now = Math.round(+new Date() * 0.001) * 1000;
     if (Math.abs(now - view.end) < 120000) {
-        floatingtime = 1;
+        graphState.floatingtime = 1;
     }
 
     const graph_to_save = {
-        name: current_graph_name,
+        name: graphState.current_graph_name,
         start: view.start,
         end: view.end,
         interval: view.interval,
         mode: view.mode,
         limitinterval: view.limitinterval,
         fixinterval: view.fixinterval,
-        floatingtime: floatingtime,
-        yaxismin: yaxismin,
-        yaxismax: yaxismax,
-        yaxismin2: yaxismin2,
-        yaxismax2: yaxismax2,
-        showmissing: showmissing,
-        showtag: showtag,
-        showlegend: showlegend,
-        showcsv: showcsv,
-        csvtimeformat: csvtimeformat,
-        csvnullvalues: csvnullvalues,
-        csvheaders: csvheaders,
-        feedlist: JSON.parse(JSON.stringify(feedlist)),
-        id: current_graph_id,
+        floatingtime: graphState.floatingtime,
+        yaxismin: graphState.yaxismin,
+        yaxismax: graphState.yaxismax,
+        yaxismin2: graphState.yaxismin2,
+        yaxismax2: graphState.yaxismax2,
+        showmissing: graphState.showmissing,
+        showtag: graphState.showtag,
+        showlegend: graphState.showlegend,
+        showcsv: graphState.showcsv,
+        csvtimeformat: graphState.csvtimeformat,
+        csvnullvalues: graphState.csvnullvalues,
+        csvheaders: graphState.csvheaders,
+        feedlist: JSON.parse(JSON.stringify(graphState.feedlist)),
+        id: graphState.current_graph_id,
     };
     return graph_to_save
 }

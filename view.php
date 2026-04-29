@@ -290,7 +290,6 @@ load_js("Lib/misc/gettext.js");
     var feedidsLH = "<?php echo $feedidsLH; ?>";
     var feedidsRH = "<?php echo $feedidsRH; ?>";
     var load_savegraphs = "<?php echo $load_saved; ?>";
-    var feeds = false;
 
     var _user = {
         lang: "<?php if (isset($_SESSION['lang'])) echo $_SESSION['lang']; ?>"
@@ -332,13 +331,13 @@ load_js("Lib/misc/gettext.js");
         const public_username_str = public_userid ? public_username + "/" : "";
         $.ajax({
             url: path + public_username_str + "feed/list.json", async: false, dataType: "json",
-            success: function(data_in) { feeds = data_in; }
+            success: function(data_in) { graphState.feeds = data_in; }
         });
     } else {
         // Load user feeds
         $.ajax({
             url: path + "feed/list.json" + apikeystr, async: false, dataType: "json",
-            success: function(data_in) { feeds = data_in; }
+            success: function(data_in) { graphState.feeds = data_in; }
         });
     }
 
@@ -353,7 +352,7 @@ load_js("Lib/misc/gettext.js");
                 if (feedid) {
                     let f = getfeed(feedid);
                     if (f === false) f = getfeedpublic(feedid);
-                    if (f !== false) feedlist.push({id:feedid, name:f.name, tag:f.tag, yaxis:1, fill:0, scale:1.0, average:0, delta:0, dp:1, plottype:'lines'});
+                    if (f !== false) graphState.feedlist.push({id:feedid, name:f.name, tag:f.tag, yaxis:1, fill:0, scale:1.0, average:0, delta:0, dp:1, plottype:'lines'});
                 }
             }
         }
@@ -366,7 +365,7 @@ load_js("Lib/misc/gettext.js");
                 if (feedid) {
                     let f = getfeed(feedid);
                     if (f === false) f = getfeedpublic(feedid);
-                    if (f !== false) feedlist.push({id:feedid, name:f.name, tag:f.tag, yaxis:1, fill:0, scale:1.0, average:0, delta:0, dp:1, plottype:'lines'});
+                    if (f !== false) graphState.feedlist.push({id:feedid, name:f.name, tag:f.tag, yaxis:1, fill:0, scale:1.0, average:0, delta:0, dp:1, plottype:'lines'});
                 }
             }
         }
@@ -379,7 +378,7 @@ load_js("Lib/misc/gettext.js");
                 if (feedid) {
                     let f = getfeed(feedid);
                     if (f === false) f = getfeedpublic(feedid);
-                    if (f !== false) feedlist.push({id:feedid, name:f.name, tag:f.tag, yaxis:2, fill:0, scale:1.0, average:0, delta:0, dp:1, plottype:'lines'});
+                    if (f !== false) graphState.feedlist.push({id:feedid, name:f.name, tag:f.tag, yaxis:2, fill:0, scale:1.0, average:0, delta:0, dp:1, plottype:'lines'});
                 }
             }
         }

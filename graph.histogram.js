@@ -7,17 +7,17 @@ $('body').on('click', '.histogram', function() {
     $('#navigation').hide();
     $('#histogram-controls').show();
     const feedid = $(this).attr('feedid');
-    active_histogram_feed = feedid;
+    graphState.active_histogram_feed = feedid;
     const type = $('#histogram-type').val();
     let resolution = 1;
 
     let index = 0;
-    for (const z in feedlist) {
-        if (feedlist[z].id == feedid) { index = z; break; }
+    for (const z in graphState.feedlist) {
+        if (graphState.feedlist[z].id == feedid) { index = z; break; }
     }
 
-    if (feedlist[index].stats.diff < 5000) resolution = 10;
-    if (feedlist[index].stats.diff < 100) resolution = 0.1;
+    if (graphState.feedlist[index].stats.diff < 5000) resolution = 10;
+    if (graphState.feedlist[index].stats.diff < 100) resolution = 0.1;
     $('#histogram-resolution').val(resolution);
 
     histogram(feedid, type, resolution);
@@ -27,14 +27,14 @@ $('body').on('click', '.histogram', function() {
 $('#histogram-resolution').change(function() {
     const type = $('#histogram-type').val();
     const resolution = $('#histogram-resolution').val();
-    histogram(active_histogram_feed, type, resolution);
+    histogram(graphState.active_histogram_feed, type, resolution);
 });
 
 // Time at value or power to kWh
 $('#histogram-type').change(function() {
     const type = $('#histogram-type').val();
     const resolution = $('#histogram-resolution').val();
-    histogram(active_histogram_feed, type, resolution);
+    histogram(graphState.active_histogram_feed, type, resolution);
 });
 
 // Return to power graph
@@ -52,13 +52,13 @@ function histogram(feedid, type, resolution)
 
     // Get the feedlist index of the feedid
     let index = -1;
-    for (const z in feedlist) {
-        if (feedlist[z].id == feedid) { index = z; }
+    for (const z in graphState.feedlist) {
+        if (graphState.feedlist[z].id == feedid) { index = z; }
     }
     if (index === -1) return false;
 
     // Load data from feedlist object
-    const data = feedlist[index].data;
+    const data = graphState.feedlist[index].data;
 
     for (let i = 1; i < data.length; i++) {
         if (data[i][1] !== null) val = data[i][1];
@@ -83,8 +83,8 @@ function histogram(feedid, type, resolution)
     };
 
     let label = '';
-    if (showtag) label += feedlist[index].tag + ': ';
-    label += feedlist[index].name;
+    if (graphState.showtag) label += graphState.feedlist[index].tag + ': ';
+    label += graphState.feedlist[index].name;
 
     $.plot('#placeholder', [{label: label, data: tmp}], options);
 }
