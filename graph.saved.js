@@ -334,7 +334,7 @@ function load_saved_graph(graph) {
     $("#yaxis-min2").val(graphState.yaxismin2);
     $("#yaxis-max2").val(graphState.yaxismax2);
     $("#request-fixinterval")[0].checked = view.fixinterval;
-    $("#request-limitinterval")[0].checked = view.limitinterval;
+    // view.limitinterval watcher (initViewWatcher) syncs this to the checkbox automatically.
     $("#showmissing")[0].checked = graphState.showmissing;
     $("#showtag")[0].checked = graphState.showtag;
     $("#showlegend")[0].checked = graphState.showlegend;

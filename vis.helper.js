@@ -3,7 +3,9 @@ var view =
   start:0,
   end:0,
   mode: "interval",
-  fixinterval:false,
+  fixinterval: false,
+  interval: 10,
+  limitinterval: 1,
 
   'zoomout':function ()
   {

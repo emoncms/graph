@@ -2,36 +2,13 @@
 // graph.utils.js - Utility/helper functions
 //----------------------------------------------------------------------------------------
 
-/**
- * @todo replace this with moment.js translated date/time strings
- * see feed and input views for example of translated dates
- * eg. moment().fromUnix(timestamp).format('ll') // format unix timestamp as per user's locale
- * @see Lib/misc/moment.min.js
- **/
-function printdate(timestamp)
-{
-    var date = new Date();
-    var thisyear = date.getFullYear();
-
-    var date = new Date(timestamp);
-    var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    var year = date.getFullYear();
-    var month = months[date.getMonth()];
-    var day = date.getDate();
-
-    var minutes = date.getMinutes();
-    if (minutes<10) minutes = "0"+minutes;
-
-    var secs = date.getSeconds();
-    if (secs<10) secs = "0"+secs;
-
-    var datestr = "";
-    //	date.getHours()+":"+minutes+" "+day+" "+month;
-    datestr += day+"/"+month;
-    if (thisyear!=year) datestr += "/"+year;
-    datestr += " " + date.getHours()+":"+minutes+":"+secs;
-    return datestr;
-};
+// Format a timestamp for display in the window-info bar.
+// Uses moment.js (already loaded) so locale-aware month/day names are handled correctly.
+function printdate(timestamp) {
+    const m = moment(timestamp);
+    const fmt = m.year() === moment().year() ? 'D/MMM HH:mm:ss' : 'D/MMM/YYYY HH:mm:ss';
+    return m.format(fmt);
+}
 
 // See: https://stackoverflow.com/questions/3665115/how-to-create-a-file-in-memory-for-user-to-download-but-not-through-server
 function download_data(filename, data) {

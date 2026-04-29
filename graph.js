@@ -5,10 +5,12 @@
 //----------------------------------------------------------------------------------------
 // Shared reactive state - readable and writable by both Vue components and non-Vue code.
 // Vue.observable() ensures mutations trigger component re-renders (Phase 3 Vue components).
+//
+// GRAPH_STATE_DEFAULTS contains the canonical "blank graph" values for all user-controlled
+// settings. resetGraphState() uses this to reset without touching derived/output properties
+// (showStats, time_in_window, num_left, num_right) or the feed lists.
 //----------------------------------------------------------------------------------------
-const graphState = Vue.observable({
-    feeds: [],
-    feedlist: [],
+const GRAPH_STATE_DEFAULTS = {
     showmissing: false,
     showtag: true,
     showlegend: true,
@@ -25,9 +27,88 @@ const graphState = Vue.observable({
     current_graph_name: '',
     skipmissing: 0,
     active_histogram_feed: 0,
+    removeNull: false,
+    removeNullMaxDuration: 900,
+};
+
+const graphState = Vue.observable({
+    ...GRAPH_STATE_DEFAULTS,
+    feeds: [],
+    feedlist: [],
+    // Derived/output state — recalculated by graph_draw(), not reset by resetGraphState().
     showStats: false,
     time_in_window: 0,
+    num_left: 0,
+    num_right: 0,
 });
+
+// Resets all user-controlled settings to their blank-graph defaults.
+// Does NOT clear feeds/feedlist (managed by feedSelectorApp) or derived state.
+function resetGraphState() {
+    Object.assign(graphState, GRAPH_STATE_DEFAULTS);
+}
+
+// Make the view object reactive so Vue watchers can track mutations.
+// vis.helper.js defines view as a plain object before Vue loads, so we wrap it here.
+view = Vue.observable(view);
+
+//----------------------------------------------------------------------------------------
+// initViewWatcher - sets up Vue watchers on view properties to automatically sync to DOM.
+// Replaces the manual DOM push calls that were previously scattered in graph_reload() and
+// load_saved_graph(). Must be called after datetimepickerInit() so the pickers exist.
+//----------------------------------------------------------------------------------------
+function initViewWatcher() {
+    const watcher = new Vue();
+
+    // Shared helper: refreshes both datetime pickers whenever start or end changes.
+    function syncDatetimePickers() {
+        if (datetimepicker1) {
+            datetimepicker1.setLocalDate(new Date(view.start));
+            datetimepicker1.setEndDate(new Date(view.end));
+        }
+        if (datetimepicker2) {
+            datetimepicker2.setLocalDate(new Date(view.end));
+            datetimepicker2.setStartDate(new Date(view.start));
+        }
+    }
+
+    watcher.$watch(() => view.start, syncDatetimePickers);
+    watcher.$watch(() => view.end,   syncDatetimePickers);
+
+    watcher.$watch(() => view.interval, function(val) {
+        $('#request-interval').val(val);
+    });
+
+    watcher.$watch(() => view.limitinterval, function(val) {
+        const el = document.getElementById('request-limitinterval');
+        if (el) el.checked = !!val;
+    });
+
+    // Show/hide left and right y-axis control rows based on whether any feed uses each axis.
+    watcher.$watch(() => graphState.num_left, function(n) {
+        if (n > 0) { $('#yaxis_left').show(); } else { $('#yaxis_left').hide(); }
+    }, { immediate: true });
+
+    watcher.$watch(() => graphState.num_right, function(n) {
+        if (n > 0) { $('#yaxis_right').show(); } else { $('#yaxis_right').hide(); }
+    }, { immediate: true });
+
+    // Show/hide the "Feeds in view" panel when the feedlist is populated.
+    watcher.$watch(() => graphState.feedlist.length, function(len) {
+        if (len > 0) { $('.feed-options').show(); } else { $('.feed-options').hide(); }
+    }, { immediate: true });
+
+    // Toggle the Show options / Show statistics buttons without touching other DOM state.
+    watcher.$watch(() => graphState.showStats, function(showStats) {
+        if (showStats) {
+            $('.feed-options-show-options').removeClass('hide');
+            $('.feed-options-show-stats').addClass('hide');
+        } else {
+            $('.feed-options-show-options').addClass('hide');
+            $('.feed-options-show-stats').removeClass('hide');
+        }
+    }, { immediate: true });
+}
 
 // Non-reactive module-level variables (transient state, jQuery instances, config flags)
 var plotdata = [];
@@ -212,18 +293,6 @@ function graph_reload()
         view.end = Math.ceil((view.end*0.001) / view.interval) * view.interval * 1000;
     }
 
-    if(datetimepicker1) {
-        datetimepicker1.setLocalDate(new Date(view.start));
-        datetimepicker1.setEndDate(new Date(view.end));
-    }
-    if(datetimepicker2) {
-        datetimepicker2.setLocalDate(new Date(view.end));
-        datetimepicker2.setStartDate(new Date(view.start));
-    }
-
-    $("#request-interval").val(view.interval);
-    $("#request-limitinterval").attr("checked",view.limitinterval);
-
     // Convert feedlist into csv properties
     const ids = [];
     const averages = [];
@@ -337,8 +406,11 @@ function checkFeedlistData(response){
 
 function processFeedlistData() {
 
-    const remove_null = embed ? false : $(".remove-null")[0].checked;
-    const remove_null_max_duration = embed ? 900 : $(".remove-null-max-duration").val();
+    // In embed mode, graphState defaults (false / 900) are used since those controls
+    // don't exist in embed.php. In view.php the reactive graphState values are kept
+    // in sync by the jQuery change handlers in graph.editor.js.
+    const remove_null = graphState.removeNull;
+    const remove_null_max_duration = graphState.removeNullMaxDuration;
 
     for (const z in graphState.feedlist) {
         // check to ensure feed scaling and data are only applied once
@@ -423,7 +495,7 @@ function graph_draw()
         mins = "";
     }
 
-    if (!embed) $("#window-info").html(`<b>${_lang['Window']}:</b> ${printdate(view.start)} <b>→</b> ${printdate(view.end)}<br><b>${_lang['Length']}:</b> ${hours}h${mins} (${time_in_window} seconds)`);
+    if (!embed) $("#window-info").html(`<b>${_lang['Window']}:</b> ${moment(view.start).format('D/MMM/YYYY HH:mm:ss')} <b>→</b> ${moment(view.end).format('D/MMM/YYYY HH:mm:ss')}<br><b>${_lang['Length']}:</b> ${hours}h${mins} (${time_in_window} seconds)`);
 
     plotdata = [];
     let num_left = 0;
@@ -462,17 +534,9 @@ function graph_draw()
         }
     }
 
-    if (num_left > 0) {
-        $('#yaxis_left').show()
-    } else {
-        $('#yaxis_left').hide();
-    }
-
-    if (num_right > 0) {
-        $('#yaxis_right').show()
-    } else {
-        $('#yaxis_right').hide();
-    }
+    // Write to graphState — watchers in initViewWatcher() handle the DOM show/hide.
+    graphState.num_left = num_left;
+    graphState.num_right = num_right;
 
     plot_statistics = $.plot($('#placeholder'), plotdata, options);
 
@@ -481,8 +545,6 @@ function graph_draw()
         for (const z in graphState.feedlist) {
             Vue.set(graphState.feedlist[z], 'stats', stats(graphState.feedlist[z].data));
         }
-
-        if (graphState.feedlist.length) $(".feed-options").show(); else $(".feed-options").hide();
 
         if (graphState.showcsv) printcsv();
     }

@@ -6,9 +6,9 @@ function printcsv()
 {
     if (typeof graphState.feedlist[0] === "undefined") return;
 
-    const timeformat = $("#csvtimeformat").val();
-    const nullvalues = $("#csvnullvalues").val();
-    const headers = $("#csvheaders").val();
+    const timeformat = graphState.csvtimeformat;
+    const nullvalues = graphState.csvnullvalues;
+    const headers = graphState.csvheaders;
 
     let csvout = "";
 

@@ -137,6 +137,9 @@ function graph_init_editor()
     if ($("#showlegend")[0]!=undefined) $("#showlegend")[0].checked = graphState.showlegend;
 
     datetimepickerInit();
+    // Activate Vue watchers that sync view.start/end/interval/limitinterval → DOM controls.
+    // Must be called after datetimepickerInit() so the pickers are ready.
+    initViewWatcher();
 
     // Events start here -------------------------------------------
 
@@ -152,24 +155,9 @@ function graph_init_editor()
         feedSelectorApp.feedlist.splice(0);
         graphState.feedlist = feedSelectorApp.feedlist;
         plotdata = [];
-        graphState.skipmissing = 0;
         requesttype = "interval";
-        graphState.showcsv = 0;
-        graphState.showmissing = false;
-        graphState.showtag = true;
-        graphState.showlegend = true;
-        graphState.floatingtime = 1;
-        graphState.yaxismin = "auto";
-        graphState.yaxismax = "auto";
-        graphState.yaxismin2 = "auto";
-        graphState.yaxismax2 = "auto";
-        graphState.csvtimeformat = "datestr";
-        graphState.csvnullvalues = "show";
-        graphState.csvheaders = "showNameTag";
-        graphState.current_graph_id = "";
-        graphState.current_graph_name = "";
         previousPoint = 0;
-        graphState.active_histogram_feed = 0;
+        resetGraphState();
 
         const timeWindow = 3600000 * 24.0 * 7;
         const now = Math.round(+new Date() * 0.001) * 1000;
@@ -228,8 +216,7 @@ function graph_init_editor()
         if (mode=="weekly") view.interval = 86400*7;
         if (mode=="monthly") view.interval = 86400*30;
         if (mode=="annual") view.interval = 86400*365;
-
-        $("#request-interval").val(view.interval);
+        // view.interval watcher syncs the new value to #request-interval automatically.
         graph_reload();
     });
 
@@ -252,9 +239,6 @@ function graph_init_editor()
         graphState.yaxismax2 = $(this).val();
         graph_draw();
     });
-    $("body").on("click",".reset-yaxis",function(){
-        $(this).parent().find('input').val('auto');
-    })
 
     $("#csvtimeformat").change(function(){
         graphState.csvtimeformat = $(this).val();
@@ -282,27 +266,36 @@ function graph_init_editor()
 
     $(".feed-options-show-stats").click(function(event){
         graphState.showStats = true;
-        $(".feed-options-show-options").removeClass('hide');
-        $(".feed-options-show-stats").addClass('hide');
+        // initViewWatcher() handles the button visibility DOM updates.
         event.preventDefault();
         event.stopPropagation();
     });
 
     $(".feed-options-show-options").click(function(event){
         graphState.showStats = false;
-        $(".feed-options-show-options").addClass('hide');
-        $(".feed-options-show-stats").removeClass('hide');
         event.preventDefault();
         event.stopPropagation();
     });
 
     // Reload feeds if remove-null is changed or remove-null-max-duration is changed
     $(".remove-null").change(function(){
+        graphState.removeNull = $(".remove-null")[0].checked;
         graph_reload();
     });
 
     $(".remove-null-max-duration").change(function(){
+        graphState.removeNullMaxDuration = parseFloat($(".remove-null-max-duration").val()) || 900;
         graph_reload();
+    });
+
+    // Fix: reset-yaxis must also update graphState so the next graph_draw uses the reset value.
+    $("body").on("click",".reset-yaxis",function(){
+        $(this).parent().find('input').each(function() {
+            $(this).val('auto');
+            const key = $(this).attr('id').replace(/-/g, ''); // e.g. "yaxis-min" -> "yaxismin"
+            graphState[key] = 'auto';
+        });
+        graph_draw();
     });
 
     /**
