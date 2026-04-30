@@ -241,7 +241,7 @@ function _processFeedData() {
 
 export function graphDraw() {
     const options = {
-        lines:  { fill: false },
+        lines:  { fill: false, lineWidth: 2 },
         xaxis:  {
             mode:       'time',
             timezone:   'browser',
@@ -255,7 +255,7 @@ export function graphDraw() {
             { alignTicksWithAxis: 1, position: 'right' },
         ],
         grid:      { hoverable: true, clickable: true },
-        selection: { mode: 'x' },
+        selection: { mode: 'x', color: '#e8cfac', visualization: 'fill' },
         legend: {
             show:     state.showlegend,
             position: 'nw',
@@ -317,7 +317,7 @@ export function graphDraw() {
             index: state.feedlist.indexOf(feed),
         };
 
-        if (feed.plottype === 'lines')  series.lines  = { show: true, fill: fillVal };
+        if (feed.plottype === 'lines')  series.lines  = { show: true, fill: fillVal, lineWidth: 2 };
         if (feed.plottype === 'bars')   series.bars   = { show: true, fill: fillVal, align: 'center', barWidth: state.interval * 1000 * 0.75 };
         if (feed.plottype === 'points') series.points = { show: true, radius: 3 };
         if (feed.plottype === 'steps')  series.lines  = { show: true, fill: fillVal, steps: true };
