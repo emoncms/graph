@@ -23,8 +23,67 @@ import {
 } from './graph.utils.js';
 
 // ---------------------------------------------------------------------------
+// Legend click-to-toggle (inlined — no separate module needed)
+// ---------------------------------------------------------------------------
+
+// Track hidden series by feed ID so state survives redraws.
+const _hiddenFeedIds = new Set();
+
+function _attachLegendToggle(plot) {
+    const placeholder = plot.getPlaceholder();
+    const legendDiv = placeholder.querySelector('.legend');
+    if (!legendDiv) return;
+
+    // Flot sets pointer-events:none on the legend div — override it so clicks land.
+    legendDiv.style.pointerEvents = 'auto';
+
+    const series = plot.getData();
+    const groups = Array.from(legendDiv.querySelectorAll('svg > g'));
+
+    groups.forEach((g, i) => {
+        const s = series[i];
+        if (!s) return;
+
+        g.style.cursor = 'pointer';
+        g.style.opacity = _hiddenFeedIds.has(s.id) ? '0.4' : '1';
+
+        // Clone node to remove any previously-attached listeners before re-adding.
+        const fresh = g.cloneNode(true);
+        g.parentNode.replaceChild(fresh, g);
+        fresh.style.cursor = 'pointer';
+        fresh.style.opacity = _hiddenFeedIds.has(s.id) ? '0.4' : '1';
+
+        fresh.addEventListener('click', () => {
+            const current = plot.getData();
+            const ser = current[i];
+            if (!ser) return;
+
+            const feed = state.feedlist.find(f => f.id == ser.id);
+            if (!feed) return;
+
+            const isHidden = _hiddenFeedIds.has(ser.id);
+            const show = isHidden;
+
+            if (isHidden) _hiddenFeedIds.delete(ser.id);
+            else          _hiddenFeedIds.add(ser.id);
+
+            if (feed.plottype === 'lines' || feed.plottype === 'steps') ser.lines  = { ...ser.lines,  show };
+            if (feed.plottype === 'bars')                               ser.bars   = { ...ser.bars,   show };
+            if (feed.plottype === 'points')                             ser.points = { ...ser.points, show };
+
+            plot.setData(current);
+            plot.draw();
+        });
+    });
+}
+
+// ---------------------------------------------------------------------------
 // Module-level flags and singletons
 // ---------------------------------------------------------------------------
+
+// Set to false to disable the drop-shadow painted beneath each series line.
+let _shadowEnabled = false;
+export function setShadowEnabled(val) { _shadowEnabled = !!val; }
 
 // Set to true by embed.php's init call.
 let _embed = false;
@@ -242,6 +301,23 @@ function _processFeedData() {
 export function graphDraw() {
     const options = {
         lines:  { fill: false, lineWidth: 2 },
+        hooks: {
+            drawSeries: _shadowEnabled ? [function(plot, ctx) {
+                ctx.shadowColor = 'rgba(0,0,0,0.15)';
+                ctx.shadowBlur = 4;
+                ctx.shadowOffsetX = 1;
+                ctx.shadowOffsetY = 2;
+            }] : [],
+            draw: [
+                ...(_shadowEnabled ? [function(plot, ctx) {
+                    ctx.shadowColor = 'transparent';
+                    ctx.shadowBlur = 0;
+                    ctx.shadowOffsetX = 0;
+                    ctx.shadowOffsetY = 0;
+                }] : []),
+                _attachLegendToggle,
+            ],
+        },
         xaxis:  {
             mode:       'time',
             timezone:   'browser',
@@ -256,16 +332,7 @@ export function graphDraw() {
         ],
         grid:      { hoverable: true, clickable: true },
         selection: { mode: 'x', color: '#e8cfac', visualization: 'fill' },
-        legend: {
-            show:     state.showlegend,
-            position: 'nw',
-            toggle:   true,
-            labelFormatter(label, item) {
-                const cls  = item.isRight ? 'label-right' : 'label-left';
-                const title = item.isRight ? 'Right Axis' : 'Left Axis';
-                return `<span data-id="${item.id}" data-index="${item.index}" class="${cls}" title="${title}">${label}</span>`;
-            },
-        },
+        legend: { show: state.showlegend, position: 'nw' },
         toggle: { scale: 'visible' },
         touch:  { pan: 'x', scale: 'x' },
     };

@@ -418,8 +418,7 @@ js_import_map('Modules/graph/', [
     'graph.utils.js',
     'graph.feedcontrols.js',
     'graph.histogram.js',
-    'graph.saved.js',
-    'graph.legend.js',
+    'graph.saved.js'
 ]);
 load_js("Modules/graph/graph.js", true, true);
 ?>

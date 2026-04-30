@@ -196,6 +196,9 @@ input.feed-tag-checkbox-left, input.feed-tag-checkbox-right{
     display: inline-block;
     margin-right: .3em;
 }
+.legendLayer rect.background {
+    fill: transparent;
+}
 #legend .legendColorBox > div > div{
     width: .3em!important;
     border-width: .4em!important;
