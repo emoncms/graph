@@ -64,8 +64,7 @@ defined('EMONCMS_EXEC') or die('Restricted access');
 <?php
 load_css("Lib/bootstrap-datetimepicker-0.0.11/css/bootstrap-datetimepicker.min.css");
 load_css("Modules/graph/graph.css");
-load_js("Lib/flot/jquery.flot.merged.js");
-load_js("Lib/flot/jquery.flot.stack.min.js");
+load_js("Lib/flot-5.1.0.min.js");
 load_js("Lib/misc/clipboard.js");
 load_js("Lib/bootstrap-datetimepicker-0.0.11/js/bootstrap-datetimepicker.min.js");
 load_js("Lib/moment.min.js");
@@ -409,7 +408,21 @@ load_js("Lib/vue.min.js");
     <div id="sidebar_html" class="hide"><?php echo view("Modules/graph/Views/sidebar.php",array()); ?></div>
 </div>
 
-<script type="module" src="<?php echo $path; ?>Modules/graph/graph.js"></script>
+<?php
+js_import_map('Modules/graph/', [
+    'graph.state.js',
+    'graph.api.js',
+    'graph.chart.js',
+    'graph.csv.js',
+    'graph.editor.js',
+    'graph.utils.js',
+    'graph.feedcontrols.js',
+    'graph.histogram.js',
+    'graph.saved.js',
+    'graph.legend.js',
+]);
+load_js("Modules/graph/graph.js", true, true);
+?>
 
 <script>
     // PHP-injected configuration

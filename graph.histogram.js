@@ -1,6 +1,6 @@
 // graph.histogram.js
 // Histogram visualisation mode.
-// Depends on: state (graph.state.js), Flot + jQuery (global scripts).
+// Depends on: state (graph.state.js), Flot (global script via Flot.plot).
 
 import { state } from './graph.state.js';
 import { graphDraw } from './graph.chart.js';
@@ -87,7 +87,7 @@ export function drawHistogram(feedid, type, resolution) {
     let label = state.showtag ? `${state.feedlist[index].tag}: ` : '';
     label += state.feedlist[index].name;
 
-    $.plot('#placeholder', [{ label, data: plotData }], {
+    Flot.plot(document.getElementById('placeholder'), [{ label, data: plotData }], {
         series: { bars: { show: true, barWidth: resolution * 0.8 } },
         grid:   { hoverable: true }
     });

@@ -129,10 +129,11 @@ export async function fetchFeed(feedid) {
  * @param {number}  params.limitinterval
  * @param {string}  params.average      — comma-separated per-feed average flags
  * @param {string}  params.delta        — comma-separated per-feed delta flags
+ * @param {string}  params.timeformat   — unix, unixms, notime etc.
  * @returns {Promise<Array>}            — array of { feedid, data: [[ts,val], …] }
  */
-export async function fetchFeedData({ ids, start, end, interval, skipmissing, limitinterval, average, delta }) {
-    const params = { ids, start, end, interval, skipmissing, limitinterval, average, delta };
+export async function fetchFeedData({ ids, start, end, interval, skipmissing, limitinterval, average, delta, timeformat }) {
+    const params = { ids, start, end, interval, skipmissing, limitinterval, average, delta, timeformat };
     return getJSON('feed/data.json', params);
 }
 

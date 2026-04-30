@@ -54,19 +54,19 @@ let _panning = false;
 // ---------------------------------------------------------------------------
 
 export function graphResize() {
-    const bound       = $('#placeholder_bound');
-    const placeholder = $('#placeholder');
+    const bound       = document.getElementById('placeholder_bound');
+    const placeholder = document.getElementById('placeholder');
 
-    const width  = bound.width();
+    const width  = bound.clientWidth;
     let   height = width * 0.5;
     if (height < 300) height = 300;
-    if (_embed)        height = $(window).height();
+    if (_embed)        height = window.innerHeight;
 
     const top_offset = _embed ? 35 : 0;
 
-    placeholder.width(width);
-    bound.height(height - top_offset);
-    placeholder.height(height - top_offset);
+    placeholder.style.width  = width + 'px';
+    bound.style.height       = (height - top_offset) + 'px';
+    placeholder.style.height = (height - top_offset) + 'px';
 }
 
 // ---------------------------------------------------------------------------
@@ -154,6 +154,7 @@ export async function graphReload() {
             interval,
             skipmissing:   state.skipmissing,
             limitinterval: state.limitinterval,
+            timeformat: 'unix'
         });
         _onFeedDataReceived(response);
         _checkFeedDataForErrors(response);
@@ -330,7 +331,7 @@ export function graphDraw() {
     state.num_left  = num_left;
     state.num_right = num_right;
 
-    _plot = $.plot($('#placeholder'), plotdata, options);
+    _plot = Flot.plot(document.getElementById('placeholder'), plotdata, options);
 
     if (!_embed) {
         for (const feed of state.feedlist) {
@@ -374,7 +375,7 @@ export function reloadDatetimePrep() {
     if (!end)   { alert('Please enter a valid end date.');   return false; }
     if (start >= end) { alert('Start date must be further back in time than end date.'); return false; }
     state.start = start * 1000;
-    state.end   = end   * 1000;
+    state.end   = end * 1000;
     return true;
 }
 
@@ -448,21 +449,25 @@ $('.graph_time_refresh').on('click', function () {
     graphReload();
 });
 
-$('#placeholder').on('plotselected', function (_event, ranges) {
+const _pholder = document.getElementById('placeholder');
+
+_pholder.addEventListener('plotselected', function (event) {
+    const [ranges] = event.detail;
     state.floatingtime = 0;
-    state.start = ranges.xaxis.from;
-    state.end   = ranges.xaxis.to;
+    state.start = ranges.xaxis.from * 1000;
+    state.end   = ranges.xaxis.to * 1000;
     calcInterval();
     graphReload();
     _panning = true; setTimeout(() => { _panning = false; }, 100);
 });
 
-$('#placeholder').on('plothover', function (_event, pos, item) {
-    if (!item) { $('#tooltip').remove(); return; }
+_pholder.addEventListener('plothover', function (event) {
+    const [pos, item] = event.detail;
+    if (!item) { document.getElementById('tooltip')?.remove(); return; }
     if (item.datapoint === _previousPoint) return;
     _previousPoint = item.datapoint;
 
-    $('#tooltip').remove();
+    document.getElementById('tooltip')?.remove();
 
     const feed    = state.feedlist[item.seriesIndex];
     const feedid  = feed?.id;
@@ -481,15 +486,22 @@ $('#placeholder').on('plothover', function (_event, pos, item) {
     );
 });
 
-$('#placeholder').on('touchended', function (_event, ranges) {
-    if (ranges.xaxis.from === undefined) return;
+let _panZoomTimeout = null;
+function _onPanOrZoom(event) {
+    const [plot] = event.detail;
+    const axes = plot.getAxes();
     state.floatingtime = 0;
-    state.start = ranges.xaxis.from;
-    state.end   = ranges.xaxis.to;
-    calcInterval();
-    graphReload();
-    _panning = true; setTimeout(() => { _panning = false; }, 100);
-});
+    state.start = axes.xaxis.min;
+    state.end   = axes.xaxis.max;
+    clearTimeout(_panZoomTimeout);
+    _panZoomTimeout = setTimeout(() => {
+        calcInterval();
+        graphReload();
+        _panning = true; setTimeout(() => { _panning = false; }, 100);
+    }, 300);
+}
+_pholder.addEventListener('plotpan',  _onPanOrZoom);
+_pholder.addEventListener('plotzoom', _onPanOrZoom);
 
 $(document).on('window.resized hidden.sidebar.collapse shown.sidebar.collapse', function () {
     graphResize();

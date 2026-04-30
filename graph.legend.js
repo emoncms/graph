@@ -11,11 +11,11 @@ import { state } from './graph.state.js';
  * splitting entries into left-axis and right-axis columns.
  * Pass this as a Flot `hooks.draw` callback.
  * @param {Object} _flot      — Flot plot instance (unused, we use getPlotInstance())
- * @param {jQuery} placeholder
+ * @param {HTMLElement} placeholder
  */
 export function buildLegend(_flot, placeholder) {
     const legend = document.getElementById('legend');
-    const flotLegend = placeholder[0].nextSibling;
+    const flotLegend = placeholder.nextSibling;
     if (!flotLegend) { legend.innerHTML = ''; return; }
 
     const rows = Array.from(flotLegend.querySelectorAll('table tbody tr'));
