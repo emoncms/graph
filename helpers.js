@@ -35,8 +35,8 @@ const GRAPH_CLEAR_EXTRA_DEFAULTS = {
 
 /* ── Translations ────────────────────────────────────────────────────────── */
 
-const translateGraph = key => {
-	const t = (typeof window !== 'undefined' && graphTranslations) || {};
+const graphTranslation = key => {
+	const t = (typeof window !== 'undefined' && window.graphTranslations) || {};
 	return Object.prototype.hasOwnProperty.call(t, key) ? t[key] : key;
 };
 
@@ -278,6 +278,82 @@ const normalizeColor = color => {
 	return '';
 };
 
+/* ── Plot / Chart Helpers ────────────────────────────────────────────────── */
+
+const buildFeedLabel = (feed, showtag) =>
+	(showtag && feed.tag ? `${feed.tag}: ` : '') + feed.name;
+
+const applyYAxisBounds = (axis, min, max) => {
+	let explicit = false;
+	if (min !== 'auto' && min !== '') { axis.min = parseFloat(min); explicit = true; }
+	if (max !== 'auto' && max !== '') { axis.max = parseFloat(max); explicit = true; }
+	if (explicit) axis.autoScale = 'none';
+};
+
+const buildFlotOptions = (startMs, endMs, state) => {
+	const yaxes = [{}, { alignTicksWithAxis: 1, position: 'right' }];
+	applyYAxisBounds(yaxes[0], state.yaxismin,  state.yaxismax);
+	applyYAxisBounds(yaxes[1], state.yaxismin2, state.yaxismax2);
+	return {
+		lines:     { fill: false, lineWidth: 2 },
+		xaxis:     { mode: 'time', timezone: 'browser', min: startMs, max: endMs,
+		             monthNames: typeof moment !== 'undefined' ? moment.monthsShort() : null,
+		             dayNames:   typeof moment !== 'undefined' ? moment.weekdaysMin() : null },
+		yaxes,
+		grid:      { hoverable: true, clickable: true },
+		selection: { mode: 'x', color: '#e8cfac', visualization: 'fill' },
+		legend:    { show: state.showlegend, position: 'nw' },
+		toggle:    { scale: 'visible' },
+		touch:     { pan: 'x', scale: 'x' },
+	};
+};
+
+const buildFeedDataParams = (feedlist, startMs, endMs, state) => {
+	const interval = state.mode !== 'interval'
+		? state.mode
+		: (parseInt(state.interval, 10) || 60);
+	return new URLSearchParams({
+		ids:           feedlist.map(f => f.id).join(','),
+		start:         String(startMs),
+		end:           String(endMs),
+		interval:      String(interval),
+		skipmissing:   state.showmissing   ? '0' : '1',
+		limitinterval: state.limitinterval ? '1' : '0',
+		average:       feedlist.map(f => f.average || 0).join(','),
+		delta:         feedlist.map(f => f.delta   || 0).join(','),
+		timeformat:    'unix',
+	});
+};
+
+const deriveProcessingParams = state => {
+	const maxDuration     = Math.max(0, parseFloat(state.removeNullMaxDuration)) || 900;
+	const intervalSeconds = Math.max(0, parseFloat(state.interval))              || 60;
+	return {
+		maxDuration,
+		intervalSeconds,
+		removeNull: !!state.removeNull && state.mode === 'interval' && intervalSeconds < maxDuration,
+	};
+};
+
+const suggestHistogramResolution = diff =>
+	diff < 100 ? 0.1 : diff < 5000 ? 10 : 1;
+
+/* ── Saved Graph Payload Helpers ─────────────────────────────────────────── */
+
+const normalizeSavedGraphPayload = (graph = {}) => ({
+	id:       graph.id !== undefined ? String(graph.id) : '',
+	name:     parseSavedGraphName(graph.name),
+	start:    isFinite(Number(graph.start)) ? Number(graph.start) : 0,
+	end:      isFinite(Number(graph.end))   ? Number(graph.end)   : 0,
+	...normalizeGraphState(graph),
+	feedlist: (Array.isArray(graph.feedlist) ? graph.feedlist : []).map(normalizeSavedFeed),
+});
+
+const buildStateFeedFromSaved = feed => {
+	const normalized = normalizeSavedFeed(feed);
+	return { ...defaultFeedProps(), ...normalized, id: String(normalized.id), autoColor: '', stats: {}, data: [] };
+};
+
 /* ── Public API ──────────────────────────────────────────────────────────── */
 
 window.GraphHelpers = {
@@ -286,7 +362,7 @@ window.GraphHelpers = {
 	normalizeGraphState,
 	applyGraphState,
 	createDefaultGraphState,
-    tr: translateGraph,
+	tr: graphTranslation,
 	msToDatetimeLocal,
 	toMsFromPlotValue,
 	pickIntervalForWindow,
@@ -302,4 +378,12 @@ window.GraphHelpers = {
 	defaultFeedProps,
 	calculateHistogramBuckets,
 	normalizeColor,
+	buildFeedLabel,
+	applyYAxisBounds,
+	buildFlotOptions,
+	buildFeedDataParams,
+	deriveProcessingParams,
+	suggestHistogramResolution,
+	normalizeSavedGraphPayload,
+	buildStateFeedFromSaved,
 };

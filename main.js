@@ -23,7 +23,7 @@ const GraphLayoutApp = {
 		hiddenFeedIds: new Set(),
 		startLocal: '2026-04-24T00:00',
 		endLocal:   '2026-05-01T00:00',
-		csvText: '',
+		csvText: 'time,solar,house\n1713916800,450,320\n1713917400,520,360',
 		collapsedTags: {},
 		savedGraphsCollapsed: false,
 		savedGraphSelected: -1,
@@ -260,21 +260,7 @@ const GraphLayoutApp = {
 			if (!this.state.feedlist.length) { this.renderChart(); return; }
 
 			const { startMs, endMs } = this.getWindowRange();
-			const interval = this.state.mode !== 'interval'
-				? this.state.mode
-				: (parseInt(this.state.interval, 10) || 60);
-
-			const params = new URLSearchParams({
-				ids:           this.state.feedlist.map(f => f.id).join(','),
-				start:         String(startMs),
-				end:           String(endMs),
-				interval:      String(interval),
-				skipmissing:   this.state.showmissing ? '0' : '1',
-				limitinterval: this.state.limitinterval ? '1' : '0',
-				average:       this.state.feedlist.map(f => f.average || 0).join(','),
-				delta:         this.state.feedlist.map(f => f.delta   || 0).join(','),
-				timeformat:    'unix',
-			});
+			const params = GH.buildFeedDataParams(this.state.feedlist, startMs, endMs, this.state);
 			if (apikey) params.set('apikey', apikey);
 
 			getJson(`${path}feed/data.json?${params}`)
@@ -433,15 +419,7 @@ const GraphLayoutApp = {
 			this.renderChart();
 		},
 
-		getProcessingParams() {
-			const maxDuration     = Math.max(0, parseFloat(this.state.removeNullMaxDuration)) || 900;
-			const intervalSeconds = Math.max(0, parseFloat(this.state.interval))              || 60;
-			return {
-				maxDuration,
-				intervalSeconds,
-				removeNull: !!this.state.removeNull && this.state.mode === 'interval' && intervalSeconds < maxDuration,
-			};
-		},
+		getProcessingParams() { return GH.deriveProcessingParams(this.state); },
 
 		/* ── Chart Rendering ─────────────────────────────────────────────── */
 		graphResize() {
@@ -474,7 +452,7 @@ const GraphLayoutApp = {
 				if (scale !== 1 || offset !== 0)
 					data = data.map(([t, v]) => { const n = Number(v); return [t, isFinite(n) ? n * scale + offset : v]; });
 
-				const label   = (this.state.showtag && feed.tag ? `${feed.tag}: ` : '') + feed.name;
+				const label   = GH.buildFeedLabel(feed, this.state.showtag);
 				const stacked = !!feed.stack;
 				const fillVal = feed.fill ? (stacked ? 1.0 : 0.5) : 0;
 				const hidden  = this.hiddenFeedIds.has(feed.id);
@@ -502,29 +480,7 @@ const GraphLayoutApp = {
 			const { startMs, endMs } = this.getWindowRange();
 			const timeInWindowSeconds = (endMs - startMs) / 1000;
 
-			// Build per-axis range options
-			const yaxes = [{}, { alignTicksWithAxis: 1, position: 'right' }];
-			const applyBounds = (axis, min, max) => {
-				let explicit = false;
-				if (min !== 'auto' && min !== '') { axis.min = parseFloat(min); explicit = true; }
-				if (max !== 'auto' && max !== '') { axis.max = parseFloat(max); explicit = true; }
-				if (explicit) axis.autoScale = 'none';
-			};
-			applyBounds(yaxes[0], this.state.yaxismin,  this.state.yaxismax);
-			applyBounds(yaxes[1], this.state.yaxismin2, this.state.yaxismax2);
-
-			const options = {
-				lines:     { fill: false, lineWidth: 2 },
-				xaxis:     { mode: 'time', timezone: 'browser', min: startMs, max: endMs,
-				             monthNames: typeof moment !== 'undefined' ? moment.monthsShort() : null,
-				             dayNames:   typeof moment !== 'undefined' ? moment.weekdaysMin() : null },
-				yaxes,
-				grid:      { hoverable: true, clickable: true },
-				selection: { mode: 'x', color: '#e8cfac', visualization: 'fill' },
-				legend:    { show: this.state.showlegend, position: 'nw' },
-				toggle:    { scale: 'visible' },
-				touch:     { pan: 'x', scale: 'x' },
-			};
+			const options = GH.buildFlotOptions(startMs, endMs, this.state);
 
 			// Update stats
 			const p = this.getProcessingParams();
@@ -558,8 +514,7 @@ const GraphLayoutApp = {
 
 			this.histogramMode = true;
 			this.activeHistogramFeed = feedid;
-			const diff = feed.stats?.diff ?? 100;
-			this.histogramResolution = diff < 100 ? 0.1 : diff < 5000 ? 10 : 1;
+			this.histogramResolution = GH.suggestHistogramResolution(feed.stats?.diff ?? 100);
 			this.drawHistogram();
 		},
 
@@ -580,7 +535,7 @@ const GraphLayoutApp = {
 				.map(([k, v]) => [Number(k), v])
 				.sort((a, b) => a[0] - b[0]);
 
-			const label = (this.state.showtag ? `${feed.tag}: ` : '') + feed.name;
+			const label = GH.buildFeedLabel(feed, this.state.showtag);
 			const placeholder = document.getElementById('placeholder');
 			if (!placeholder) return;
 
@@ -711,30 +666,15 @@ const GraphLayoutApp = {
 		},
 
 		findSavedGraphIndexById(id) {
-			return this.savedGraphs.findIndex(g => String(g.id) === String(id));
+			const savedGraphs = Array.isArray(this.savedGraphs) ? this.savedGraphs : [];
+			return savedGraphs.findIndex(g => String(g.id) === String(id));
 		},
 
-		normalizeSavedGraphState: source => GH.normalizeGraphState(source),
 		applySavedGraphState(savedState) { GH.applyGraphState(this.state, savedState); },
 
-		normalizeSavedGraphPayload(graph = {}) {
-			const state = GH.normalizeGraphState(graph);
-			return {
-				id:       graph.id !== undefined ? String(graph.id) : '',
-				name:     GH.parseSavedGraphName(graph.name),
-				start:    isFinite(Number(graph.start)) ? Number(graph.start) : 0,
-				end:      isFinite(Number(graph.end))   ? Number(graph.end)   : 0,
-				...state,
-				feedlist: (Array.isArray(graph.feedlist) ? graph.feedlist : []).map(GH.normalizeSavedFeed),
-			};
-		},
+		normalizeSavedGraphPayload: graph => GH.normalizeSavedGraphPayload(graph),
 
-		buildStateFeedFromSaved(feed) {
-			return Object.assign(GH.defaultFeedProps(), GH.normalizeSavedFeed(feed), {
-				id: String(GH.normalizeSavedFeed(feed).id),
-				autoColor: '', stats: {}, data: [],
-			});
-		},
+		buildStateFeedFromSaved: feed => GH.buildStateFeedFromSaved(feed),
 
 		buildSavedGraphPayload() {
 			const { startMs, endMs } = this.getWindowRange();
