@@ -88,17 +88,17 @@ load_js("Lib/vue.global.min.js");
 	<div id="info">
 		<div class="input-prepend input-append" style="padding-right:5px">
 			<span class="add-on" style="width:50px"><?php echo tr('Start'); ?></span>
-			<input id="request-start" type="datetime-local" style="width:185px" v-model="startLocal">
+			<input id="request-start" type="datetime-local" style="width:185px" v-model="startLocal" @change="onReload">
 		</div>
 
 		<div class="input-prepend input-append" style="padding-right:5px">
 			<span class="add-on" style="width:50px"><?php echo tr('End'); ?></span>
-			<input id="request-end" type="datetime-local" style="width:185px" v-model="endLocal">
+			<input id="request-end" type="datetime-local" style="width:185px" v-model="endLocal" @change="onReload">
 		</div>
 
 		<div class="input-prepend input-append" style="padding-right:5px">
 			<span class="add-on" style="width:50px"><?php echo tr('Type'); ?></span>
-			<select id="request-type" style="width:130px" v-model="state.mode">
+			<select id="request-type" style="width:130px" v-model="state.mode" @change="onReload">
 				<option value="interval"><?php echo tr('Fixed Interval'); ?></option>
 				<option value="daily"><?php echo tr('Daily'); ?></option>
 				<option value="weekly"><?php echo tr('Weekly'); ?></option>
@@ -109,7 +109,7 @@ load_js("Lib/vue.global.min.js");
 
 		<div class="input-prepend input-append" style="padding-right:5px">
 			<span class="fixed-interval-options" v-show="state.mode==='interval'">
-				<input id="request-interval" type="text" style="width:60px" v-model="state.interval" :disabled="state.fixinterval">
+				<input id="request-interval" type="text" style="width:60px" v-model="state.interval" :disabled="state.fixinterval" @change="onReload">
 				<span class="add-on"><?php echo tr('Fix'); ?> <input id="request-fixinterval" type="checkbox" style="margin-top:1px" v-model="state.fixinterval"></span>
 				<span class="add-on"><?php echo tr('Limit to data interval'); ?> <input id="request-limitinterval" type="checkbox" style="margin-top:1px" v-model="state.limitinterval"></span>
 			</span>
@@ -124,6 +124,8 @@ load_js("Lib/vue.global.min.js");
 				<input class="yaxis-minmax" id="yaxis-max" type="text" v-model="state.yaxismax" @change="onYAxisBoundsChange">
 				<button class="btn reset-yaxis" @click="resetYAxis('left')"><?php echo tr('Reset'); ?></button>
 			</div>
+        </div>
+        <div>
 
 			<div id="yaxis_right" class="input-append input-prepend" v-show="state.num_right > 0">
 				<span id="yaxis-right" class="add-on"><?php echo tr('Y-axis').' ('.tr('Right').')'; ?>:</span>
@@ -134,8 +136,6 @@ load_js("Lib/vue.global.min.js");
 				<button class="btn reset-yaxis" @click="resetYAxis('right')"><?php echo tr('Reset'); ?></button>
 			</div>
 
-			<button id="reload" class="btn" style="vertical-align:top" @click="onReload"><?php echo tr('Reload'); ?></button>
-			<button id="clear" class="btn" style="vertical-align:top" @click="noop"><?php echo tr('Clear All'); ?></button>
 		</div>
 
 		<div class="input-prepend input-append" v-show="state.mode==='interval'">
@@ -152,6 +152,10 @@ load_js("Lib/vue.global.min.js");
 			<div class="group-card" :class="{'tables-collapsed': tablesCollapsed}">
 				<div class="group-card-header feed-options-header" @click="toggleTablesCollapsed">
 					<span class="group-name feed-options-title"><?php echo tr('Feeds in view'); ?></span>
+
+                    <button class="btn" @click="onClearAll"><?php echo tr('Clear All'); ?></button>
+
+
 					<div class="feed-options-show-options btn btn-sm" :class="{hide: !state.showStats}" @click.stop.prevent="showOptions"><?php echo tr('Show options'); ?></div>
 					<div class="feed-options-show-stats btn btn-sm" :class="{hide: state.showStats}" @click.stop.prevent="showStats"><?php echo tr('Show statistics'); ?></div>
 					<i class="collapse-icon icon-chevron-down"></i>
@@ -541,10 +545,10 @@ const GraphLayoutApp = {
 			var shift = (range.endMs - range.startMs) * 0.2;
 			this.setWindowAndReload(range.startMs + shift, range.endMs + shift, false);
 		},
-		onReload: function () {
-			var range = this.getWindowRange();
-			this.setWindowAndReload(range.startMs, range.endMs, false);
-		},
+        onReload: function () {
+            var range = this.getWindowRange();
+            this.setWindowAndReload(range.startMs, range.endMs, false);
+        },
 		onRemoveNullChange: function () {
 			var maxDuration = parseFloat(this.state.removeNullMaxDuration);
 			if (!isFinite(maxDuration) || maxDuration <= 0) {
@@ -1003,6 +1007,32 @@ const GraphLayoutApp = {
 			if (this.state.showcsv) {
 				this.csvText = this.buildCsvText();
 			}
+		},
+		onClearAll: function () {
+			this.state.feedlist.splice(0);
+			this.state.mode = 'interval';
+			this.state.fixinterval = false;
+			this.state.limitinterval = true;
+			this.state.showmissing = true;
+			this.state.showlegend = true;
+			this.state.showtag = false;
+			this.state.showcsv = false;
+			this.state.showStats = false;
+			this.state.yaxismin = 'auto';
+			this.state.yaxismax = 'auto';
+			this.state.yaxismin2 = 'auto';
+			this.state.yaxismax2 = 'auto';
+			this.state.removeNull = false;
+			this.state.removeNullMaxDuration = '900';
+			this.state.csvtimeformat = 'unix';
+			this.state.csvnullvalues = 'show';
+			this.state.csvheaders = 'showNameTag';
+			var endMs = Math.round(Date.now() / 1000) * 1000;
+			var startMs = endMs - 7 * 24 * 3600 * 1000;
+			this.graphTimeHours = '168';
+			this.calcIntervalForWindow(startMs, endMs);
+			this.syncWindowInputs(startMs, endMs);
+			this.renderChart();
 		},
 		onYAxisBoundsChange: function () {
 			this.renderChart();
