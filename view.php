@@ -116,7 +116,7 @@ load_js("Lib/vue.global.min.js");
 		</div>
 
 		<div>
-			<div id="yaxis_left" class="input-append input-prepend" v-show="state.num_left > 0">
+			<div id="yaxis_left" class="input-append input-prepend" v-show="leftCount > 0">
 				<span id="yaxis-left" class="add-on"><?php echo tr('Y-axis').' ('.tr('Left').')'; ?>:</span>
 				<span class="yaxis-minmax-label add-on"><?php echo tr('min'); ?></span>
 				<input class="yaxis-minmax" id="yaxis-min" type="text" v-model="state.yaxismin" @change="onYAxisBoundsChange">
@@ -127,7 +127,7 @@ load_js("Lib/vue.global.min.js");
         </div>
         <div>
 
-			<div id="yaxis_right" class="input-append input-prepend" v-show="state.num_right > 0">
+			<div id="yaxis_right" class="input-append input-prepend" v-show="rightCount > 0">
 				<span id="yaxis-right" class="add-on"><?php echo tr('Y-axis').' ('.tr('Right').')'; ?>:</span>
 				<span class="yaxis-minmax-label add-on"><?php echo tr('min'); ?></span>
 				<input class="yaxis-minmax" id="yaxis-min2" type="text" v-model="state.yaxismin2" @change="onYAxisBoundsChange">
@@ -365,7 +365,6 @@ load_js("Lib/vue.global.min.js");
 				</div>
 			</div>
 		</Teleport>
-		<div class="layout-note"><?php echo tr('Layout scaffold mode: controls use Vue dummy values only.'); ?></div>
 	</div>
 </div>
 

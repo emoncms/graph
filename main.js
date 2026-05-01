@@ -21,8 +21,8 @@ const GraphLayoutApp = {
 		graphTimeHours: '168',
 		tablesCollapsed: false,
 		hiddenFeedIds: new Set(),
-		startLocal: '2026-04-24T00:00',
-		endLocal:   '2026-05-01T00:00',
+		startLocal: GH.msToDatetimeLocal(Date.now() - 168 * 3600_000),
+		endLocal:   GH.msToDatetimeLocal(Math.round(Date.now() / 1000) * 1000),
 		csvText: '',
 		collapsedTags: {},
 		savedGraphsCollapsed: false,
@@ -73,6 +73,8 @@ const GraphLayoutApp = {
 
 		leftChecked()  { return new Set(this.state.feedlist.filter(f => f.yaxis !== 2).map(f => f.id)); },
 		rightChecked() { return new Set(this.state.feedlist.filter(f => f.yaxis === 2).map(f => f.id)); },
+		leftCount()    { return this.state.feedlist.filter(f => f.yaxis !== 2).length; },
+		rightCount()   { return this.state.feedlist.filter(f => f.yaxis === 2).length; },
 	},
 
 	/* ── Watchers ──────────────────────────────────────────────────────────── */
@@ -111,7 +113,6 @@ const GraphLayoutApp = {
 
 	/* ── Methods ───────────────────────────────────────────────────────────── */
 	methods: {
-		noop() {},
 
 		/* ── Tooltip ─────────────────────────────────────────────────────── */
 		removeTooltip() {
@@ -120,18 +121,19 @@ const GraphLayoutApp = {
 
 		showTooltip(x, y, contents, bgColor) {
 			this.removeTooltip();
-			if (!(window.jQuery && typeof window.jQuery === 'function')) return;
-
 			const offset = 15;
-			const elem = window.jQuery(`<div id="tooltip">${contents}</div>`).css({
-				position: 'absolute', display: 'none',
-				'font-weight': 'bold', border: '1px solid rgb(255,221,221)',
-				padding: '2px', 'background-color': bgColor, opacity: '0.8',
-			}).appendTo('body').fadeIn(200);
-
-			const top  = Math.max(0, y - elem.height() - offset);
-			const left = Math.max(0, x - elem.width()  - offset);
-			elem.css({ top, left });
+			const elem = document.createElement('div');
+			elem.id = 'tooltip';
+			elem.innerHTML = contents;
+			Object.assign(elem.style, {
+				position: 'absolute', visibility: 'hidden',
+				fontWeight: 'bold', border: '1px solid rgb(255,221,221)',
+				padding: '2px', backgroundColor: bgColor, opacity: '0.8',
+			});
+			document.body.appendChild(elem);
+			const top  = Math.max(0, y - elem.offsetHeight - offset);
+			const left = Math.max(0, x - elem.offsetWidth  - offset);
+			Object.assign(elem.style, { top: `${top}px`, left: `${left}px`, visibility: 'visible' });
 		},
 
 		/* ── Feed Utilities ──────────────────────────────────────────────── */
@@ -455,8 +457,7 @@ const GraphLayoutApp = {
 				if (!this.state.showmissing)
 					data = data.filter(pt => pt[1] !== null);
 
-				if (scale !== 1 || offset !== 0)
-					data = data.map(([t, v]) => { const n = Number(v); return [t, isFinite(n) ? n * scale + offset : v]; });
+				data = GH.applyScaleOffset(data, scale, offset);
 
 				const label   = GH.buildFeedLabel(feed, this.state.showtag);
 				const stacked = !!feed.stack;
@@ -575,7 +576,7 @@ const GraphLayoutApp = {
 		_setFeedPropRender(feed, prop, value) { feed[prop] = value; this.renderChart(); },
 		_setFeedPropFetch(feed, prop, value)  { feed[prop] = value; this.fetchFeedData(); },
 
-		setPlottype: (feed, e) => feed.plottype = e.target.value,
+		setPlottype(feed, e)   { this._setFeedPropRender(feed, 'plottype', e.target.value); },
 		setColor(feed, e)  { feed.color = feed.autoColor = e.target.value; this.renderChart(); },
 		setFill(feed, e)   { this._setFeedPropRender(feed, 'fill',    e.target.checked ? 1 : 0); },
 		setStack(feed, e)  { this._setFeedPropRender(feed, 'stack',   e.target.checked ? 1 : 0); },
@@ -738,7 +739,7 @@ const GraphLayoutApp = {
 
 			if (selected.feedlist) { this.applySavedGraphPayload(selected); return; }
 
-			getJson(apiUrl(`graph/get?id=${encodeURIComponent(String(selected.id))}`, apikey ? `&apikey=${apikey}` : ''))
+			getJson(`${path}graph/get?id=${encodeURIComponent(String(selected.id))}${apikeystr}`)
 				.then(graph => this.applySavedGraphPayload(graph))
 				.catch(err => console.error('Failed to load saved graph:', err));
 		},

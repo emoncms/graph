@@ -56,8 +56,6 @@ const applyGraphState = (target, source) => {
 const createDefaultGraphState = () => ({
 	...normalizeGraphState({}),
 	...GRAPH_CLEAR_EXTRA_DEFAULTS,
-	num_left: 1,
-	num_right: 1,
 	feedlist: [],
 });
 
@@ -281,7 +279,7 @@ const normalizeColor = color => {
 /* ── Plot / Chart Helpers ────────────────────────────────────────────────── */
 
 const buildFeedLabel = (feed, showtag) =>
-	(showtag && feed.tag ? `${feed.tag}: ` : '') + feed.name;
+	(showtag && feed.tag ? `${feed.tag}/` : '') + feed.name;
 
 const applyYAxisBounds = (axis, min, max) => {
 	let explicit = false;
@@ -336,7 +334,7 @@ const deriveProcessingParams = state => {
 };
 
 const suggestHistogramResolution = diff =>
-	diff < 100 ? 0.1 : diff < 5000 ? 10 : 1;
+	diff < 100 ? 0.1 : diff < 5000 ? 10 : 100;
 
 /* ── Saved Graph Payload Helpers ─────────────────────────────────────────── */
 
@@ -367,6 +365,7 @@ window.GraphHelpers = {
 	toMsFromPlotValue,
 	pickIntervalForWindow,
 	fillShortNullGaps,
+	applyScaleOffset,
 	buildProcessedDataForStats,
 	calculateFeedStats,
 	buildCsvText,
