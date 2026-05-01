@@ -23,7 +23,7 @@ const GraphLayoutApp = {
 		hiddenFeedIds: new Set(),
 		startLocal: '2026-04-24T00:00',
 		endLocal:   '2026-05-01T00:00',
-		csvText: 'time,solar,house\n1713916800,450,320\n1713917400,520,360',
+		csvText: '',
 		collapsedTags: {},
 		savedGraphsCollapsed: false,
 		savedGraphSelected: -1,
@@ -155,6 +155,12 @@ const GraphLayoutApp = {
 		},
 
 		/* ── Legend Toggle ───────────────────────────────────────────────── */
+		// Flot renders the legend as static SVG, so click-to-toggle isn't built in.
+		// This method wires it up manually: it finds each <g> in the legend SVG,
+		// clones the node to strip any previous listener, then attaches a click
+		// handler that flips the series' visibility in hiddenFeedIds and calls
+		// plot.setData/draw to redraw without a full re-render. It then re-runs
+		// itself so the opacity of each legend item stays in sync with hidden state.
 		attachLegendToggle(plot) {
 			if (!plot || typeof plot.getData !== 'function') return;
 
@@ -382,9 +388,9 @@ const GraphLayoutApp = {
 
 				const value = `${raw.toFixed(dp)} ${this.getFeedUnit(feed?.id)}`;
 				const date  = typeof moment !== 'undefined'
-					? moment(datapoint[0]).format('llll')
-					: new Date(datapoint[0]).toString();
-				const ts = datapoint[0] / 1000;
+					? moment(datapoint[0]*1000).format('llll')
+					: new Date(datapoint[0]*1000).toString();
+				const ts = datapoint[0];
 
 				this.showTooltip(item.pageX, item.pageY,
 					`<span style="font-size:11px">${item.series.label}</span><br>` +
@@ -649,14 +655,17 @@ const GraphLayoutApp = {
 			this.savedGraphStatusTimeout = setTimeout(() => this.savedGraphStatus = '', 2000);
 		},
 
+		// Extract the saved graph ID from the URL hash if it matches the expected pattern.
 		getSavedHashId() {
 			const hash = String(window.location.hash || '');
 			return hash.startsWith('#/Saved/') ? hash.replace('#/Saved/', '').trim() : '';
 		},
 
+		// When a graph is selected, update the URL hash so it can be linked to or reloaded.
 		setSavedHashId(id) { if (id) window.location.hash = `/Saved/${id}`; },
 		clearSavedHash()   { history.replaceState(null, null, ' '); },
 
+		// When the URL hash changes, if it matches the pattern for a saved graph, select that graph in the UI.
 		onSavedHashChange() {
 			if (!this.canWriteGraphs || !this.savedGraphs.length) return;
 			const hashId = this.getSavedHashId();
@@ -670,12 +679,19 @@ const GraphLayoutApp = {
 			return savedGraphs.findIndex(g => String(g.id) === String(id));
 		},
 
+		// Apply persisted graph-level settings onto the live reactive state object
+		// without replacing the state reference that Vue is tracking.
 		applySavedGraphState(savedState) { GH.applyGraphState(this.state, savedState); },
 
+		// This takes a saved graph object, cleans it up, and converts it into one 
+		// standard format so the rest of the code can work with it consistently.
 		normalizeSavedGraphPayload: graph => GH.normalizeSavedGraphPayload(graph),
 
+		// Turn saved feed data back into the full feed object the graph screen uses.
 		buildStateFeedFromSaved: feed => GH.buildStateFeedFromSaved(feed),
 
+		// Build the payload sent to create/update endpoints from the current window,
+		// graph settings, and visible feed configuration.
 		buildSavedGraphPayload() {
 			const { startMs, endMs } = this.getWindowRange();
 			const payload = {
@@ -690,6 +706,8 @@ const GraphLayoutApp = {
 			return payload;
 		},
 
+		// Apply a saved graph payload back into the UI, preserving the current
+		// window if the saved timestamps are missing or invalid.
 		applySavedGraphPayload(graph) {
 			if (!graph || typeof graph !== 'object') return;
 			const normalized = this.normalizeSavedGraphPayload(graph);

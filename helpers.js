@@ -139,14 +139,14 @@ const calculateFeedStats = (data, timeInWindowSeconds) => {
 
 /* ── CSV ─────────────────────────────────────────────────────────────────── */
 
-const formatCsvTimestamp = (timeMs, startTimeMs, csvtimeformat) => {
-	if (csvtimeformat === 'seconds') return Math.round((timeMs - startTimeMs) / 1000);
+const formatCsvTimestamp = (time, startTime, csvtimeformat) => {
+	if (csvtimeformat === 'seconds') return Math.round(time - startTime);
 	if (csvtimeformat === 'datestr') {
-		const d = new Date(timeMs);
+		const d = new Date(time*1000);
 		return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())} ` +
 		       `${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
 	}
-	return Math.round(timeMs / 1000);
+	return Math.round(time);
 };
 
 const buildCsvText = (feedlist, csvtimeformat, csvnullvalues, csvheaders) => {
