@@ -44,7 +44,7 @@ load_js("Lib/vue.global.min.js");
 	<h3><?php echo tr('Data viewer'); ?></h3>
 	<div id="error" style="display:none"></div>
 
-	<div id="navigation" style="padding-bottom:5px;">
+	<div id="navigation" style="padding-bottom:5px;" v-show="!histogramMode">
 		<div class="input-prepend input-append" style="margin-bottom:0 !important">
 			<button class="btn graph_time_refresh" title="<?php echo tr('Refresh'); ?>" @click="onGraphTimeRefresh"><i class="icon-repeat"></i></button>
 			<select class="btn graph_time" style="width:110px; padding-left:5px" v-model="graphTimeHours" @change="onGraphTimeChange">
@@ -74,19 +74,19 @@ load_js("Lib/vue.global.min.js");
 		<div style="clear:both"></div>
 	</div>
 
-	<div id="histogram-controls" style="padding-bottom:5px; display:none;">
+	<div id="histogram-controls" style="padding-bottom:5px;" v-show="histogramMode">
 		<div class="input-prepend input-append">
 			<span class="add-on" style="width:100px"><b><?php echo tr('Histogram'); ?></b></span>
 			<span class="add-on" style="width:75px"><?php echo tr('Type'); ?></span>
-			<select id="histogram-type" style="width:150px">
+			<select style="width:150px" v-model="histogramType" @change="drawHistogram">
 				<option value="timeatvalue"><?php echo tr('Time at value'); ?></option>
 				<option value="kwhatpower"><?php echo tr('kWh at Power'); ?></option>
 			</select>
 			<span class="add-on" style="width:75px"><?php echo tr('Resolution'); ?></span>
-			<input id="histogram-resolution" type="text" style="width:60px" value="100">
+			<input type="text" style="width:60px" v-model="histogramResolution" @change="drawHistogram">
 		</div>
 
-		<button id="histogram-back" class="btn" style="float:right" @click="noop"><?php echo tr('Back to main view'); ?></button>
+		<button class="btn" style="float:right" @click="onHistogramBackClick"><?php echo tr('Back to main view'); ?></button>
 	</div>
 
 	<div id="legend"></div>
@@ -157,7 +157,7 @@ load_js("Lib/vue.global.min.js");
 
 		<div id="window-info"></div><br>
 
-		<div class="feed-options" :class="{hide: state.feedlist.length===0}">
+		<div class="feed-options" :class="{hide: state.feedlist.length===0 || histogramMode}" v-show="!histogramMode">
 			<div class="group-card" :class="{'tables-collapsed': tablesCollapsed}">
 				<div class="group-card-header feed-options-header" @click="toggleTablesCollapsed">
 					<span class="group-name feed-options-title"><?php echo tr('Feeds in view'); ?></span>
@@ -232,7 +232,7 @@ load_js("Lib/vue.global.min.js");
 										<option>3</option>
 									</select>
 								</td>
-								<td style="text-align:center"><button class="histogram btn" @click="noop"><?php echo tr('Histogram'); ?></button></td>
+								<td style="text-align:center"><button class="histogram btn" @click="onHistogramClick(feed.id)"><?php echo tr('Histogram'); ?></button></td>
 							</tr>
 						</tbody>
 					</table>
@@ -429,7 +429,11 @@ const GraphLayoutApp = {
 				csvnullvalues: "show",
 				csvheaders: "showNameTag",
 				feedlist: []
-			}
+			},
+			histogramMode: false,
+			activeHistogramFeed: null,
+			histogramType: 'timeatvalue',
+			histogramResolution: 1
 		};
 	},
 	computed: {
@@ -1300,7 +1304,7 @@ const GraphLayoutApp = {
 			for (var i = 0; i < feedlist.length; i++) {
 				var feed = feedlist[i] || {};
 				this.state.feedlist.push({
-					id: feed.id,
+					id: feed.id+'',
 					name: feed.name || '',
 					tag: feed.tag || '',
 					unit: feed.unit || '',
@@ -1744,6 +1748,72 @@ const GraphLayoutApp = {
 			this.calcIntervalForWindow(startMs, endMs);
 			this.syncWindowInputs(startMs, endMs);
 			this.renderChart();
+		},
+		onHistogramClick: function (feedid) {
+			var index = this.state.feedlist.findIndex((f) => f.id == feedid);
+			if (index === -1) return;
+
+			this.histogramMode = true;
+			this.activeHistogramFeed = feedid;
+
+			// Suggest resolution based on feed stats
+			var diff = this.state.feedlist[index].stats.diff || 100;
+			if (diff < 5000) this.histogramResolution = 10;
+			else if (diff < 100) this.histogramResolution = 0.1;
+			else this.histogramResolution = 1;
+
+			this.drawHistogram();
+		},
+		onHistogramBackClick: function () {
+			this.histogramMode = false;
+			this.activeHistogramFeed = null;
+			this.renderChart();
+		},
+		drawHistogram: function () {
+			if (!this.histogramMode || !this.activeHistogramFeed) return;
+
+			var index = this.state.feedlist.findIndex((f) => f.id == this.activeHistogramFeed);
+			if (index === -1) return;
+
+			var feed = this.state.feedlist[index];
+			var resolution = parseFloat(this.histogramResolution) || 1;
+			var buckets = this.calculateHistogramBuckets(feed.data, this.histogramType, resolution);
+
+			var plotData = Object.entries(buckets)
+				.map(([k, v]) => [Number(k), v])
+				.sort((a, b) => a[0] - b[0]);
+
+			var label = this.state.showtag ? (feed.tag + ': ') : '';
+			label += feed.name;
+
+			var placeholder = document.getElementById('placeholder');
+			if (!placeholder) return;
+
+			Flot.plot(placeholder, [{ label: label, data: plotData, color: feed.color || undefined }], {
+				series: { bars: { show: true, barWidth: resolution * 0.8 } },
+				grid:   { hoverable: true },
+				xaxis: { tickFormatter: (v) => v.toFixed(2) },
+				yaxis: { tickFormatter: (v) => this.histogramType === 'kwhatpower' ? v.toFixed(2) + ' kWh' : (v/3600).toFixed(1) + ' h' }
+			});
+		},
+		calculateHistogramBuckets: function (data, type, resolution) {
+			var buckets = {};
+			var val = 0;
+
+			for (var i = 1; i < data.length; i++) {
+				if (data[i][1] !== null) val = data[i][1];
+				var key = Math.round(val / resolution) * resolution;
+				if (buckets[key] === undefined) buckets[key] = 0;
+
+				var dt = (data[i][0] - data[i - 1][0]) * 0.001; // milliseconds to seconds
+				if (type === 'kwhatpower') {
+					buckets[key] += (val * dt) / (3600 * 1000); // Convert to kWh
+				} else if (type === 'timeatvalue') {
+					buckets[key] += dt; // Accumulate time in seconds
+				}
+			}
+
+			return buckets;
 		},
 		onYAxisBoundsChange: function () {
 			this.renderChart();
