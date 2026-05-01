@@ -572,6 +572,83 @@ const GraphLayoutApp = {
 			}
 			return processed;
 		},
+		buildProcessedDataForStats: function (feed, intervalSeconds, maxDuration, removeNullEnabled) {
+			var data = Array.isArray(feed.data)
+				? feed.data.map(function (pt) { return [pt[0], pt[1]]; })
+				: [];
+
+			if (removeNullEnabled && data.length > 1) {
+				data = this.fillShortNullGaps(data, intervalSeconds, maxDuration);
+			}
+
+			var scale = parseFloat(feed.scale);
+			if (!isFinite(scale)) scale = 1;
+			var offset = parseFloat(feed.offset);
+			if (!isFinite(offset)) offset = 0;
+
+			if (scale !== 1 || offset !== 0) {
+				data = data.map(function (pt) {
+					var val = Number(pt[1]);
+					if (!isFinite(val)) return [pt[0], pt[1]];
+					return [pt[0], val * scale + offset];
+				});
+			}
+
+			return data;
+		},
+		calculateFeedStats: function (data, timeInWindowSeconds) {
+			var sum = 0;
+			var countValid = 0;
+			var npoints = 0;
+			var npointsnull = 0;
+			var minval = 0;
+			var maxval = 0;
+
+			for (var i = 0; i < data.length; i++) {
+				var val = data[i][1];
+				if (val !== null) {
+					if (countValid === 0) {
+						minval = val;
+						maxval = val;
+					}
+					if (val > maxval) maxval = val;
+					if (val < minval) minval = val;
+					sum += val;
+					countValid++;
+				} else {
+					npointsnull++;
+				}
+				npoints++;
+			}
+
+			var mean = countValid > 0 ? sum / countValid : 0;
+			var variance = 0;
+			var varianceCount = 0;
+			for (var j = 0; j < data.length; j++) {
+				var v = data[j][1];
+				if (v !== null) {
+					variance += Math.pow(v - mean, 2);
+					varianceCount++;
+				}
+			}
+			var stdev = varianceCount > 0 ? Math.sqrt(variance / varianceCount) : 0;
+			var diff = countValid > 0 ? (maxval - minval) : 0;
+			var good = npoints - npointsnull;
+			var quality = npoints > 0 ? Math.round(100 * (1 - npointsnull / npoints)) : 0;
+			var wh = Math.round((mean * timeInWindowSeconds) / 3600);
+
+			return {
+				min: minval,
+				max: maxval,
+				diff: diff,
+				mean: mean,
+				stdev: stdev,
+				quality: quality,
+				good: good,
+				total: npoints,
+				wh: wh
+			};
+		},
 		formatCsvTimestamp: function (timeMs, startTimeMs) {
 			if (this.state.csvtimeformat === 'seconds') {
 				return Math.round((timeMs - startTimeMs) / 1000);
@@ -933,6 +1010,7 @@ const GraphLayoutApp = {
 			var range = this.getWindowRange();
 			var startMs = range.startMs;
 			var endMs = range.endMs;
+			var timeInWindowSeconds = (endMs - startMs) / 1000;
 
 			var options = {
 				lines: { fill: false, lineWidth: 2 },
@@ -964,6 +1042,16 @@ const GraphLayoutApp = {
 			if (rightHasExplicit) options.yaxes[1].autoScale = 'none';
 
 			var plotdata = this.buildPlotData();
+			var statsMaxDuration = parseFloat(this.state.removeNullMaxDuration);
+			if (!isFinite(statsMaxDuration) || statsMaxDuration <= 0) statsMaxDuration = 900;
+			var statsIntervalSeconds = parseFloat(this.state.interval);
+			if (!isFinite(statsIntervalSeconds) || statsIntervalSeconds <= 0) statsIntervalSeconds = 60;
+			var statsRemoveNullEnabled = !!this.state.removeNull && this.state.mode === 'interval' && statsIntervalSeconds < statsMaxDuration;
+			for (var s = 0; s < this.state.feedlist.length; s++) {
+				var statsFeed = this.state.feedlist[s];
+				var statsData = this.buildProcessedDataForStats(statsFeed, statsIntervalSeconds, statsMaxDuration, statsRemoveNullEnabled);
+				statsFeed.stats = this.calculateFeedStats(statsData, timeInWindowSeconds);
+			}
 
 			if (window.Flot && typeof window.Flot.plot === 'function') {
 				var plot = window.Flot.plot(placeholder, plotdata, options);
