@@ -86,7 +86,6 @@ load_js("Lib/vue.global.min.js");
 	</div>
 
 	<div id="info">
-		<div class="info-controls-panel">
 		<div class="input-prepend input-append" style="padding-right:5px">
 			<span class="add-on" style="width:50px"><?php echo tr('Start'); ?></span>
 			<input id="request-start" type="datetime-local" style="width:185px" v-model="startLocal">
@@ -116,22 +115,22 @@ load_js("Lib/vue.global.min.js");
 			</span>
 		</div>
 
-		<div class="info-axis-actions">
+		<div>
 			<div id="yaxis_left" class="input-append input-prepend" v-show="state.num_left > 0">
 				<span id="yaxis-left" class="add-on"><?php echo tr('Y-axis').' ('.tr('Left').')'; ?>:</span>
 				<span class="yaxis-minmax-label add-on"><?php echo tr('min'); ?></span>
-				<input class="yaxis-minmax" id="yaxis-min" type="text" v-model="state.yaxismin">
+				<input class="yaxis-minmax" id="yaxis-min" type="text" v-model="state.yaxismin" @change="onYAxisBoundsChange">
 				<span class="yaxis-minmax-label add-on"><?php echo tr('max'); ?></span>
-				<input class="yaxis-minmax" id="yaxis-max" type="text" v-model="state.yaxismax">
+				<input class="yaxis-minmax" id="yaxis-max" type="text" v-model="state.yaxismax" @change="onYAxisBoundsChange">
 				<button class="btn reset-yaxis" @click="resetYAxis('left')"><?php echo tr('Reset'); ?></button>
 			</div>
 
 			<div id="yaxis_right" class="input-append input-prepend" v-show="state.num_right > 0">
 				<span id="yaxis-right" class="add-on"><?php echo tr('Y-axis').' ('.tr('Right').')'; ?>:</span>
 				<span class="yaxis-minmax-label add-on"><?php echo tr('min'); ?></span>
-				<input class="yaxis-minmax" id="yaxis-min2" type="text" v-model="state.yaxismin2">
+				<input class="yaxis-minmax" id="yaxis-min2" type="text" v-model="state.yaxismin2" @change="onYAxisBoundsChange">
 				<span class="yaxis-minmax-label add-on"><?php echo tr('max'); ?></span>
-				<input class="yaxis-minmax" id="yaxis-max2" type="text" v-model="state.yaxismax2">
+				<input class="yaxis-minmax" id="yaxis-max2" type="text" v-model="state.yaxismax2" @change="onYAxisBoundsChange">
 				<button class="btn reset-yaxis" @click="resetYAxis('right')"><?php echo tr('Reset'); ?></button>
 			</div>
 
@@ -139,13 +138,12 @@ load_js("Lib/vue.global.min.js");
 			<button id="clear" class="btn" style="vertical-align:top" @click="noop"><?php echo tr('Clear All'); ?></button>
 		</div>
 
-		<div class="input-prepend input-append">
+		<div class="input-prepend input-append" v-show="state.mode==='interval'">
 			<span class="add-on"><?php echo tr('Remove null values'); ?>:</span>
-			<span class="add-on"><input type="checkbox" class="remove-null" style="margin-top:3px" v-model="state.removeNull"></span>
+			<span class="add-on"><input type="checkbox" class="remove-null" style="margin-top:3px" v-model="state.removeNull" @change="onRemoveNullChange"></span>
 			<span class="add-on"><?php echo tr('Max fill length'); ?>:</span>
-			<input type="text" class="remove-null-max-duration" style="width:60px" v-model="state.removeNullMaxDuration">
+			<input type="text" class="remove-null-max-duration" style="width:60px" v-model="state.removeNullMaxDuration" @change="onRemoveNullChange">
 			<span class="add-on"><?php echo tr('s'); ?></span>
-		</div>
 		</div>
 
 		<div id="window-info"></div><br>
@@ -294,11 +292,11 @@ load_js("Lib/vue.global.min.js");
 		</div>
 
 		<div class="input-prepend">
-			<button id="download-csv" class="csvoptions btn" v-show="state.showcsv" @click="noop"><?php echo tr('Download'); ?></button>
+			<button id="download-csv" class="csvoptions btn" v-show="state.showcsv" @click="onDownloadCsv"><?php echo tr('Download'); ?></button>
 		</div>
 
 		<div class="input-append">
-			<button class="csvoptions btn" id="copy-csv" type="button" v-show="state.showcsv" @click="noop"><?php echo tr('Copy'); ?> <i class="icon-share-alt"></i></button>
+			<button class="csvoptions btn" id="copy-csv" type="button" v-show="state.showcsv" @click="onCopyCsv"><?php echo tr('Copy'); ?> <i class="icon-share-alt"></i></button>
 		</div>
 
 		<span id="copy-csv-feedback" class="csvoptions" v-show="state.showcsv"></span>
@@ -445,6 +443,15 @@ const GraphLayoutApp = {
 		},
 		'state.showtag': function () {
 			this.renderChart();
+		},
+		'state.csvtimeformat': function () {
+			this.updateCsvText();
+		},
+		'state.csvnullvalues': function () {
+			this.updateCsvText();
+		},
+		'state.csvheaders': function () {
+			this.updateCsvText();
 		}
 	},
 	mounted: function () {
@@ -537,6 +544,143 @@ const GraphLayoutApp = {
 		onReload: function () {
 			var range = this.getWindowRange();
 			this.setWindowAndReload(range.startMs, range.endMs, false);
+		},
+		onRemoveNullChange: function () {
+			var maxDuration = parseFloat(this.state.removeNullMaxDuration);
+			if (!isFinite(maxDuration) || maxDuration <= 0) {
+				this.state.removeNullMaxDuration = "900";
+			}
+			this.renderChart();
+		},
+		fillShortNullGaps: function (data, intervalSeconds, maxDurationSeconds) {
+			var processed = data.map(function (pt) { return [pt[0], pt[1]]; });
+			var lastValidPos = 0;
+			for (var pos = 0; pos < processed.length; pos++) {
+				if (processed[pos][1] !== null) {
+					var nullTime = (pos - lastValidPos) * intervalSeconds;
+					if (nullTime < maxDurationSeconds) {
+						for (var x = lastValidPos + 1; x < pos; x++) {
+							processed[x][1] = processed[lastValidPos][1];
+						}
+					}
+					lastValidPos = pos;
+				}
+			}
+			return processed;
+		},
+		formatCsvTimestamp: function (timeMs, startTimeMs) {
+			if (this.state.csvtimeformat === 'seconds') {
+				return Math.round((timeMs - startTimeMs) / 1000);
+			}
+			if (this.state.csvtimeformat === 'datestr') {
+				var t = new Date(timeMs);
+				var pad = function (n) { return String(n).padStart(2, '0'); };
+				return t.getFullYear() + '-' + pad(t.getMonth() + 1) + '-' + pad(t.getDate()) + ' ' + pad(t.getHours()) + ':' + pad(t.getMinutes()) + ':' + pad(t.getSeconds());
+			}
+			return Math.round(timeMs / 1000);
+		},
+		buildCsvText: function () {
+			if (!this.state.feedlist.length) return '';
+
+			var firstFeedData = this.state.feedlist[0].data;
+			if (!Array.isArray(firstFeedData) || !firstFeedData.length) return '';
+
+			var nullValues = this.state.csvnullvalues;
+			var headers = this.state.csvheaders;
+			var showName = headers === 'showNameTag' || headers === 'showName';
+			var showTag = headers === 'showNameTag';
+			var csvout = '';
+			var line = [];
+			var values = [];
+			var startTime = firstFeedData[0][0];
+
+			if (showName || showTag) {
+				if (this.state.csvtimeformat === 'unix') line = ['Unix timestamp'];
+				if (this.state.csvtimeformat === 'seconds') line = ['Seconds since start'];
+				if (this.state.csvtimeformat === 'datestr') line = ['Date-time string'];
+
+				for (var h = 0; h < this.state.feedlist.length; h++) {
+					var headerFeed = this.state.feedlist[h];
+					var tagPart = showTag ? (headerFeed.tag || '') : '';
+					var namePart = showName ? (headerFeed.name || '') : '';
+					line.push(tagPart + (tagPart && namePart ? ':' : '') + namePart);
+				}
+				csvout = '"' + line.join('", "') + '"\n';
+			}
+
+			for (var z = 0; z < firstFeedData.length; z++) {
+				line = [this.formatCsvTimestamp(firstFeedData[z][0], startTime)];
+				var nullFound = false;
+
+				for (var f = 0; f < this.state.feedlist.length; f++) {
+					if (values[f] === undefined) values[f] = null;
+
+					var point = this.state.feedlist[f].data[z];
+					if (point === undefined) continue;
+
+					if (point[1] === null) nullFound = true;
+					if (point[1] !== null || nullValues === 'show') {
+						values[f] = point[1];
+					}
+
+					var outVal = values[f];
+					if (outVal !== null) {
+						var numeric = Number(outVal);
+						if (isFinite(numeric)) {
+							outVal = numeric.toFixed(this.state.feedlist[f].dp);
+						}
+					}
+					line.push(String(outVal));
+				}
+
+				if (nullValues === 'remove' && nullFound) {
+					continue;
+				}
+				csvout += line.join(', ') + '\n';
+			}
+
+			return csvout;
+		},
+		updateCsvText: function () {
+			if (!this.state.showcsv) return;
+			this.csvText = this.buildCsvText();
+		},
+		onDownloadCsv: function () {
+			if (!this.state.showcsv) return;
+			var csv = this.buildCsvText();
+			if (!csv) return;
+			this.csvText = csv;
+
+			var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+			var url = window.URL.createObjectURL(blob);
+			var link = document.createElement('a');
+			link.href = url;
+			link.download = 'emoncms-graph.csv';
+			document.body.appendChild(link);
+			link.click();
+			document.body.removeChild(link);
+			window.URL.revokeObjectURL(url);
+		},
+		onCopyCsv: function () {
+			if (!this.state.showcsv) return;
+			var csv = this.buildCsvText();
+			if (!csv) return;
+			this.csvText = csv;
+
+			var csvElement = document.getElementById('csv');
+			if (typeof copyToClipboardCustomMsg === 'function' && csvElement) {
+				copyToClipboardCustomMsg(csvElement, 'copy-csv-feedback', "<?php echo tr('Copied'); ?>", "<?php echo tr('Copy not supported'); ?>");
+				return;
+			}
+
+			if (navigator.clipboard && navigator.clipboard.writeText) {
+				navigator.clipboard.writeText(csv).then(function () {
+					var feedback = document.getElementById('copy-csv-feedback');
+					if (!feedback) return;
+					feedback.textContent = "<?php echo tr('Copied'); ?>";
+					setTimeout(function () { feedback.textContent = ''; }, 2000);
+				});
+			}
 		},
 		bindPlotEvents: function () {
 			var self = this;
@@ -713,13 +857,26 @@ const GraphLayoutApp = {
 		},
 		buildPlotData: function () {
 			var plotdata = [];
+			var removeNull = !!this.state.removeNull;
+			var maxDuration = parseFloat(this.state.removeNullMaxDuration);
+			var intervalSeconds = parseFloat(this.state.interval);
+			if (!isFinite(maxDuration) || maxDuration <= 0) maxDuration = 900;
+			if (!isFinite(intervalSeconds) || intervalSeconds <= 0) intervalSeconds = 60;
+			var nullGapFillEnabled = removeNull && this.state.mode === 'interval' && intervalSeconds < maxDuration;
+
 			for (var i = 0; i < this.state.feedlist.length; i++) {
 				var feed = this.state.feedlist[i];
-				var data = Array.isArray(feed.data) ? feed.data.slice() : [];
+				var data = Array.isArray(feed.data)
+					? feed.data.map(function (pt) { return [pt[0], pt[1]]; })
+					: [];
 				var scale = parseFloat(feed.scale);
 				if (!isFinite(scale)) scale = 1;
 				var offset = parseFloat(feed.offset);
 				if (!isFinite(offset)) offset = 0;
+
+				if (nullGapFillEnabled && data.length > 1) {
+					data = this.fillShortNullGaps(data, intervalSeconds, maxDuration);
+				}
 
 				if (!this.state.showmissing) {
 					data = data.filter(function (pt) { return pt[1] !== null; });
@@ -794,10 +951,13 @@ const GraphLayoutApp = {
 				touch: { pan: 'x', scale: 'x' }
 			};
 
-			if (this.state.yaxismin !== 'auto' && this.state.yaxismin !== '') options.yaxes[0].min = Number(this.state.yaxismin);
-			if (this.state.yaxismax !== 'auto' && this.state.yaxismax !== '') options.yaxes[0].max = Number(this.state.yaxismax);
-			if (this.state.yaxismin2 !== 'auto' && this.state.yaxismin2 !== '') options.yaxes[1].min = Number(this.state.yaxismin2);
-			if (this.state.yaxismax2 !== 'auto' && this.state.yaxismax2 !== '') options.yaxes[1].max = Number(this.state.yaxismax2);
+			var leftHasExplicit = false, rightHasExplicit = false;
+			if (this.state.yaxismin !== 'auto' && this.state.yaxismin !== '') { options.yaxes[0].min = parseFloat(this.state.yaxismin); leftHasExplicit = true; }
+			if (this.state.yaxismax !== 'auto' && this.state.yaxismax !== '') { options.yaxes[0].max = parseFloat(this.state.yaxismax); leftHasExplicit = true; }
+			if (leftHasExplicit) options.yaxes[0].autoScale = 'none';
+			if (this.state.yaxismin2 !== 'auto' && this.state.yaxismin2 !== '') { options.yaxes[1].min = parseFloat(this.state.yaxismin2); rightHasExplicit = true; }
+			if (this.state.yaxismax2 !== 'auto' && this.state.yaxismax2 !== '') { options.yaxes[1].max = parseFloat(this.state.yaxismax2); rightHasExplicit = true; }
+			if (rightHasExplicit) options.yaxes[1].autoScale = 'none';
 
 			var plotdata = this.buildPlotData();
 
@@ -819,6 +979,9 @@ const GraphLayoutApp = {
 						}
 					}
 				}
+				if (this.state.showcsv) {
+					this.csvText = this.buildCsvText();
+				}
 				return;
 			}
 
@@ -837,6 +1000,12 @@ const GraphLayoutApp = {
 		},
 		toggleCsv: function () {
 			this.state.showcsv = !this.state.showcsv;
+			if (this.state.showcsv) {
+				this.csvText = this.buildCsvText();
+			}
+		},
+		onYAxisBoundsChange: function () {
+			this.renderChart();
 		},
 		resetYAxis: function (side) {
 			if (side === "left") {
@@ -847,6 +1016,7 @@ const GraphLayoutApp = {
 				this.state.yaxismin2 = "auto";
 				this.state.yaxismax2 = "auto";
 			}
+			this.renderChart();
 		},
 		feedName: function (feed) {
 			if (this.state.showtag && feed.tag) return feed.tag + "/" + feed.name;
