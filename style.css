@@ -1,0 +1,202 @@
+/* Graph module styles */
+
+.content-container { max-width:1150px; }
+
+[v-cloak] {
+	visibility: hidden;
+}
+
+#tables {
+	overflow: hidden;
+	max-height: 2000px;
+	transition: max-height 0.25s ease-in-out;
+}
+
+.tables-collapsed #tables {
+	max-height: 0;
+}
+
+.collapse-icon {
+	display: inline-block;
+	transition: transform 0.2s ease;
+}
+
+.tables-collapsed .collapse-icon {
+	transform: rotate(-90deg);
+}
+
+#feed-options-table input,
+#feed-options-table select {
+	margin-bottom: 0;
+}
+
+#placeholder {
+	width: 100%;
+	height: 100%;
+}
+
+.layout-note {
+	margin-top: 10px;
+	color: #666;
+}
+
+.feed-options {
+    overflow-x: auto;
+}
+
+.feed-options #tables {
+    overflow-x: auto;
+}
+
+.feed-options-show-options,
+.feed-options-show-stats {
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+/* .hide does not use !important in core styles */
+.feed-options-show-options.hide,
+.feed-options-show-stats.hide {
+    display: none !important;
+}
+
+#feed-options-table td input[type="checkbox"],
+#feed-stats-table td input[type="checkbox"] {
+    vertical-align: middle;
+    margin: 0;
+    position: relative;
+    top: -1px;
+}
+
+#tooltip {
+    z-index: 1001;
+}
+
+#legend {
+    width: 100%;
+    float: right;
+    position: relative;
+    z-index: 2;
+    font-size: 13px;
+}
+
+#legend .grid-container {
+    margin: 1.3em 3em 0 3.2em;
+    position: relative;
+}
+
+#legend .col {
+    position: absolute;
+    top: 0;
+}
+
+#legend .right {
+    right: 0.8em;
+}
+
+#legend .left {
+    left: 0;
+}
+
+#legend .legendColorBox {
+    display: inline-block;
+    margin-right: 0.3em;
+}
+
+#legend [data-legend-series] a {
+    color: inherit;
+    outline: none;
+}
+.legendLayer rect.background { fill: transparent; }
+#legend .legendColorBox {
+    display: inline-block;
+    margin-right: 0.3em;
+}
+#legend .legendColorBox > div > div {
+    width: 0.3em !important;
+    border-width: 0.4em !important;
+}
+#legend .faded { opacity: 0.4; }
+
+/* ---- Info panel layout ---- */
+#showcontrols {
+    float: right;
+    margin-right: 22px;
+}
+#yaxis-left { width: 110px; }
+#yaxis-right { width: 110px; }
+.yaxis-minmax-label { width: 30px; }
+.yaxis-minmax { width: 50px !important; }
+#info { padding-top: 20px; }
+.table { margin-bottom: 0 !important; }
+.csvoptions { width: auto; }
+
+/* ---- Sidebar: feeds table ---- */
+#my_graphs {
+    width: 13rem;
+    overflow: hidden;
+    position: relative;
+}
+#my_graphs h4 a {
+    color: var(--l2-title);
+    display: block;
+}
+#my_graphs h4 a:hover { text-decoration: underline; }
+#my_graphs h5 { color: var(--l2-title); }
+#my_graphs input { width: 12rem; }
+#my_graphs select { width: 13rem; }
+
+table#feeds.table thead th {
+    border-top: 2px solid var(--bg-l2);
+    font-weight: normal !important;
+    color: var(--l2-title);
+    cursor: pointer;
+    transition: all .3s ease-in;
+    padding-left: 0;
+}
+table#feeds.table thead th:hover {
+    color: var(--l2-text);
+    text-decoration: underline;
+}
+table#feeds.table input[type="checkbox"] { margin: 0; }
+table#feeds.table tbody tr > * { border-color: var(--bg-l2); }
+table#feeds.table tbody tr th {
+    cursor: pointer;
+    transition: all .3s ease-in;
+    font-weight: normal;
+}
+table#feeds.table tbody tr th:hover { text-decoration: underline; }
+table#feeds.table tbody tr th.feed-title span { max-width: 9em; }
+table#feeds.table .caret {
+    border-top-color: currentColor !important;
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: .4em;
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 610px) {
+    #legend .col { position: relative; left: 0; }
+    #showcontrols { float: none; margin: 5px 0 0 0; }
+    .alert { margin-bottom: 5px; }
+    h3 { line-height: 20px; }
+    #yaxis-left { width: 80px; }
+    #yaxis-right { width: 80px; }
+    .yaxis-minmax-label { width: 20px; }
+    .yaxis-minmax { width: 35px !important; }
+    #info { padding-top: 5px; }
+    .input-append { margin-bottom: 5px !important; }
+}
+
+#legend .legendColorBox > div > div {
+    width: 0.3em !important;
+    border-width: 0.4em !important;
+}
+
+#legend .faded {
+    opacity: 0.4;
+}
+
+.legendLayer rect.background {
+    fill: transparent;
+}
