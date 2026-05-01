@@ -571,6 +571,7 @@ const GraphLayoutApp = {
 			if (next < 0 || next >= this.state.feedlist.length) return;
 			[this.state.feedlist[index], this.state.feedlist[next]] =
 			[this.state.feedlist[next],  this.state.feedlist[index]];
+			this.renderChart();
 		},
 
 		_setFeedPropRender(feed, prop, value) { feed[prop] = value; this.renderChart(); },

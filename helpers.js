@@ -126,8 +126,8 @@ const calculateFeedStats = (data, timeInWindowSeconds) => {
 
 	if (good === 0) return { min: 0, max: 0, diff: 0, mean: 0, stdev: 0, quality, good, total, wh: 0 };
 
-	const min  = Math.min(...valid);
-	const max  = Math.max(...valid);
+	const min  = valid.reduce((a, b) => b < a ? b : a);
+	const max  = valid.reduce((a, b) => b > a ? b : a);
 	const mean = valid.reduce((s, v) => s + v, 0) / good;
 	const stdev = Math.sqrt(valid.reduce((s, v) => s + (v - mean) ** 2, 0) / good);
 	const wh = Math.round((mean * timeInWindowSeconds) / 3600);
