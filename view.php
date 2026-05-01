@@ -21,6 +21,9 @@ if (isset($_GET['feedidsLH'])) $feedidsLH = $_GET['feedidsLH'];
 $feedidsRH = "";
 if (isset($_GET['feedidsRH'])) $feedidsRH = $_GET['feedidsRH'];
 
+$load_saved = "";
+if (isset($_GET['load'])) $load_saved = $_GET['load'];
+
 $min_feed_interval = 10;
 if (isset($settings['feed']['min_feed_interval'])) {
 	$min_feed_interval = (int) $settings['feed']['min_feed_interval'];
@@ -357,13 +360,17 @@ load_js("Lib/vue.global.min.js");
 						<option v-for="(g, i) in savedGraphs" :key="g.id" :value="i">[#{{ g.id }}] {{ g.name }}</option>
 					</select>
 					<h5><?php echo tr('Graph Name'); ?>:</h5>
-					<input id="graphName" v-model="savedGraphName" type="text" placeholder="<?php echo tr('Graph Name'); ?>" style="width:100%; margin-bottom:8px">
+					<input id="graphName" v-model="savedGraphName" type="text" placeholder="<?php echo tr('Graph Name'); ?>" style="width:100%; margin-bottom:8px" :disabled="!canWriteGraphs">
 					<small class="help-block">
 						<span v-if="savedGraphSelected > -1"><?php echo tr('Selected graph id'); ?>: {{ savedGraphs[savedGraphSelected].id }}</span>
 						<span v-else><?php echo tr('None selected'); ?></span>
 					</small>
-					<button type="button" class="btn" @click="noop"><?php echo tr('Delete'); ?></button>
-					<button type="button" class="btn" @click="noop"><?php echo tr('Save'); ?></button>
+					<small class="help-block" v-if="savedGraphSelected > -1">
+						{{ savedGraphChanged ? '<?php echo tr('Changed'); ?>' : '<?php echo tr('No changes'); ?>' }}
+					</small>
+					<button type="button" class="btn" @click="onDeleteSavedGraph" :disabled="!canWriteGraphs || savedGraphSelected < 0"><?php echo tr('Delete'); ?></button>
+					<button type="button" class="btn" @click="onSaveSavedGraph" :disabled="!canSaveSavedGraph"><?php echo tr('Save'); ?></button>
+					<small class="help-block" v-if="savedGraphStatus">{{ savedGraphStatus }}</small>
 				</div>
 			</div>
 		</Teleport>
@@ -378,6 +385,7 @@ var apikey = "<?php echo $apikey; ?>";
 var apikeystr = apikey !== '' ? '&apikey=' + apikey : '';
 var feedidsLH = "<?php echo $feedidsLH; ?>";
 var feedidsRH = "<?php echo $feedidsRH; ?>";
+var load_savegraphs = "<?php echo $load_saved; ?>";
 var session_write = <?php echo isset($session['write']) ? (int) $session['write'] : 0; ?>;
 var INTERVAL_LADDER = [1, 5, 10, 15, 20, 30, 60, 120, 180, 300, 600, 900, 1200, 1800, 3600, 7200, 10800, 14400, 18000, 21600, 43200, 86400];
 
@@ -395,6 +403,8 @@ const GraphLayoutApp = {
 			savedGraphSelected: -1,
 			savedGraphName: '',
 			savedGraphs: [],
+			savedGraphStatus: '',
+			savedGraphStatusTimeout: null,
 			feeds: [],
 			state: {
 				showmissing: true,
@@ -423,6 +433,29 @@ const GraphLayoutApp = {
 		};
 	},
 	computed: {
+		canWriteGraphs: function () {
+			return !!session_write;
+		},
+		selectedSavedGraph: function () {
+			var idx = Number(this.savedGraphSelected);
+			if (!isFinite(idx) || idx < 0 || idx >= this.savedGraphs.length) return null;
+			return this.savedGraphs[idx] || null;
+		},
+		savedGraphChanged: function () {
+			if (!this.selectedSavedGraph) return false;
+			var current = this.normalizeSavedGraphPayload(this.buildSavedGraphPayload());
+			var selected = this.normalizeSavedGraphPayload(this.selectedSavedGraph);
+			delete current.id;
+			delete selected.id;
+			return JSON.stringify(current) !== JSON.stringify(selected);
+		},
+		canSaveSavedGraph: function () {
+			if (!this.canWriteGraphs) return false;
+			var hasName = this.parseSavedGraphName(this.savedGraphName) !== '';
+			if (!hasName) return false;
+			if (this.selectedSavedGraph) return this.savedGraphChanged;
+			return true;
+		},
 		csvButtonLabel: function () {
 			return this.state.showcsv ? "<?php echo tr('Hide CSV Output'); ?>" : "<?php echo tr('Show CSV Output'); ?>";
 		},
@@ -448,6 +481,9 @@ const GraphLayoutApp = {
 		}
 	},
 	watch: {
+		savedGraphSelected: function (newVal) {
+			this.onSavedGraphSelectedChange(newVal);
+		},
 		'state.showlegend': function () {
 			this.renderChart();
 		},
@@ -471,6 +507,11 @@ const GraphLayoutApp = {
 		if (typeof menu !== 'undefined' && menu.show_l3) {
 			menu.show_l3();
 		}
+		this._onHashChange = this.onSavedHashChange.bind(this);
+		window.addEventListener('hashchange', this._onHashChange);
+		if (this.canWriteGraphs) {
+			this.fetchSavedGraphs();
+		}
 		this.fetchFeeds();
 		this.fetchFeedData();
 		this.bindPlotEvents();
@@ -480,6 +521,8 @@ const GraphLayoutApp = {
 	beforeUnmount: function () {
 		this.unbindPlotEvents();
 		this.removeTooltip();
+		if (this._onHashChange) window.removeEventListener('hashchange', this._onHashChange);
+		if (this.savedGraphStatusTimeout) clearTimeout(this.savedGraphStatusTimeout);
 		window.removeEventListener('resize', this.onWindowResize);
 	},
 	methods: {
@@ -1052,10 +1095,350 @@ const GraphLayoutApp = {
 				.then(function (data) {
 					if (!Array.isArray(data)) return;
 					self.feeds = data;
-					self.applyUrlFeedSelection();
+					if (!load_savegraphs) self.applyUrlFeedSelection();
 				})
 				.catch(function (err) {
 					console.error('Failed to fetch feed list:', err);
+				});
+		},
+		showSavedGraphStatus: function (message) {
+			this.savedGraphStatus = message;
+			if (this.savedGraphStatusTimeout) {
+				clearTimeout(this.savedGraphStatusTimeout);
+			}
+			var self = this;
+			this.savedGraphStatusTimeout = setTimeout(function () {
+				self.savedGraphStatus = '';
+			}, 2000);
+		},
+		getSavedHashId: function () {
+			var hash = String(window.location.hash || '');
+			if (hash.indexOf('#/Saved/') !== 0) return '';
+			return hash.replace('#/Saved/', '').trim();
+		},
+		setSavedHashId: function (id) {
+			if (!id) return;
+			window.location.hash = '/Saved/' + id;
+		},
+		clearSavedHash: function () {
+			history.replaceState(null, null, ' ');
+		},
+		onSavedHashChange: function () {
+			if (!this.canWriteGraphs || !this.savedGraphs.length) return;
+			var hashId = this.getSavedHashId();
+			if (!hashId) return;
+			for (var i = 0; i < this.savedGraphs.length; i++) {
+				if (String(this.savedGraphs[i].id) === String(hashId)) {
+					if (this.savedGraphSelected !== i) this.savedGraphSelected = i;
+					break;
+				}
+			}
+		},
+		parseSavedGraphName: function (name) {
+			return String(name || '').trim();
+		},
+		sortSavedGraphs: function (graphs) {
+			return graphs.slice().sort(function (a, b) {
+				var an = String(a && a.name ? a.name : '').toLowerCase();
+				var bn = String(b && b.name ? b.name : '').toLowerCase();
+				if (an < bn) return -1;
+				if (an > bn) return 1;
+				return 0;
+			});
+		},
+		normalizeSavedGraphPayload: function (graph) {
+			var g = graph || {};
+			var normalizeFeed = function (feed) {
+				var f = feed || {};
+				return {
+					id: String(f.id || ''),
+					name: String(f.name || ''),
+					tag: String(f.tag || ''),
+					unit: String(f.unit || ''),
+					yaxis: Number(f.yaxis) === 2 ? 2 : 1,
+					fill: Number(f.fill) ? 1 : 0,
+					stack: Number(f.stack) ? 1 : 0,
+					scale: String(f.scale !== undefined ? f.scale : '1'),
+					offset: String(f.offset !== undefined ? f.offset : '0'),
+					delta: Number(f.delta) ? 1 : 0,
+					average: Number(f.average) ? 1 : 0,
+					dp: isFinite(Number(f.dp)) ? Number(f.dp) : 1,
+					plottype: String(f.plottype || 'lines'),
+					color: String(f.color || '')
+				};
+			};
+
+			return {
+				id: g.id !== undefined ? String(g.id) : '',
+				name: this.parseSavedGraphName(g.name),
+				start: isFinite(Number(g.start)) ? Number(g.start) : 0,
+				end: isFinite(Number(g.end)) ? Number(g.end) : 0,
+				interval: isFinite(Number(g.interval)) ? Number(g.interval) : 60,
+				mode: String(g.mode || 'interval'),
+				limitinterval: Number(g.limitinterval) ? 1 : 0,
+				fixinterval: !!g.fixinterval,
+				floatingtime: Number(g.floatingtime) ? 1 : 0,
+				yaxismin: g.yaxismin !== undefined ? String(g.yaxismin) : 'auto',
+				yaxismax: g.yaxismax !== undefined ? String(g.yaxismax) : 'auto',
+				yaxismin2: g.yaxismin2 !== undefined ? String(g.yaxismin2) : 'auto',
+				yaxismax2: g.yaxismax2 !== undefined ? String(g.yaxismax2) : 'auto',
+				showmissing: !!g.showmissing,
+				showtag: !!g.showtag,
+				showlegend: g.showlegend === undefined ? true : !!g.showlegend,
+				showcsv: !!g.showcsv,
+				csvtimeformat: String(g.csvtimeformat || 'unix'),
+				csvnullvalues: String(g.csvnullvalues || 'show'),
+				csvheaders: String(g.csvheaders || 'showNameTag'),
+				feedlist: (Array.isArray(g.feedlist) ? g.feedlist : []).map(normalizeFeed)
+			};
+		},
+		fetchSavedGraphs: function () {
+			var self = this;
+			return fetch(path + 'graph/getall' + (apikey ? '?apikey=' + apikey : ''))
+				.then(function (r) {
+					if (!r.ok) throw new Error('HTTP ' + r.status);
+					return r.json();
+				})
+				.then(function (result) {
+					var list = Array.isArray(result) ? result : ((result && result.user) ? result.user : []);
+					self.savedGraphs = self.sortSavedGraphs(list);
+
+					var targetId = String(load_savegraphs || self.getSavedHashId() || '');
+					if (!targetId) return;
+					for (var i = 0; i < self.savedGraphs.length; i++) {
+						if (String(self.savedGraphs[i].id) === targetId) {
+							self.savedGraphSelected = i;
+							break;
+						}
+					}
+				})
+				.catch(function (err) {
+					console.error('Failed to fetch saved graphs:', err);
+				});
+		},
+		buildSavedGraphPayload: function () {
+			var range = this.getWindowRange();
+			var payload = {
+				name: this.parseSavedGraphName(this.savedGraphName),
+				start: range.startMs,
+				end: range.endMs,
+				interval: Number(this.state.interval) || 60,
+				mode: this.state.mode || 'interval',
+				limitinterval: this.state.limitinterval ? 1 : 0,
+				fixinterval: !!this.state.fixinterval,
+				floatingtime: this.state.floatingtime ? 1 : 0,
+				yaxismin: this.state.yaxismin,
+				yaxismax: this.state.yaxismax,
+				yaxismin2: this.state.yaxismin2,
+				yaxismax2: this.state.yaxismax2,
+				showmissing: !!this.state.showmissing,
+				showtag: !!this.state.showtag,
+				showlegend: !!this.state.showlegend,
+				showcsv: !!this.state.showcsv,
+				csvtimeformat: this.state.csvtimeformat,
+				csvnullvalues: this.state.csvnullvalues,
+				csvheaders: this.state.csvheaders,
+				feedlist: this.state.feedlist.map(function (feed) {
+					return {
+						id: feed.id,
+						name: feed.name,
+						tag: feed.tag,
+						unit: feed.unit,
+						yaxis: feed.yaxis,
+						fill: feed.fill,
+						scale: feed.scale,
+						offset: feed.offset,
+						delta: feed.delta,
+						average: feed.average,
+						dp: feed.dp,
+						plottype: feed.plottype,
+						color: feed.color
+					};
+				})
+			};
+
+			if (this.savedGraphSelected > -1 && this.savedGraphs[this.savedGraphSelected]) {
+				payload.id = this.savedGraphs[this.savedGraphSelected].id;
+			}
+
+			return payload;
+		},
+		applySavedGraphPayload: function (graph) {
+			if (!graph || typeof graph !== 'object') return;
+
+			var start = Number(graph.start);
+			var end = Number(graph.end);
+			if (!isFinite(start) || !isFinite(end) || start >= end) {
+				var fallback = this.getWindowRange();
+				start = fallback.startMs;
+				end = fallback.endMs;
+			}
+
+			this.syncWindowInputs(start, end);
+			this.state.mode = graph.mode || 'interval';
+			this.state.interval = String(graph.interval || this.state.interval || 60);
+			this.state.limitinterval = !!Number(graph.limitinterval);
+			this.state.fixinterval = !!graph.fixinterval;
+			this.state.floatingtime = !!Number(graph.floatingtime);
+
+			this.state.yaxismin = graph.yaxismin !== undefined ? graph.yaxismin : 'auto';
+			this.state.yaxismax = graph.yaxismax !== undefined ? graph.yaxismax : 'auto';
+			this.state.yaxismin2 = graph.yaxismin2 !== undefined ? graph.yaxismin2 : 'auto';
+			this.state.yaxismax2 = graph.yaxismax2 !== undefined ? graph.yaxismax2 : 'auto';
+
+			this.state.showmissing = !!graph.showmissing;
+			this.state.showtag = !!graph.showtag;
+			this.state.showlegend = graph.showlegend === undefined ? true : !!graph.showlegend;
+			this.state.showcsv = !!graph.showcsv;
+			this.state.csvtimeformat = graph.csvtimeformat || 'unix';
+			this.state.csvnullvalues = graph.csvnullvalues || 'show';
+			this.state.csvheaders = graph.csvheaders || 'showNameTag';
+
+			this.hiddenFeedIds.clear();
+			this.state.feedlist.splice(0);
+			var feedlist = Array.isArray(graph.feedlist) ? graph.feedlist : [];
+			for (var i = 0; i < feedlist.length; i++) {
+				var feed = feedlist[i] || {};
+				this.state.feedlist.push({
+					id: feed.id,
+					name: feed.name || '',
+					tag: feed.tag || '',
+					unit: feed.unit || '',
+					yaxis: Number(feed.yaxis) === 2 ? 2 : 1,
+					fill: Number(feed.fill) ? 1 : 0,
+					stack: Number(feed.stack) ? 1 : 0,
+					scale: feed.scale !== undefined ? String(feed.scale) : '1',
+					offset: feed.offset !== undefined ? String(feed.offset) : '0',
+					delta: Number(feed.delta) ? 1 : 0,
+					average: Number(feed.average) ? 1 : 0,
+					dp: isFinite(Number(feed.dp)) ? Number(feed.dp) : 1,
+					plottype: feed.plottype || 'lines',
+					color: feed.color || '',
+					autoColor: '',
+					stats: {},
+					data: []
+				});
+			}
+
+			this.fetchFeedData();
+			if (this.state.showcsv) this.updateCsvText();
+		},
+		onSavedGraphSelectedChange: function (newVal) {
+			var idx = Number(newVal);
+			if (!isFinite(idx) || idx < 0 || idx >= this.savedGraphs.length) {
+				this.savedGraphName = '';
+				this.clearSavedHash();
+				return;
+			}
+
+			var selected = this.savedGraphs[idx];
+			if (!selected) return;
+			this.savedGraphName = selected.name || '';
+			this.setSavedHashId(selected.id);
+
+			if (selected.feedlist) {
+				this.applySavedGraphPayload(selected);
+				return;
+			}
+
+			var self = this;
+			fetch(path + 'graph/get?id=' + encodeURIComponent(String(selected.id)) + (apikey ? '&apikey=' + apikey : ''))
+				.then(function (r) {
+					if (!r.ok) throw new Error('HTTP ' + r.status);
+					return r.json();
+				})
+				.then(function (graph) {
+					self.applySavedGraphPayload(graph);
+				})
+				.catch(function (err) {
+					console.error('Failed to load saved graph:', err);
+				});
+		},
+		onSaveSavedGraph: function () {
+			if (!this.canWriteGraphs) return;
+			var name = this.parseSavedGraphName(this.savedGraphName);
+			if (!name) {
+				this.showSavedGraphStatus('<?php echo tr('Graph Name'); ?> required');
+				return;
+			}
+
+			var payload = this.buildSavedGraphPayload();
+			payload.name = encodeURIComponent(name);
+
+			var self = this;
+			var params = new URLSearchParams();
+			var endpoint = 'graph/create';
+			if (payload.id) {
+				endpoint = 'graph/update';
+				params.set('id', String(payload.id));
+			}
+			params.set('data', JSON.stringify(payload));
+
+			fetch(path + endpoint + (apikey ? '?apikey=' + apikey : ''), {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+				body: params.toString()
+			})
+				.then(function (r) {
+					if (!r.ok) throw new Error('HTTP ' + r.status);
+					return r.json();
+				})
+				.then(function (res) {
+					if (!res || res.success === false) throw new Error((res && res.message) || 'Save failed');
+					self.showSavedGraphStatus(res.message || '<?php echo tr('Saved'); ?>');
+
+					var createdId = null;
+					if (!payload.id && res.message) {
+						var match = String(res.message).match(/graph saved id\s*:\s*(\d+)/i);
+						if (match) createdId = match[1];
+					}
+
+					self.fetchSavedGraphs().then(function () {
+						var targetId = createdId || payload.id;
+						if (!targetId) return;
+						for (var i = 0; i < self.savedGraphs.length; i++) {
+							if (String(self.savedGraphs[i].id) === String(targetId)) {
+								self.savedGraphSelected = i;
+								break;
+							}
+						}
+					});
+				})
+				.catch(function (err) {
+					self.showSavedGraphStatus('Error: ' + err.message);
+				});
+		},
+		onDeleteSavedGraph: function () {
+			if (!this.canWriteGraphs) return;
+			if (this.savedGraphSelected < 0 || this.savedGraphSelected >= this.savedGraphs.length) return;
+
+			var graph = this.savedGraphs[this.savedGraphSelected];
+			if (!graph) return;
+			if (!window.confirm('Delete ' + (graph.name || '') + ' (#' + graph.id + ')?')) return;
+
+			var self = this;
+			var params = new URLSearchParams();
+			params.set('id', String(graph.id));
+
+			fetch(path + 'graph/delete' + (apikey ? '?apikey=' + apikey : ''), {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+				body: params.toString()
+			})
+				.then(function (r) {
+					if (!r.ok) throw new Error('HTTP ' + r.status);
+					return r.json();
+				})
+				.then(function (res) {
+					if (!res || res.success === false) throw new Error((res && res.message) || 'Delete failed');
+					self.savedGraphSelected = -1;
+					self.savedGraphName = '';
+					self.clearSavedHash();
+					self.showSavedGraphStatus(res.message || '<?php echo tr('Deleted'); ?>');
+					return self.fetchSavedGraphs();
+				})
+				.catch(function (err) {
+					self.showSavedGraphStatus('Error: ' + err.message);
 				});
 		},
 		parseFeedIds: function (raw) {
