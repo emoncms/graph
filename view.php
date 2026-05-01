@@ -378,6 +378,7 @@ const GraphLayoutApp = {
 		return {
 			graphTimeHours: "168",
 			tablesCollapsed: false,
+			hiddenFeedIds: new Set(),
 			startLocal: "2026-04-24T00:00",
 			endLocal: "2026-05-01T00:00",
 			csvText: "time,solar,house\n1713916800,450,320\n1713917400,520,360",
@@ -470,10 +471,119 @@ const GraphLayoutApp = {
 	},
 	beforeUnmount: function () {
 		this.unbindPlotEvents();
+		this.removeTooltip();
 		window.removeEventListener('resize', this.onWindowResize);
 	},
 	methods: {
 		noop: function () {},
+		removeTooltip: function () {
+			var existing = document.getElementById('tooltip');
+			if (existing && existing.parentNode) existing.parentNode.removeChild(existing);
+		},
+		showTooltip: function (x, y, contents, bgColor) {
+			this.removeTooltip();
+			if (!(window.jQuery && typeof window.jQuery === 'function')) return;
+
+			var offset = 15;
+			var elem = window.jQuery('<div id="tooltip">' + contents + '</div>').css({
+				position: 'absolute',
+				display: 'none',
+				'font-weight': 'bold',
+				border: '1px solid rgb(255, 221, 221)',
+				padding: '2px',
+				'background-color': bgColor,
+				opacity: '0.8'
+			}).appendTo('body').fadeIn(200);
+
+			var elemY = y - elem.height() - offset;
+			var elemX = x - elem.width() - offset;
+			if (elemY < 0) elemY = 0;
+			if (elemX < 0) elemX = 0;
+			elem.css({ top: elemY, left: elemX });
+		},
+		getFeedUnit: function (feedid) {
+			for (var i = 0; i < this.feeds.length; i++) {
+				if (String(this.feeds[i].id) === String(feedid)) {
+					return this.feeds[i].unit || '';
+				}
+			}
+			for (var j = 0; j < this.state.feedlist.length; j++) {
+				if (String(this.state.feedlist[j].id) === String(feedid)) {
+					return this.state.feedlist[j].unit || '';
+				}
+			}
+			return '';
+		},
+		attachLegendToggle: function (plot) {
+			if (!plot || typeof plot.getData !== 'function') return;
+
+			var placeholder = typeof plot.getPlaceholder === 'function' ? plot.getPlaceholder() : null;
+			var legendHost = null;
+			if (placeholder && placeholder.querySelector) {
+				legendHost = placeholder.querySelector('.legend');
+			}
+			if (!legendHost) {
+				var legendContainer = document.getElementById('legend');
+				if (legendContainer) {
+					legendHost = legendContainer.querySelector('.legend') || legendContainer;
+				}
+			}
+			if (!legendHost) return;
+
+			legendHost.style.pointerEvents = 'auto';
+			var series = plot.getData();
+			var groups = Array.prototype.slice.call(legendHost.querySelectorAll('svg > g'));
+			if (!groups.length) return;
+
+			for (var i = 0; i < groups.length; i++) {
+				var group = groups[i];
+				var seriesItem = series[i];
+				if (!seriesItem) continue;
+
+				var isHidden = this.hiddenFeedIds.has(seriesItem.id);
+				group.style.cursor = 'pointer';
+				group.style.opacity = isHidden ? '0.4' : '1';
+
+				var fresh = group.cloneNode(true);
+				group.parentNode.replaceChild(fresh, group);
+				fresh.style.cursor = 'pointer';
+				fresh.style.opacity = isHidden ? '0.4' : '1';
+
+				fresh.addEventListener('click', (function (index, vm) {
+					return function () {
+						var current = plot.getData();
+						var currentSeries = current[index];
+						if (!currentSeries) return;
+						var feed = vm.state.feedlist.find(function (f) {
+							return String(f.id) === String(currentSeries.id);
+						});
+						if (!feed) return;
+
+						var nowHidden = vm.hiddenFeedIds.has(currentSeries.id);
+						var show = nowHidden;
+						if (nowHidden) vm.hiddenFeedIds.delete(currentSeries.id);
+						else vm.hiddenFeedIds.add(currentSeries.id);
+
+						if (currentSeries.lines) {
+							var showLines = (feed.plottype === 'lines' || feed.plottype === 'steps') ? show : false;
+							currentSeries.lines = Object.assign({}, currentSeries.lines, { show: showLines });
+						}
+						if (currentSeries.bars) {
+							var showBars = feed.plottype === 'bars' ? show : false;
+							currentSeries.bars = Object.assign({}, currentSeries.bars, { show: showBars });
+						}
+						if (currentSeries.points) {
+							var showPoints = feed.plottype === 'points' ? show : false;
+							currentSeries.points = Object.assign({}, currentSeries.points, { show: showPoints });
+						}
+
+						plot.setData(current);
+						plot.draw();
+						vm.attachLegendToggle(plot);
+					};
+				})(i, this));
+			}
+		},
 		msToDatetimeLocal: function (ms) {
 			var d = new Date(ms);
 			var pad = function (n) { return String(n).padStart(2, '0'); };
@@ -793,9 +903,58 @@ const GraphLayoutApp = {
 				}, 250);
 			};
 
+			this._onPlotHover = function (event) {
+				if (!event.detail || event.detail.length < 2) {
+					self.removeTooltip();
+					self._previousHoverPoint = null;
+					return;
+				}
+
+				var item = event.detail[1];
+				if (!item) {
+					self.removeTooltip();
+					self._previousHoverPoint = null;
+					return;
+				}
+
+				var datapoint = item.datapoint;
+				if (!datapoint) {
+					self.removeTooltip();
+					self._previousHoverPoint = null;
+					return;
+				}
+
+				var datapointKey = String(datapoint[0]) + ':' + String(datapoint[1]) + ':' + String(datapoint[2]);
+				if (datapointKey === self._previousHoverPoint) return;
+				self._previousHoverPoint = datapointKey;
+
+				var feed = self.state.feedlist[item.seriesIndex] || null;
+				var feedid = feed ? feed.id : null;
+				var dp = feed && isFinite(Number(feed.dp)) ? Number(feed.dp) : 0;
+				var isStack = typeof datapoint[2] !== 'undefined';
+				var raw = isStack ? (datapoint[1] - datapoint[2]) : datapoint[1];
+				if (!isFinite(raw)) {
+					self.removeTooltip();
+					return;
+				}
+
+				var value = raw.toFixed(dp) + ' ' + self.getFeedUnit(feedid);
+				var date = typeof moment !== 'undefined' ? moment(datapoint[0]).format('llll') : new Date(datapoint[0]).toString();
+				var ts = datapoint[0] / 1000;
+
+				self.showTooltip(
+					item.pageX,
+					item.pageY,
+					'<span style="font-size:11px">' + item.series.label + '</span><br>' + value + '<br>' +
+					'<span style="font-size:11px">' + date + '</span><br><span style="font-size:11px">(' + ts + ')</span>',
+					'#fff'
+				);
+			};
+
 			placeholder.addEventListener('plotselected', this._onPlotSelected);
 			placeholder.addEventListener('plotpan', this._onPlotPanOrZoom);
 			placeholder.addEventListener('plotzoom', this._onPlotPanOrZoom);
+			placeholder.addEventListener('plothover', this._onPlotHover);
 		},
 		unbindPlotEvents: function () {
 			var placeholder = document.getElementById('placeholder');
@@ -805,7 +964,11 @@ const GraphLayoutApp = {
 				placeholder.removeEventListener('plotpan', this._onPlotPanOrZoom);
 				placeholder.removeEventListener('plotzoom', this._onPlotPanOrZoom);
 			}
+			if (this._onPlotHover) {
+				placeholder.removeEventListener('plothover', this._onPlotHover);
+			}
 			if (this._panZoomTimeout) clearTimeout(this._panZoomTimeout);
+			this.removeTooltip();
 		},
 		getWindowRange: function () {
 			var startMs = Date.parse(this.startLocal);
@@ -985,15 +1148,16 @@ const GraphLayoutApp = {
 					stack: stacked,
 					id: feed.id
 				};
+				var isHidden = this.hiddenFeedIds.has(feed.id);
 				if (feed.color) series.color = feed.color;
 
-				if (feed.plottype === 'lines') series.lines = { show: true, fill: fillVal, lineWidth: 2 };
-				if (feed.plottype === 'bars') series.bars = { show: true, fill: fillVal, align: 'center', barWidth: 45 * 60 * 1000 };
-				if (feed.plottype === 'points') series.points = { show: true, radius: 3 };
-				if (feed.plottype === 'steps') series.lines = { show: true, fill: fillVal, steps: true };
+				if (feed.plottype === 'lines') series.lines = { show: !isHidden, fill: fillVal, lineWidth: 2 };
+				if (feed.plottype === 'bars') series.bars = { show: !isHidden, fill: fillVal, align: 'center', barWidth: 45 * 60 * 1000 };
+				if (feed.plottype === 'points') series.points = { show: !isHidden, radius: 3 };
+				if (feed.plottype === 'steps') series.lines = { show: !isHidden, fill: fillVal, steps: true };
 
 				if (!series.lines && !series.bars && !series.points) {
-					series.lines = { show: true, fill: fillVal, lineWidth: 2 };
+					series.lines = { show: !isHidden, fill: fillVal, lineWidth: 2 };
 				}
 
 				plotdata.push(series);
@@ -1003,7 +1167,6 @@ const GraphLayoutApp = {
 		},
 		renderChart: function () {
 			var placeholder = document.getElementById('placeholder');
-			var legendEl = document.getElementById('legend');
 			if (!placeholder) return;
 			this.graphResize();
 
@@ -1028,7 +1191,7 @@ const GraphLayoutApp = {
 				],
 				grid: { hoverable: true, clickable: true },
 				selection: { mode: 'x', color: '#e8cfac', visualization: 'fill' },
-				legend: { show: this.state.showlegend, position: 'nw', container: legendEl || null },
+				legend: { show: this.state.showlegend, position: 'nw' },
 				toggle: { scale: 'visible' },
 				touch: { pan: 'x', scale: 'x' }
 			};
@@ -1055,6 +1218,7 @@ const GraphLayoutApp = {
 
 			if (window.Flot && typeof window.Flot.plot === 'function') {
 				var plot = window.Flot.plot(placeholder, plotdata, options);
+				this.attachLegendToggle(plot);
 				if (plot && typeof plot.getData === 'function') {
 					var rendered = plot.getData();
 					for (var i = 0; i < rendered.length; i++) {
@@ -1097,6 +1261,9 @@ const GraphLayoutApp = {
 			}
 		},
 		onClearAll: function () {
+			this.hiddenFeedIds.clear();
+			this._previousHoverPoint = null;
+			this.removeTooltip();
 			this.state.feedlist.splice(0);
 			this.state.mode = 'interval';
 			this.state.fixinterval = false;
