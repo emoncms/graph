@@ -15,6 +15,12 @@ global $path, $session, $settings;
 $apikey = "";
 if (isset($_GET['apikey'])) $apikey = $_GET['apikey'];
 
+$feedidsLH = "";
+if (isset($_GET['feedidsLH'])) $feedidsLH = $_GET['feedidsLH'];
+
+$feedidsRH = "";
+if (isset($_GET['feedidsRH'])) $feedidsRH = $_GET['feedidsRH'];
+
 $min_feed_interval = 10;
 if (isset($settings['feed']['min_feed_interval'])) {
 	$min_feed_interval = (int) $settings['feed']['min_feed_interval'];
@@ -370,6 +376,8 @@ var path = "<?php echo $path; ?>";
 var min_feed_interval = <?php echo $min_feed_interval; ?>;
 var apikey = "<?php echo $apikey; ?>";
 var apikeystr = apikey !== '' ? '&apikey=' + apikey : '';
+var feedidsLH = "<?php echo $feedidsLH; ?>";
+var feedidsRH = "<?php echo $feedidsRH; ?>";
 var session_write = <?php echo isset($session['write']) ? (int) $session['write'] : 0; ?>;
 var INTERVAL_LADDER = [1, 5, 10, 15, 20, 30, 60, 120, 180, 300, 600, 900, 1200, 1800, 3600, 7200, 10800, 14400, 18000, 21600, 43200, 86400];
 
@@ -1042,11 +1050,76 @@ const GraphLayoutApp = {
 					return r.json();
 				})
 				.then(function (data) {
-					if (Array.isArray(data)) self.feeds = data;
+					if (!Array.isArray(data)) return;
+					self.feeds = data;
+					self.applyUrlFeedSelection();
 				})
 				.catch(function (err) {
 					console.error('Failed to fetch feed list:', err);
 				});
+		},
+		parseFeedIds: function (raw) {
+			if (raw === undefined || raw === null) return [];
+			var text = String(raw).trim();
+			if (!text) return [];
+			return text.split(',')
+				.map(function (part) { return Number(String(part).trim()); })
+				.filter(function (id) { return isFinite(id) && id > 0; });
+		},
+		findFeedById: function (feedid) {
+			for (var i = 0; i < this.feeds.length; i++) {
+				if (String(this.feeds[i].id) === String(feedid)) return this.feeds[i];
+			}
+			return null;
+		},
+		addInitialFeed: function (feedMeta, yaxis) {
+			if (!feedMeta) return;
+
+			for (var i = 0; i < this.state.feedlist.length; i++) {
+				if (String(this.state.feedlist[i].id) === String(feedMeta.id)) {
+					this.state.feedlist[i].yaxis = yaxis;
+					return;
+				}
+			}
+
+			this.state.feedlist.push(Object.assign({
+				plottype: 'lines',
+				fill: 0,
+				stack: 0,
+				scale: '1',
+				offset: '0',
+				delta: 0,
+				average: 0,
+				dp: 1,
+				yaxis: yaxis,
+				stats: {},
+				data: [],
+				autoColor: ''
+			}, feedMeta));
+		},
+		getPathFeedIds: function () {
+			var pathName = window.location.pathname || '';
+			var parts = pathName.split('graph/');
+			if (parts.length < 2) return [];
+			var afterGraph = parts[parts.length - 1].split('/')[0];
+			if (!afterGraph) return [];
+			return this.parseFeedIds(afterGraph);
+		},
+		applyUrlFeedSelection: function () {
+			var leftIds = this.getPathFeedIds();
+			leftIds = leftIds.concat(this.parseFeedIds(typeof feedidsLH !== 'undefined' ? feedidsLH : ''));
+			var rightIds = this.parseFeedIds(typeof feedidsRH !== 'undefined' ? feedidsRH : '');
+
+			if (!leftIds.length && !rightIds.length) return;
+
+			for (var i = 0; i < leftIds.length; i++) {
+				this.addInitialFeed(this.findFeedById(leftIds[i]), 1);
+			}
+			for (var j = 0; j < rightIds.length; j++) {
+				this.addInitialFeed(this.findFeedById(rightIds[j]), 2);
+			}
+
+			this.fetchFeedData();
 		},
 		toggleTag: function (tag) {
 			this.collapsedTags[tag] = !this.collapsedTags[tag];
