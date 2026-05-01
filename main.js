@@ -6,7 +6,7 @@ const GH = window.GraphHelpers;
 
 /* ── Tiny fetch helpers ──────────────────────────────────────────────────── */
 
-const apiUrl  = (endpoint, extra = '') => `${path}${endpoint}${apikey ? `?apikey=${apikey}` : ''}${extra}`;
+const apiUrl  = endpoint => `${path}${endpoint}${apikey ? `?apikey=${apikey}` : ''}`;
 const getJson = url => fetch(url).then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); });
 const postJson = (url, params) => fetch(url, {
 	method: 'POST',
@@ -51,7 +51,7 @@ const GraphLayoutApp = {
 
 		savedGraphChanged() {
 			if (!this.selectedSavedGraph) return false;
-			const strip = g => { const c = this.normalizeSavedGraphPayload(g); delete c.id; return c; };
+			const strip = g => { const c = GH.normalizeSavedGraphPayload(g); delete c.id; return c; };
 			return JSON.stringify(strip(this.buildSavedGraphPayload())) !==
 			       JSON.stringify(strip(this.selectedSavedGraph));
 		},
@@ -144,9 +144,7 @@ const GraphLayoutApp = {
 				?? '';
 		},
 
-		feedName(feed) {
-			return (this.state.showtag && feed.tag) ? `${feed.tag}/${feed.name}` : feed.name;
-		},
+		feedName(feed) { return GH.buildFeedLabel(feed, this.state.showtag); },
 
 		feedColor(feed) {
 			return GH.normalizeColor(feed.color) || GH.normalizeColor(feed.autoColor) || '#000000';
@@ -236,7 +234,6 @@ const GraphLayoutApp = {
 			this.fetchFeedData();
 		},
 
-		onGraphTimeChange()   { this.onGraphTimeRefresh(); },
 		onReload()            { const r = this.getWindowRange(); this.setWindowAndReload(r.startMs, r.endMs, false); },
 
 		onGraphTimeRefresh() {
@@ -613,7 +610,7 @@ const GraphLayoutApp = {
 			this._previousHoverPoint = null;
 			this.removeTooltip();
 			this.state.feedlist.splice(0);
-			this.applySavedGraphState({});
+			GH.applyGraphState(this.state, {});
 			Object.assign(this.state, GH.GRAPH_CLEAR_EXTRA_DEFAULTS);
 
 			const endMs   = Math.round(Date.now() / 1000) * 1000;
@@ -640,9 +637,8 @@ const GraphLayoutApp = {
 		},
 
 		applyUrlFeedSelection() {
-			const leftIds  = [...this.getPathFeedIds(),
-			                  ...GH.parseFeedIds(typeof feedidsLH !== 'undefined' ? feedidsLH : '')];
-			const rightIds = GH.parseFeedIds(typeof feedidsRH !== 'undefined' ? feedidsRH : '');
+			const leftIds  = [...this.getPathFeedIds(), ...GH.parseFeedIds(feedidsLH)];
+			const rightIds = GH.parseFeedIds(feedidsRH);
 			if (!leftIds.length && !rightIds.length) return;
 
 			for (const id of leftIds)  this.addInitialFeed(this.findFeedById(id), 1);
@@ -677,20 +673,12 @@ const GraphLayoutApp = {
 		},
 
 		findSavedGraphIndexById(id) {
-			const savedGraphs = Array.isArray(this.savedGraphs) ? this.savedGraphs : [];
-			return savedGraphs.findIndex(g => String(g.id) === String(id));
+			return this.savedGraphs.findIndex(g => String(g.id) === String(id));
 		},
 
 		// Apply persisted graph-level settings onto the live reactive state object
 		// without replacing the state reference that Vue is tracking.
 		applySavedGraphState(savedState) { GH.applyGraphState(this.state, savedState); },
-
-		// This takes a saved graph object, cleans it up, and converts it into one 
-		// standard format so the rest of the code can work with it consistently.
-		normalizeSavedGraphPayload: graph => GH.normalizeSavedGraphPayload(graph),
-
-		// Turn saved feed data back into the full feed object the graph screen uses.
-		buildStateFeedFromSaved: feed => GH.buildStateFeedFromSaved(feed),
 
 		// Build the payload sent to create/update endpoints from the current window,
 		// graph settings, and visible feed configuration.
@@ -712,7 +700,7 @@ const GraphLayoutApp = {
 		// window if the saved timestamps are missing or invalid.
 		applySavedGraphPayload(graph) {
 			if (!graph || typeof graph !== 'object') return;
-			const normalized = this.normalizeSavedGraphPayload(graph);
+			const normalized = GH.normalizeSavedGraphPayload(graph);
 			const { startMs, endMs } = this.getWindowRange();
 			let { start: s, end: e } = normalized;
 			if (!isFinite(s) || !isFinite(e) || s >= e) { s = startMs; e = endMs; }
@@ -720,7 +708,7 @@ const GraphLayoutApp = {
 			this.syncWindowInputs(s, e);
 			this.applySavedGraphState(normalized);
 			this.hiddenFeedIds.clear();
-			this.state.feedlist.splice(0, Infinity, ...normalized.feedlist.map(f => this.buildStateFeedFromSaved(f)));
+			this.state.feedlist.splice(0, Infinity, ...normalized.feedlist.map(GH.buildStateFeedFromSaved));
 			this.fetchFeedData();
 			if (this.state.showcsv) this.updateCsvText();
 		},

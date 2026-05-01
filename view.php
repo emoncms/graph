@@ -21,9 +21,6 @@ $min_feed_interval = 10;
 if (isset($settings['feed']['min_feed_interval'])) {
 	$min_feed_interval = (int) $settings['feed']['min_feed_interval'];
 }
-?>
-
-<?php
 load_css("Modules/graph/style.css");
 load_js("Lib/flot-5.1.0.min.js");
 load_js("Lib/misc/clipboard.js");
@@ -38,7 +35,7 @@ load_js("Lib/vue.global.min.js");
 	<div id="navigation" style="padding-bottom:5px;" v-show="!histogramMode">
 		<div class="input-prepend input-append" style="margin-bottom:0 !important">
 			<button class="btn graph_time_refresh" title="<?php echo tr('Refresh'); ?>" @click="onGraphTimeRefresh"><i class="icon-repeat"></i></button>
-			<select class="btn graph_time" style="width:110px; padding-left:5px" v-model="graphTimeHours" @change="onGraphTimeChange">
+			<select class="btn graph_time" style="width:110px; padding-left:5px" v-model="graphTimeHours" @change="onGraphTimeRefresh">
 				<option value="1"><?php echo tr('1 hour'); ?></option>
 				<option value="6"><?php echo tr('6 hours'); ?></option>
 				<option value="12"><?php echo tr('12 hours'); ?></option>
