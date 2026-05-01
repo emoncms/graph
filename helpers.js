@@ -1,0 +1,305 @@
+/* ─────────────────────────────────────────────────────────────────────────── *
+ *  GraphHelpers  –  pure utility module, no DOM / Vue dependencies
+ * ─────────────────────────────────────────────────────────────────────────── */
+
+const INTERVAL_LADDER = [
+	1, 5, 10, 15, 20, 30,
+	60, 120, 180, 300, 600, 900, 1200, 1800,
+	3600, 7200, 10800, 14400, 18000, 21600, 43200, 86400,
+];
+
+const GRAPH_STATE_SCHEMA = {
+	interval:      { default: 60,             coerce: v => (isFinite(Number(v)) ? Number(v) : 60) },
+	mode:          { default: 'interval',     coerce: v => String(v || 'interval') },
+	limitinterval: { default: 1,              coerce: v => (Number(v) ? 1 : 0) },
+	fixinterval:   { default: false,          coerce: v => !!v },
+	floatingtime:  { default: 0,              coerce: v => (Number(v) ? 1 : 0) },
+	yaxismin:      { default: 'auto',         coerce: v => (v !== undefined ? String(v) : 'auto') },
+	yaxismax:      { default: 'auto',         coerce: v => (v !== undefined ? String(v) : 'auto') },
+	yaxismin2:     { default: 'auto',         coerce: v => (v !== undefined ? String(v) : 'auto') },
+	yaxismax2:     { default: 'auto',         coerce: v => (v !== undefined ? String(v) : 'auto') },
+	showmissing:   { default: true,           coerce: v => !!v },
+	showtag:       { default: false,          coerce: v => !!v },
+	showlegend:    { default: true,           coerce: v => (v === undefined ? true : !!v) },
+	showcsv:       { default: false,          coerce: v => !!v },
+	csvtimeformat: { default: 'unix',         coerce: v => String(v || 'unix') },
+	csvnullvalues: { default: 'show',         coerce: v => String(v || 'show') },
+	csvheaders:    { default: 'showNameTag',  coerce: v => String(v || 'showNameTag') },
+};
+
+const GRAPH_CLEAR_EXTRA_DEFAULTS = {
+	showStats: false,
+	removeNull: false,
+	removeNullMaxDuration: '900',
+};
+
+/* ── Translations ────────────────────────────────────────────────────────── */
+
+const translateGraph = key => {
+	const t = (typeof window !== 'undefined' && graphTranslations) || {};
+	return Object.prototype.hasOwnProperty.call(t, key) ? t[key] : key;
+};
+
+/* ── Graph State ─────────────────────────────────────────────────────────── */
+
+const normalizeGraphState = (source = {}) =>
+	Object.fromEntries(
+		Object.entries(GRAPH_STATE_SCHEMA).map(([key, { coerce }]) => [key, coerce(source[key])])
+	);
+
+const applyGraphState = (target, source) => {
+	const normalized = normalizeGraphState(source);
+	Object.assign(target, normalized);
+	target.interval = String(target.interval);
+};
+
+const createDefaultGraphState = () => ({
+	...normalizeGraphState({}),
+	...GRAPH_CLEAR_EXTRA_DEFAULTS,
+	num_left: 1,
+	num_right: 1,
+	feedlist: [],
+});
+
+/* ── Time Helpers ────────────────────────────────────────────────────────── */
+
+const pad2 = n => String(n).padStart(2, '0');
+
+const msToDatetimeLocal = ms => {
+	const d = new Date(ms);
+	return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}` +
+	       `T${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+};
+
+const toMsFromPlotValue = value => (value < 1e12 ? value * 1000 : value);
+
+const pickIntervalForWindow = (startMs, endMs, minStep) => {
+	const windowSecs  = (endMs - startMs) / 1000;
+	const raw         = windowSecs / 600;
+	const resolvedMin = isFinite(Number(minStep)) ? Number(minStep) : 10;
+	return (
+		INTERVAL_LADDER.find(step => step >= raw && step >= resolvedMin) ??
+		INTERVAL_LADDER.at(-1)
+	);
+};
+
+/* ── Series Processing ───────────────────────────────────────────────────── */
+
+const fillShortNullGaps = (data, intervalSeconds, maxDurationSeconds) => {
+	const out = data.map(pt => [pt[0], pt[1]]);
+	let lastValid = 0;
+
+	for (let i = 0; i < out.length; i++) {
+		if (out[i][1] !== null) {
+			if ((i - lastValid) * intervalSeconds < maxDurationSeconds) {
+				for (let x = lastValid + 1; x < i; x++) out[x][1] = out[lastValid][1];
+			}
+			lastValid = i;
+		}
+	}
+	return out;
+};
+
+const applyScaleOffset = (data, scale, offset) => {
+	if (scale === 1 && offset === 0) return data;
+	return data.map(([t, v]) => {
+		const n = Number(v);
+		return [t, isFinite(n) ? n * scale + offset : v];
+	});
+};
+
+const buildProcessedDataForStats = (feed, intervalSeconds, maxDuration, removeNullEnabled) => {
+	let data = Array.isArray(feed.data) ? feed.data.map(pt => [pt[0], pt[1]]) : [];
+
+	if (removeNullEnabled && data.length > 1) {
+		data = fillShortNullGaps(data, intervalSeconds, maxDuration);
+	}
+
+	const scale  = isFinite(parseFloat(feed.scale))  ? parseFloat(feed.scale)  : 1;
+	const offset = isFinite(parseFloat(feed.offset)) ? parseFloat(feed.offset) : 0;
+	return applyScaleOffset(data, scale, offset);
+};
+
+const calculateFeedStats = (data, timeInWindowSeconds) => {
+	const valid = data.map(([, v]) => v).filter(v => v !== null);
+	const total = data.length;
+	const good  = valid.length;
+	const quality = total > 0 ? Math.round(100 * good / total) : 0;
+
+	if (good === 0) return { min: 0, max: 0, diff: 0, mean: 0, stdev: 0, quality, good, total, wh: 0 };
+
+	const min  = Math.min(...valid);
+	const max  = Math.max(...valid);
+	const mean = valid.reduce((s, v) => s + v, 0) / good;
+	const stdev = Math.sqrt(valid.reduce((s, v) => s + (v - mean) ** 2, 0) / good);
+	const wh = Math.round((mean * timeInWindowSeconds) / 3600);
+
+	return { min, max, diff: max - min, mean, stdev, quality, good, total, wh };
+};
+
+/* ── CSV ─────────────────────────────────────────────────────────────────── */
+
+const formatCsvTimestamp = (timeMs, startTimeMs, csvtimeformat) => {
+	if (csvtimeformat === 'seconds') return Math.round((timeMs - startTimeMs) / 1000);
+	if (csvtimeformat === 'datestr') {
+		const d = new Date(timeMs);
+		return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())} ` +
+		       `${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
+	}
+	return Math.round(timeMs / 1000);
+};
+
+const buildCsvText = (feedlist, csvtimeformat, csvnullvalues, csvheaders) => {
+	if (!feedlist.length) return '';
+	const firstData = feedlist[0].data;
+	if (!Array.isArray(firstData) || !firstData.length) return '';
+
+	const showName = csvheaders === 'showNameTag' || csvheaders === 'showName';
+	const showTag  = csvheaders === 'showNameTag';
+	const startTime = firstData[0][0];
+
+	let csv = '';
+
+	if (showName || showTag) {
+		const TIME_LABELS = { unix: 'Unix timestamp', seconds: 'Seconds since start', datestr: 'Date-time string' };
+		const header = [TIME_LABELS[csvtimeformat] ?? 'Unix timestamp', ...feedlist.map(f => {
+			const tag  = showTag  ? (f.tag  || '') : '';
+			const name = showName ? (f.name || '') : '';
+			return tag + (tag && name ? ':' : '') + name;
+		})];
+		csv = '"' + header.join('", "') + '"\n';
+	}
+
+	const lastValues = new Array(feedlist.length).fill(null);
+
+	for (let z = 0; z < firstData.length; z++) {
+		const line = [formatCsvTimestamp(firstData[z][0], startTime, csvtimeformat)];
+		let nullFound = false;
+
+		for (let f = 0; f < feedlist.length; f++) {
+			const point = feedlist[f].data[z];
+			if (point === undefined) continue;
+
+			if (point[1] === null) nullFound = true;
+			if (point[1] !== null || csvnullvalues === 'show') lastValues[f] = point[1];
+
+			const v = lastValues[f];
+			const numeric = v !== null ? Number(v) : NaN;
+			line.push(v === null ? String(v) : isFinite(numeric) ? numeric.toFixed(feedlist[f].dp) : String(v));
+		}
+
+		if (csvnullvalues === 'remove' && nullFound) continue;
+		csv += line.join(', ') + '\n';
+	}
+
+	return csv;
+};
+
+/* ── Saved Graphs & Feed Utilities ───────────────────────────────────────── */
+
+const parseSavedGraphName = name => String(name || '').trim();
+
+const sortSavedGraphs = graphs =>
+	[...graphs].sort((a, b) => {
+		const an = String(a?.name ?? '').toLowerCase();
+		const bn = String(b?.name ?? '').toLowerCase();
+		return an < bn ? -1 : an > bn ? 1 : 0;
+	});
+
+const normalizeSavedFeed = (feed = {}) => ({
+	id:       String(feed.id   || ''),
+	name:     String(feed.name || ''),
+	tag:      String(feed.tag  || ''),
+	unit:     String(feed.unit || ''),
+	yaxis:    Number(feed.yaxis) === 2 ? 2 : 1,
+	fill:     Number(feed.fill)  ? 1 : 0,
+	stack:    Number(feed.stack) ? 1 : 0,
+	scale:    String(feed.scale  !== undefined ? feed.scale  : '1'),
+	offset:   String(feed.offset !== undefined ? feed.offset : '0'),
+	delta:    Number(feed.delta)   ? 1 : 0,
+	average:  Number(feed.average) ? 1 : 0,
+	dp:       isFinite(Number(feed.dp)) ? Number(feed.dp) : 1,
+	plottype: String(feed.plottype || 'lines'),
+	color:    String(feed.color || ''),
+});
+
+const parseFeedIds = raw => {
+	const text = String(raw ?? '').trim();
+	if (!text) return [];
+	return text.split(',')
+		.map(p => Number(p.trim()))
+		.filter(id => isFinite(id) && id > 0);
+};
+
+const defaultFeedProps = () => ({
+	plottype: 'lines', fill: 0, stack: 0,
+	scale: '1', offset: '0',
+	delta: 0, average: 0, dp: 1,
+	stats: {}, data: [], autoColor: '',
+});
+
+/* ── Histogram ───────────────────────────────────────────────────────────── */
+
+const calculateHistogramBuckets = (data, type, resolution) => {
+	const buckets = {};
+	let val = 0;
+
+	for (let i = 1; i < data.length; i++) {
+		if (data[i][1] !== null) val = data[i][1];
+		const key = Math.round(val / resolution) * resolution;
+		buckets[key] ??= 0;
+
+		const dt = (data[i][0] - data[i - 1][0]) * 0.001;
+		buckets[key] += type === 'kwhatpower'
+			? (val * dt) / (3600 * 1000)
+			: dt; // timeatvalue
+	}
+
+	return buckets;
+};
+
+/* ── Color Utilities ─────────────────────────────────────────────────────── */
+
+const normalizeColor = color => {
+	if (!color || typeof color !== 'string') return '';
+
+	if (color.startsWith('#')) {
+		if (color.length === 4) return '#' + [...color.slice(1)].map(c => c + c).join('');
+		return color.length === 7 ? color : '';
+	}
+
+	const rgb = color.match(/^rgba?\((\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i);
+	if (rgb) {
+		const clamp = n => Math.max(0, Math.min(255, parseInt(n, 10) || 0));
+		const toHex = n => n.toString(16).padStart(2, '0');
+		return '#' + toHex(clamp(rgb[1])) + toHex(clamp(rgb[2])) + toHex(clamp(rgb[3]));
+	}
+
+	return '';
+};
+
+/* ── Public API ──────────────────────────────────────────────────────────── */
+
+window.GraphHelpers = {
+	INTERVAL_LADDER,
+	GRAPH_CLEAR_EXTRA_DEFAULTS,
+	normalizeGraphState,
+	applyGraphState,
+	createDefaultGraphState,
+    tr: translateGraph,
+	msToDatetimeLocal,
+	toMsFromPlotValue,
+	pickIntervalForWindow,
+	fillShortNullGaps,
+	buildProcessedDataForStats,
+	calculateFeedStats,
+	buildCsvText,
+	formatCsvTimestamp,
+	parseSavedGraphName,
+	sortSavedGraphs,
+	normalizeSavedFeed,
+	parseFeedIds,
+	defaultFeedProps,
+	calculateHistogramBuckets,
+	normalizeColor,
+};

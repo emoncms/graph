@@ -1,0 +1,851 @@
+/* ─────────────────────────────────────────────────────────────────────────── *
+ *  GraphLayoutApp  –  Vue 3 component for the graph view
+ * ─────────────────────────────────────────────────────────────────────────── */
+
+const GH = window.GraphHelpers;
+
+/* ── Tiny fetch helpers ──────────────────────────────────────────────────── */
+
+const apiUrl  = (endpoint, extra = '') => `${path}${endpoint}${apikey ? `?apikey=${apikey}` : ''}${extra}`;
+const getJson = url => fetch(url).then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); });
+const postJson = (url, params) => fetch(url, {
+	method: 'POST',
+	headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+	body: params.toString(),
+}).then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); });
+
+/* ─────────────────────────────────────────────────────────────────────────── */
+
+const GraphLayoutApp = {
+	data: () => ({
+		graphTimeHours: '168',
+		tablesCollapsed: false,
+		hiddenFeedIds: new Set(),
+		startLocal: '2026-04-24T00:00',
+		endLocal:   '2026-05-01T00:00',
+		csvText: '',
+		collapsedTags: {},
+		savedGraphsCollapsed: false,
+		savedGraphSelected: -1,
+		savedGraphName: '',
+		savedGraphs: [],
+		savedGraphStatus: '',
+		savedGraphStatusTimeout: null,
+		feeds: [],
+		state: GH.createDefaultGraphState(),
+		histogramMode: false,
+		activeHistogramFeed: null,
+		histogramType: 'timeatvalue',
+		histogramResolution: 1,
+	}),
+
+	/* ── Computed ──────────────────────────────────────────────────────────── */
+	computed: {
+		canWriteGraphs: () => !!session_write,
+
+		selectedSavedGraph() {
+			const idx = Number(this.savedGraphSelected);
+			return (isFinite(idx) && idx >= 0 && idx < this.savedGraphs.length)
+				? this.savedGraphs[idx] ?? null : null;
+		},
+
+		savedGraphChanged() {
+			if (!this.selectedSavedGraph) return false;
+			const strip = g => { const c = this.normalizeSavedGraphPayload(g); delete c.id; return c; };
+			return JSON.stringify(strip(this.buildSavedGraphPayload())) !==
+			       JSON.stringify(strip(this.selectedSavedGraph));
+		},
+
+		canSaveSavedGraph() {
+			if (!this.canWriteGraphs || !GH.parseSavedGraphName(this.savedGraphName)) return false;
+			return this.selectedSavedGraph ? this.savedGraphChanged : true;
+		},
+
+		csvButtonLabel() { return GH.tr(this.state.showcsv ? 'Hide CSV Output' : 'Show CSV Output'); },
+
+		feedsByTag() {
+			return this.feeds.reduce((acc, feed) => {
+				const tag = feed.tag || 'undefined';
+				(acc[tag] ??= []).push(feed);
+				return acc;
+			}, {});
+		},
+
+		leftChecked()  { return new Set(this.state.feedlist.filter(f => f.yaxis !== 2).map(f => f.id)); },
+		rightChecked() { return new Set(this.state.feedlist.filter(f => f.yaxis === 2).map(f => f.id)); },
+	},
+
+	/* ── Watchers ──────────────────────────────────────────────────────────── */
+	watch: {
+		savedGraphSelected(v) { this.onSavedGraphSelectedChange(v); },
+		'state.showlegend':    'renderChart',
+		'state.showmissing':   'renderChart',
+		'state.showtag':       'renderChart',
+		'state.csvtimeformat': 'updateCsvText',
+		'state.csvnullvalues': 'updateCsvText',
+		'state.csvheaders':    'updateCsvText',
+	},
+
+	/* ── Lifecycle ─────────────────────────────────────────────────────────── */
+	mounted() {
+		menu?.show_l3?.();
+
+		this._onHashChange = this.onSavedHashChange.bind(this);
+		window.addEventListener('hashchange', this._onHashChange);
+		window.addEventListener('resize', this.onWindowResize);
+
+		if (this.canWriteGraphs) this.fetchSavedGraphs();
+		this.fetchFeeds();
+		this.fetchFeedData();
+		this.bindPlotEvents();
+		this.onWindowResize();
+	},
+
+	beforeUnmount() {
+		this.unbindPlotEvents();
+		this.removeTooltip();
+		window.removeEventListener('hashchange', this._onHashChange);
+		window.removeEventListener('resize', this.onWindowResize);
+		clearTimeout(this.savedGraphStatusTimeout);
+	},
+
+	/* ── Methods ───────────────────────────────────────────────────────────── */
+	methods: {
+		noop() {},
+
+		/* ── Tooltip ─────────────────────────────────────────────────────── */
+		removeTooltip() {
+			document.getElementById('tooltip')?.remove();
+		},
+
+		showTooltip(x, y, contents, bgColor) {
+			this.removeTooltip();
+			if (!(window.jQuery && typeof window.jQuery === 'function')) return;
+
+			const offset = 15;
+			const elem = window.jQuery(`<div id="tooltip">${contents}</div>`).css({
+				position: 'absolute', display: 'none',
+				'font-weight': 'bold', border: '1px solid rgb(255,221,221)',
+				padding: '2px', 'background-color': bgColor, opacity: '0.8',
+			}).appendTo('body').fadeIn(200);
+
+			const top  = Math.max(0, y - elem.height() - offset);
+			const left = Math.max(0, x - elem.width()  - offset);
+			elem.css({ top, left });
+		},
+
+		/* ── Feed Utilities ──────────────────────────────────────────────── */
+		getFeedUnit(feedid) {
+			const id = String(feedid);
+			return this.feeds.find(f => String(f.id) === id)?.unit
+				?? this.state.feedlist.find(f => String(f.id) === id)?.unit
+				?? '';
+		},
+
+		feedName(feed) {
+			return (this.state.showtag && feed.tag) ? `${feed.tag}/${feed.name}` : feed.name;
+		},
+
+		feedColor(feed) {
+			return GH.normalizeColor(feed.color) || GH.normalizeColor(feed.autoColor) || '#000000';
+		},
+
+		findFeedById(feedid) {
+			return this.feeds.find(f => String(f.id) === String(feedid)) ?? null;
+		},
+
+		/* ── Legend Toggle ───────────────────────────────────────────────── */
+		attachLegendToggle(plot) {
+			if (!plot || typeof plot.getData !== 'function') return;
+
+			const placeholder = plot.getPlaceholder?.();
+			const legendHost  = placeholder?.querySelector?.('.legend')
+				?? document.getElementById('legend')?.querySelector('.legend')
+				?? document.getElementById('legend');
+			if (!legendHost) return;
+
+			legendHost.style.pointerEvents = 'auto';
+			const series = plot.getData();
+			const groups = [...legendHost.querySelectorAll('svg > g')];
+			if (!groups.length) return;
+
+			groups.forEach((group, i) => {
+				const seriesItem = series[i];
+				if (!seriesItem) return;
+
+				const hidden = this.hiddenFeedIds.has(seriesItem.id);
+				const fresh  = group.cloneNode(true);
+				Object.assign(fresh.style, { cursor: 'pointer', opacity: hidden ? '0.4' : '1' });
+				group.parentNode.replaceChild(fresh, group);
+
+				fresh.addEventListener('click', () => {
+					const current     = plot.getData();
+					const cur         = current[i];
+					if (!cur) return;
+					const feed        = this.state.feedlist.find(f => String(f.id) === String(cur.id));
+					if (!feed) return;
+
+					const nowHidden = this.hiddenFeedIds.has(cur.id);
+					nowHidden ? this.hiddenFeedIds.delete(cur.id) : this.hiddenFeedIds.add(cur.id);
+					const show = nowHidden;
+
+					if (cur.lines)  cur.lines  = { ...cur.lines,  show: show && feed.plottype !== 'bars'   && feed.plottype !== 'points' };
+					if (cur.bars)   cur.bars   = { ...cur.bars,   show: show && feed.plottype === 'bars' };
+					if (cur.points) cur.points = { ...cur.points, show: show && feed.plottype === 'points' };
+
+					plot.setData(current);
+					plot.draw();
+					this.attachLegendToggle(plot);
+				});
+			});
+		},
+
+		/* ── Window / Time ───────────────────────────────────────────────── */
+		syncWindowInputs(startMs, endMs) {
+			this.startLocal = GH.msToDatetimeLocal(startMs);
+			this.endLocal   = GH.msToDatetimeLocal(endMs);
+		},
+
+		getWindowRange() {
+			const start = Date.parse(this.startLocal);
+			const end   = Date.parse(this.endLocal);
+			if (!isFinite(start) || !isFinite(end) || start >= end) {
+				const now = Date.now();
+				return { startMs: now - 86400_000, endMs: now };
+			}
+			return { startMs: start, endMs: end };
+		},
+
+		calcIntervalForWindow(startMs, endMs) {
+			if (this.state.mode !== 'interval' || this.state.fixinterval) return;
+			this.state.interval = String(GH.pickIntervalForWindow(startMs, endMs, min_feed_interval ?? 10));
+		},
+
+		setWindowAndReload(startMs, endMs, floating) {
+			this.state.floatingtime = floating ? 1 : 0;
+			this.calcIntervalForWindow(startMs, endMs);
+			this.syncWindowInputs(startMs, endMs);
+			this.fetchFeedData();
+		},
+
+		onGraphTimeChange()   { this.onGraphTimeRefresh(); },
+		onReload()            { const r = this.getWindowRange(); this.setWindowAndReload(r.startMs, r.endMs, false); },
+
+		onGraphTimeRefresh() {
+			const hours  = Number(this.graphTimeHours) || 168;
+			const endMs  = Math.round(Date.now() / 1000) * 1000;
+			this.setWindowAndReload(endMs - hours * 3600_000, endMs, true);
+		},
+
+		onZoomOut() {
+			const { startMs, endMs } = this.getWindowRange();
+			const mid = (startMs + endMs) / 2, half = endMs - startMs;
+			this.setWindowAndReload(mid - half, mid + half, false);
+		},
+
+		onZoomIn() {
+			const { startMs, endMs } = this.getWindowRange();
+			const mid = (startMs + endMs) / 2, quarter = (endMs - startMs) / 4;
+			this.setWindowAndReload(mid - quarter, mid + quarter, false);
+		},
+
+		onPan(direction) {
+			const { startMs, endMs } = this.getWindowRange();
+			const shift = (endMs - startMs) * 0.2 * direction;
+			this.setWindowAndReload(startMs + shift, endMs + shift, false);
+		},
+
+		/* ── Data Fetch ──────────────────────────────────────────────────── */
+		fetchFeedData() {
+			if (!this.state.feedlist.length) { this.renderChart(); return; }
+
+			const { startMs, endMs } = this.getWindowRange();
+			const interval = this.state.mode !== 'interval'
+				? this.state.mode
+				: (parseInt(this.state.interval, 10) || 60);
+
+			const params = new URLSearchParams({
+				ids:           this.state.feedlist.map(f => f.id).join(','),
+				start:         String(startMs),
+				end:           String(endMs),
+				interval:      String(interval),
+				skipmissing:   this.state.showmissing ? '0' : '1',
+				limitinterval: this.state.limitinterval ? '1' : '0',
+				average:       this.state.feedlist.map(f => f.average || 0).join(','),
+				delta:         this.state.feedlist.map(f => f.delta   || 0).join(','),
+				timeformat:    'unix',
+			});
+			if (apikey) params.set('apikey', apikey);
+
+			getJson(`${path}feed/data.json?${params}`)
+				.then(response => {
+					const byId = {};
+					if (Array.isArray(response)) {
+						for (const item of response) {
+							if (item) byId[String(item.feedid)] = Array.isArray(item.data) ? item.data : [];
+						}
+					}
+					for (const feed of this.state.feedlist) {
+						feed.data = byId[String(feed.id)] || [];
+					}
+					this.renderChart();
+				})
+				.catch(err => console.error('Failed to fetch feed data:', err));
+		},
+
+		fetchFeeds() {
+			getJson(apiUrl('feed/list.json'))
+				.then(data => {
+					if (!Array.isArray(data)) return;
+					this.feeds = data;
+					if (!load_savegraphs) this.applyUrlFeedSelection();
+				})
+				.catch(err => console.error('Failed to fetch feed list:', err));
+		},
+
+		/* ── CSV ─────────────────────────────────────────────────────────── */
+		buildCsvText() {
+			return GH.buildCsvText(this.state.feedlist, this.state.csvtimeformat,
+			                    this.state.csvnullvalues, this.state.csvheaders);
+		},
+
+		updateCsvText() {
+			if (this.state.showcsv) this.csvText = this.buildCsvText();
+		},
+
+		toggleCsv() {
+			this.state.showcsv = !this.state.showcsv;
+			if (this.state.showcsv) this.csvText = this.buildCsvText();
+		},
+
+		onDownloadCsv() {
+			if (!this.state.showcsv) return;
+			const csv = this.buildCsvText();
+			if (!csv) return;
+			this.csvText = csv;
+
+			const url  = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
+			const link = Object.assign(document.createElement('a'), { href: url, download: 'emoncms-graph.csv' });
+			document.body.appendChild(link);
+			link.click();
+			link.remove();
+			URL.revokeObjectURL(url);
+		},
+
+		onCopyCsv() {
+			if (!this.state.showcsv) return;
+			const csv = this.buildCsvText();
+			if (!csv) return;
+			this.csvText = csv;
+
+			const csvEl = document.getElementById('csv');
+			if (typeof copyToClipboardCustomMsg === 'function' && csvEl) {
+				copyToClipboardCustomMsg(csvEl, 'copy-csv-feedback', GH.tr('Copied'), GH.tr('Copy not supported'));
+				return;
+			}
+
+			navigator.clipboard?.writeText(csv).then(() => {
+				const fb = document.getElementById('copy-csv-feedback');
+				if (!fb) return;
+				fb.textContent = GH.tr('Copied');
+				setTimeout(() => fb.textContent = '', 2000);
+			});
+		},
+
+		/* ── Plot Events ─────────────────────────────────────────────────── */
+		bindPlotEvents() {
+			const placeholder = document.getElementById('placeholder');
+			if (!placeholder) return;
+
+			this._onPlotSelected = ({ detail }) => {
+				const ranges = detail?.[0];
+				if (!ranges?.xaxis) return;
+				const startMs = GH.toMsFromPlotValue(ranges.xaxis.from);
+				const endMs   = GH.toMsFromPlotValue(ranges.xaxis.to);
+				if (isFinite(startMs) && isFinite(endMs) && endMs > startMs)
+					this.setWindowAndReload(startMs, endMs, false);
+			};
+
+			this._onPlotPanOrZoom = ({ detail }) => {
+				const plot = detail?.[0];
+				if (typeof plot?.getAxes !== 'function') return;
+				const { xaxis } = plot.getAxes();
+				if (!xaxis) return;
+				const startMs = GH.toMsFromPlotValue(xaxis.min);
+				const endMs   = GH.toMsFromPlotValue(xaxis.max);
+				if (!isFinite(startMs) || !isFinite(endMs) || endMs <= startMs) return;
+				clearTimeout(this._panZoomTimeout);
+				this._panZoomTimeout = setTimeout(() => this.setWindowAndReload(startMs, endMs, false), 250);
+			};
+
+			this._onPlotHover = ({ detail }) => {
+				const item = detail?.[1];
+				if (!item?.datapoint) { this.removeTooltip(); this._previousHoverPoint = null; return; }
+
+				const { datapoint } = item;
+				const key = datapoint.join(':');
+				if (key === this._previousHoverPoint) return;
+				this._previousHoverPoint = key;
+
+				const feed    = this.state.feedlist[item.seriesIndex] ?? null;
+				const dp      = isFinite(Number(feed?.dp)) ? Number(feed.dp) : 0;
+				const isStack = datapoint[2] !== undefined;
+				const raw     = isStack ? datapoint[1] - datapoint[2] : datapoint[1];
+
+				if (!isFinite(raw)) { this.removeTooltip(); return; }
+
+				const value = `${raw.toFixed(dp)} ${this.getFeedUnit(feed?.id)}`;
+				const date  = typeof moment !== 'undefined'
+					? moment(datapoint[0]).format('llll')
+					: new Date(datapoint[0]).toString();
+				const ts = datapoint[0] / 1000;
+
+				this.showTooltip(item.pageX, item.pageY,
+					`<span style="font-size:11px">${item.series.label}</span><br>` +
+					`${value}<br>` +
+					`<span style="font-size:11px">${date}</span><br>` +
+					`<span style="font-size:11px">(${ts})</span>`,
+					'#fff');
+			};
+
+			placeholder.addEventListener('plotselected', this._onPlotSelected);
+			placeholder.addEventListener('plotpan',      this._onPlotPanOrZoom);
+			placeholder.addEventListener('plotzoom',     this._onPlotPanOrZoom);
+			placeholder.addEventListener('plothover',    this._onPlotHover);
+		},
+
+		unbindPlotEvents() {
+			const placeholder = document.getElementById('placeholder');
+			if (placeholder) {
+				placeholder.removeEventListener('plotselected', this._onPlotSelected);
+				placeholder.removeEventListener('plotpan',      this._onPlotPanOrZoom);
+				placeholder.removeEventListener('plotzoom',     this._onPlotPanOrZoom);
+				placeholder.removeEventListener('plothover',    this._onPlotHover);
+			}
+			clearTimeout(this._panZoomTimeout);
+			this.removeTooltip();
+		},
+
+		/* ── Null-Gap Removal ────────────────────────────────────────────── */
+		onRemoveNullChange() {
+			const v = parseFloat(this.state.removeNullMaxDuration);
+			if (!isFinite(v) || v <= 0) this.state.removeNullMaxDuration = '900';
+			this.renderChart();
+		},
+
+		getProcessingParams() {
+			const maxDuration     = Math.max(0, parseFloat(this.state.removeNullMaxDuration)) || 900;
+			const intervalSeconds = Math.max(0, parseFloat(this.state.interval))              || 60;
+			return {
+				maxDuration,
+				intervalSeconds,
+				removeNull: !!this.state.removeNull && this.state.mode === 'interval' && intervalSeconds < maxDuration,
+			};
+		},
+
+		/* ── Chart Rendering ─────────────────────────────────────────────── */
+		graphResize() {
+			const bound       = document.getElementById('placeholder_bound');
+			const placeholder = document.getElementById('placeholder');
+			if (!bound || !placeholder) return;
+			const width  = bound.clientWidth;
+			const height = Math.max(300, width * 0.5);
+			placeholder.style.cssText += `width:${width}px;height:${height}px;`;
+			bound.style.height = `${height}px`;
+		},
+
+		onWindowResize() { this.graphResize(); this.renderChart(); },
+
+		buildPlotData() {
+			const p = this.getProcessingParams();
+
+			return this.state.feedlist.map(feed => {
+				let data = Array.isArray(feed.data) ? feed.data.map(pt => [pt[0], pt[1]]) : [];
+
+				const scale  = isFinite(parseFloat(feed.scale))  ? parseFloat(feed.scale)  : 1;
+				const offset = isFinite(parseFloat(feed.offset)) ? parseFloat(feed.offset) : 0;
+
+				if (p.removeNull && data.length > 1)
+					data = GH.fillShortNullGaps(data, p.intervalSeconds, p.maxDuration);
+
+				if (!this.state.showmissing)
+					data = data.filter(pt => pt[1] !== null);
+
+				if (scale !== 1 || offset !== 0)
+					data = data.map(([t, v]) => { const n = Number(v); return [t, isFinite(n) ? n * scale + offset : v]; });
+
+				const label   = (this.state.showtag && feed.tag ? `${feed.tag}: ` : '') + feed.name;
+				const stacked = !!feed.stack;
+				const fillVal = feed.fill ? (stacked ? 1.0 : 0.5) : 0;
+				const hidden  = this.hiddenFeedIds.has(feed.id);
+
+				const series = { label, data, yaxis: feed.yaxis || 1, stack: stacked, id: feed.id };
+				if (feed.color) series.color = feed.color;
+
+				const PLOT_TYPES = {
+					lines:  () => { series.lines  = { show: !hidden, fill: fillVal, lineWidth: 2 }; },
+					bars:   () => { series.bars   = { show: !hidden, fill: fillVal, align: 'center', barWidth: 45 * 60 * 1000 }; },
+					points: () => { series.points = { show: !hidden, radius: 3 }; },
+					steps:  () => { series.lines  = { show: !hidden, fill: fillVal, steps: true }; },
+				};
+				(PLOT_TYPES[feed.plottype] ?? PLOT_TYPES.lines)();
+
+				return series;
+			});
+		},
+
+		renderChart() {
+			const placeholder = document.getElementById('placeholder');
+			if (!placeholder) return;
+			this.graphResize();
+
+			const { startMs, endMs } = this.getWindowRange();
+			const timeInWindowSeconds = (endMs - startMs) / 1000;
+
+			// Build per-axis range options
+			const yaxes = [{}, { alignTicksWithAxis: 1, position: 'right' }];
+			const applyBounds = (axis, min, max) => {
+				let explicit = false;
+				if (min !== 'auto' && min !== '') { axis.min = parseFloat(min); explicit = true; }
+				if (max !== 'auto' && max !== '') { axis.max = parseFloat(max); explicit = true; }
+				if (explicit) axis.autoScale = 'none';
+			};
+			applyBounds(yaxes[0], this.state.yaxismin,  this.state.yaxismax);
+			applyBounds(yaxes[1], this.state.yaxismin2, this.state.yaxismax2);
+
+			const options = {
+				lines:     { fill: false, lineWidth: 2 },
+				xaxis:     { mode: 'time', timezone: 'browser', min: startMs, max: endMs,
+				             monthNames: typeof moment !== 'undefined' ? moment.monthsShort() : null,
+				             dayNames:   typeof moment !== 'undefined' ? moment.weekdaysMin() : null },
+				yaxes,
+				grid:      { hoverable: true, clickable: true },
+				selection: { mode: 'x', color: '#e8cfac', visualization: 'fill' },
+				legend:    { show: this.state.showlegend, position: 'nw' },
+				toggle:    { scale: 'visible' },
+				touch:     { pan: 'x', scale: 'x' },
+			};
+
+			// Update stats
+			const p = this.getProcessingParams();
+			for (const feed of this.state.feedlist) {
+				feed.stats = GH.calculateFeedStats(
+					GH.buildProcessedDataForStats(feed, p.intervalSeconds, p.maxDuration, p.removeNull),
+					timeInWindowSeconds
+				);
+			}
+
+			if (!window.Flot || typeof window.Flot.plot !== 'function') return;
+
+			const plot     = window.Flot.plot(placeholder, this.buildPlotData(), options);
+			const rendered = plot.getData?.() ?? [];
+
+			this.attachLegendToggle(plot);
+
+			// Back-fill auto colors
+			for (const series of rendered) {
+				const feed = this.state.feedlist.find(f => String(f.id) === String(series.id));
+				if (feed && !feed.color) feed.autoColor = GH.normalizeColor(series.color);
+			}
+
+			if (this.state.showcsv) this.csvText = this.buildCsvText();
+		},
+
+		/* ── Histogram ───────────────────────────────────────────────────── */
+		onHistogramClick(feedid) {
+			const feed = this.state.feedlist.find(f => f.id == feedid);
+			if (!feed) return;
+
+			this.histogramMode = true;
+			this.activeHistogramFeed = feedid;
+			const diff = feed.stats?.diff ?? 100;
+			this.histogramResolution = diff < 100 ? 0.1 : diff < 5000 ? 10 : 1;
+			this.drawHistogram();
+		},
+
+		onHistogramBackClick() {
+			this.histogramMode = false;
+			this.activeHistogramFeed = null;
+			this.renderChart();
+		},
+
+		drawHistogram() {
+			if (!this.histogramMode || !this.activeHistogramFeed) return;
+			const feed       = this.state.feedlist.find(f => f.id == this.activeHistogramFeed);
+			if (!feed) return;
+
+			const resolution = parseFloat(this.histogramResolution) || 1;
+			const buckets    = GH.calculateHistogramBuckets(feed.data, this.histogramType, resolution);
+			const plotData   = Object.entries(buckets)
+				.map(([k, v]) => [Number(k), v])
+				.sort((a, b) => a[0] - b[0]);
+
+			const label = (this.state.showtag ? `${feed.tag}: ` : '') + feed.name;
+			const placeholder = document.getElementById('placeholder');
+			if (!placeholder) return;
+
+			Flot.plot(placeholder, [{ label, data: plotData, color: feed.color || undefined }], {
+				series: { bars: { show: true, barWidth: resolution * 0.8 } },
+				grid:   { hoverable: true },
+				xaxis:  { tickFormatter: v => v.toFixed(2) },
+				yaxis:  { tickFormatter: v => this.histogramType === 'kwhatpower'
+					? `${v.toFixed(2)} kWh`
+					: `${(v / 3600).toFixed(1)} h` },
+			});
+		},
+
+		/* ── Y-Axis Controls ─────────────────────────────────────────────── */
+		onYAxisBoundsChange() { this.renderChart(); },
+
+		resetYAxis(side) {
+			if (side === 'left')  { this.state.yaxismin  = 'auto'; this.state.yaxismax  = 'auto'; }
+			if (side === 'right') { this.state.yaxismin2 = 'auto'; this.state.yaxismax2 = 'auto'; }
+			this.renderChart();
+		},
+
+		/* ── Feed Management ─────────────────────────────────────────────── */
+		moveFeed(index, direction) {
+			const next = index + direction;
+			if (next < 0 || next >= this.state.feedlist.length) return;
+			[this.state.feedlist[index], this.state.feedlist[next]] =
+			[this.state.feedlist[next],  this.state.feedlist[index]];
+		},
+
+		_setFeedPropRender(feed, prop, value) { feed[prop] = value; this.renderChart(); },
+		_setFeedPropFetch(feed, prop, value)  { feed[prop] = value; this.fetchFeedData(); },
+
+		setPlottype: (feed, e) => feed.plottype = e.target.value,
+		setColor(feed, e)  { feed.color = feed.autoColor = e.target.value; this.renderChart(); },
+		setFill(feed, e)   { this._setFeedPropRender(feed, 'fill',    e.target.checked ? 1 : 0); },
+		setStack(feed, e)  { this._setFeedPropRender(feed, 'stack',   e.target.checked ? 1 : 0); },
+		setScale(feed, e)  { this._setFeedPropRender(feed, 'scale',   e.target.value); },
+		setOffset(feed, e) { this._setFeedPropRender(feed, 'offset',  e.target.value); },
+		setDelta(feed, e)  { this._setFeedPropFetch(feed,  'delta',   e.target.checked ? 1 : 0); },
+		setAverage(feed, e){ this._setFeedPropFetch(feed,  'average', e.target.checked ? 1 : 0); },
+		setDp(feed, e)     { this._setFeedPropRender(feed, 'dp',      Number(e.target.value)); },
+
+		toggleFeedLeft(feedid)            { this.onYAxisChange(feedid, 1, !this.leftChecked.has(feedid)); },
+		toggleTag(tag)                    { this.collapsedTags[tag] = !this.collapsedTags[tag]; },
+		toggleTablesCollapsed()           { this.tablesCollapsed = !this.tablesCollapsed; },
+		showOptions()                     { this.state.showStats = false; },
+		showStats()                       { this.state.showStats = true; },
+
+		onYAxisChange(feedid, yaxis, checked) {
+			const idx = this.state.feedlist.findIndex(f => f.id === feedid);
+			if (checked) {
+				if (idx === -1) {
+					const feed = this.feeds.find(f => f.id === feedid);
+					if (feed) this.state.feedlist.push(Object.assign(GH.defaultFeedProps(), { yaxis }, feed));
+				} else {
+					this.state.feedlist[idx].yaxis = yaxis;
+				}
+			} else if (idx !== -1) {
+				this.state.feedlist.splice(idx, 1);
+			}
+			this.fetchFeedData();
+		},
+
+		onClearAll() {
+			this.hiddenFeedIds.clear();
+			this._previousHoverPoint = null;
+			this.removeTooltip();
+			this.state.feedlist.splice(0);
+			this.applySavedGraphState({});
+			Object.assign(this.state, GH.GRAPH_CLEAR_EXTRA_DEFAULTS);
+
+			const endMs   = Math.round(Date.now() / 1000) * 1000;
+			const startMs = endMs - 7 * 24 * 3600_000;
+			this.graphTimeHours = '168';
+			this.calcIntervalForWindow(startMs, endMs);
+			this.syncWindowInputs(startMs, endMs);
+			this.renderChart();
+		},
+
+		/* ── URL / Path Feed Selection ───────────────────────────────────── */
+		getPathFeedIds() {
+			const parts = (window.location.pathname || '').split('graph/');
+			if (parts.length < 2) return [];
+			const segment = parts.at(-1).split('/')[0];
+			return segment ? GH.parseFeedIds(segment) : [];
+		},
+
+		addInitialFeed(feedMeta, yaxis) {
+			if (!feedMeta) return;
+			const existing = this.state.feedlist.find(f => String(f.id) === String(feedMeta.id));
+			if (existing) { existing.yaxis = yaxis; return; }
+			this.state.feedlist.push(Object.assign(GH.defaultFeedProps(), { yaxis }, feedMeta));
+		},
+
+		applyUrlFeedSelection() {
+			const leftIds  = [...this.getPathFeedIds(),
+			                  ...GH.parseFeedIds(typeof feedidsLH !== 'undefined' ? feedidsLH : '')];
+			const rightIds = GH.parseFeedIds(typeof feedidsRH !== 'undefined' ? feedidsRH : '');
+			if (!leftIds.length && !rightIds.length) return;
+
+			for (const id of leftIds)  this.addInitialFeed(this.findFeedById(id), 1);
+			for (const id of rightIds) this.addInitialFeed(this.findFeedById(id), 2);
+			this.fetchFeedData();
+		},
+
+		/* ── Saved Graphs ────────────────────────────────────────────────── */
+		showSavedGraphStatus(message) {
+			this.savedGraphStatus = message;
+			clearTimeout(this.savedGraphStatusTimeout);
+			this.savedGraphStatusTimeout = setTimeout(() => this.savedGraphStatus = '', 2000);
+		},
+
+		getSavedHashId() {
+			const hash = String(window.location.hash || '');
+			return hash.startsWith('#/Saved/') ? hash.replace('#/Saved/', '').trim() : '';
+		},
+
+		setSavedHashId(id) { if (id) window.location.hash = `/Saved/${id}`; },
+		clearSavedHash()   { history.replaceState(null, null, ' '); },
+
+		onSavedHashChange() {
+			if (!this.canWriteGraphs || !this.savedGraphs.length) return;
+			const hashId = this.getSavedHashId();
+			if (!hashId) return;
+			const idx = this.findSavedGraphIndexById(hashId);
+			if (idx !== -1 && this.savedGraphSelected !== idx) this.savedGraphSelected = idx;
+		},
+
+		findSavedGraphIndexById(id) {
+			return this.savedGraphs.findIndex(g => String(g.id) === String(id));
+		},
+
+		normalizeSavedGraphState: source => GH.normalizeGraphState(source),
+		applySavedGraphState(savedState) { GH.applyGraphState(this.state, savedState); },
+
+		normalizeSavedGraphPayload(graph = {}) {
+			const state = GH.normalizeGraphState(graph);
+			return {
+				id:       graph.id !== undefined ? String(graph.id) : '',
+				name:     GH.parseSavedGraphName(graph.name),
+				start:    isFinite(Number(graph.start)) ? Number(graph.start) : 0,
+				end:      isFinite(Number(graph.end))   ? Number(graph.end)   : 0,
+				...state,
+				feedlist: (Array.isArray(graph.feedlist) ? graph.feedlist : []).map(GH.normalizeSavedFeed),
+			};
+		},
+
+		buildStateFeedFromSaved(feed) {
+			return Object.assign(GH.defaultFeedProps(), GH.normalizeSavedFeed(feed), {
+				id: String(GH.normalizeSavedFeed(feed).id),
+				autoColor: '', stats: {}, data: [],
+			});
+		},
+
+		buildSavedGraphPayload() {
+			const { startMs, endMs } = this.getWindowRange();
+			const payload = {
+				name:     GH.parseSavedGraphName(this.savedGraphName),
+				start:    startMs,
+				end:      endMs,
+				...GH.normalizeGraphState(this.state),
+				feedlist: this.state.feedlist.map(GH.normalizeSavedFeed),
+			};
+			const selected = this.savedGraphs[this.savedGraphSelected];
+			if (this.savedGraphSelected > -1 && selected) payload.id = selected.id;
+			return payload;
+		},
+
+		applySavedGraphPayload(graph) {
+			if (!graph || typeof graph !== 'object') return;
+			const normalized = this.normalizeSavedGraphPayload(graph);
+			const { startMs, endMs } = this.getWindowRange();
+			let { start: s, end: e } = normalized;
+			if (!isFinite(s) || !isFinite(e) || s >= e) { s = startMs; e = endMs; }
+
+			this.syncWindowInputs(s, e);
+			this.applySavedGraphState(normalized);
+			this.hiddenFeedIds.clear();
+			this.state.feedlist.splice(0, Infinity, ...normalized.feedlist.map(f => this.buildStateFeedFromSaved(f)));
+			this.fetchFeedData();
+			if (this.state.showcsv) this.updateCsvText();
+		},
+
+		onSavedGraphSelectedChange(newVal) {
+			const idx = Number(newVal);
+			if (!isFinite(idx) || idx < 0 || idx >= this.savedGraphs.length) {
+				this.savedGraphName = '';
+				this.clearSavedHash();
+				return;
+			}
+
+			const selected = this.savedGraphs[idx];
+			if (!selected) return;
+			this.savedGraphName = selected.name || '';
+			this.setSavedHashId(selected.id);
+
+			if (selected.feedlist) { this.applySavedGraphPayload(selected); return; }
+
+			getJson(apiUrl(`graph/get?id=${encodeURIComponent(String(selected.id))}`, apikey ? `&apikey=${apikey}` : ''))
+				.then(graph => this.applySavedGraphPayload(graph))
+				.catch(err => console.error('Failed to load saved graph:', err));
+		},
+
+		fetchSavedGraphs() {
+			return getJson(apiUrl('graph/getall'))
+				.then(result => {
+					const list = Array.isArray(result) ? result : (result?.user ?? []);
+					this.savedGraphs = GH.sortSavedGraphs(list);
+					const targetId = String(load_savegraphs || this.getSavedHashId() || '');
+					if (!targetId) return;
+					const idx = this.savedGraphs.findIndex(g => String(g.id) === targetId);
+					if (idx !== -1) this.savedGraphSelected = idx;
+				})
+				.catch(err => console.error('Failed to fetch saved graphs:', err));
+		},
+
+		onSaveSavedGraph() {
+			if (!this.canWriteGraphs) return;
+			const name = GH.parseSavedGraphName(this.savedGraphName);
+			if (!name) { this.showSavedGraphStatus(GH.tr('Graph Name required')); return; }
+
+			const payload    = this.buildSavedGraphPayload();
+			payload.name     = encodeURIComponent(name);
+			const isUpdate   = !!payload.id;
+			const endpoint   = isUpdate ? 'graph/update' : 'graph/create';
+			const params     = new URLSearchParams({ data: JSON.stringify(payload) });
+			if (isUpdate) params.set('id', String(payload.id));
+
+			postJson(apiUrl(endpoint), params)
+				.then(res => {
+					if (!res || res.success === false) throw new Error(res?.message || 'Save failed');
+					this.showSavedGraphStatus(res.message || GH.tr('Saved'));
+
+					const match     = !payload.id && String(res.message || '').match(/graph saved id\s*:\s*(\d+)/i);
+					const createdId = match ? match[1] : null;
+
+					return this.fetchSavedGraphs().then(() => {
+						const targetId = createdId || payload.id;
+						if (!targetId) return;
+						const idx = this.savedGraphs.findIndex(g => String(g.id) === String(targetId));
+						if (idx !== -1) this.savedGraphSelected = idx;
+					});
+				})
+				.catch(err => this.showSavedGraphStatus(`Error: ${err.message}`));
+		},
+
+		onDeleteSavedGraph() {
+			if (!this.canWriteGraphs) return;
+			const graph = this.savedGraphs[this.savedGraphSelected];
+			if (!graph) return;
+			if (!window.confirm(`Delete ${graph.name || ''} (#${graph.id})?`)) return;
+
+			postJson(apiUrl('graph/delete'), new URLSearchParams({ id: String(graph.id) }))
+				.then(res => {
+					if (!res || res.success === false) throw new Error(res?.message || 'Delete failed');
+					this.savedGraphSelected = -1;
+					this.savedGraphName = '';
+					this.clearSavedHash();
+					this.showSavedGraphStatus(res.message || GH.tr('Deleted'));
+					return this.fetchSavedGraphs();
+				})
+				.catch(err => this.showSavedGraphStatus(`Error: ${err.message}`));
+		},
+	},
+};
+
+Vue.createApp(GraphLayoutApp).mount('#graph-view-app');
