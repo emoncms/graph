@@ -2,7 +2,7 @@
 // Entry point for the graph module — loaded as <script type="module">.
 //
 // Responsibilities:
-//   1. Make state reactive (Vue.observable) so Vue components track mutations.
+//   1. Make state reactive (Vue.reactive) so Vue components track mutations.
 //   2. Register cross-module callbacks that would otherwise create circular imports.
 //   3. Fetch the user's feed list.
 //   4. Initialise the correct startup path (view.php vs embed.php).
@@ -21,15 +21,9 @@ import { printCsv }    from './graph.csv.js';
 import { initEditor }  from './graph.editor.js';
 
 // ---------------------------------------------------------------------------
-// 1. Make state reactive
-//    Vue.observable() is called here, after Vue is available as a global,
-//    so every imported module that holds a reference to `state` sees the
-//    same reactive object without any module needing to import Vue itself.
+// 1. State is made reactive at source in graph.state.js via Vue.reactive().
+//    No additional wrapping is needed here.
 // ---------------------------------------------------------------------------
-const reactiveState = Vue.observable(state);
-// Overwrite every key in the original object so all existing references
-// (including those captured by module-level imports) stay valid.
-Object.assign(state, reactiveState);
 
 // ---------------------------------------------------------------------------
 // 2. Register cross-module callbacks

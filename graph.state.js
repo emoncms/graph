@@ -60,15 +60,16 @@ export const STATE_DEFAULTS = {
 
 // ---------------------------------------------------------------------------
 // state — the single reactive graph state object.
-// Wrapping with Vue.observable() happens in the entry-point (graph.js) once
-// Vue is available; until then it is a plain object.
+// Vue.reactive() is called here at module level. This is safe because
+// vue.global.min.js is a plain <script> tag that runs before any ES module,
+// so the Vue global is always available when this module is evaluated.
 //
 // Separation of concerns:
 //   STATE_DEFAULTS  — user-controlled, serialisable, resettable
 //   feeds/feedlist  — managed by the feed-selector component
 //   derived fields  — written by graph_draw(), never reset by resetState()
 // ---------------------------------------------------------------------------
-export const state = {
+export const state = Vue.reactive({
     ...STATE_DEFAULTS,
 
     // Full list of the user's feeds fetched from the server.
@@ -82,7 +83,7 @@ export const state = {
     time_in_window: 0,   // seconds
     num_left:  0,        // count of feeds on left y-axis
     num_right: 0,        // count of feeds on right y-axis
-};
+});
 
 // ---------------------------------------------------------------------------
 // resetState() — restore all user-controlled settings to blank-graph defaults.

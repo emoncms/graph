@@ -31,14 +31,12 @@ defined('EMONCMS_EXEC') or die('Restricted access');
 <script>var min_feed_interval = <?php echo $min_feed_interval; ?>;</script>
 
 <?php
-load_css("Lib/bootstrap-datetimepicker-0.0.11/css/bootstrap-datetimepicker.min.css");
 load_css("Modules/graph/graph.css");
 load_js("Lib/flot-5.1.0.min.js");
-load_js("Lib/bootstrap-datetimepicker-0.0.11/js/bootstrap-datetimepicker.min.js");
 load_js("Lib/moment.min.js");
 load_js("Lib/user_locale.js");
 load_js("Lib/misc/gettext.js");
-load_js("Lib/vue.min.js");
+load_js("Lib/vue.global.min.js");
 ?>
 
 <div id='navigation-timemanual' style='right:1px; display: none;'>
@@ -46,16 +44,10 @@ load_js("Lib/vue.min.js");
         <span class='add-on'>Select time window</span>
 
         <span class='add-on'>Start:</span>
-        <span id='datetimepicker1'>
-            <input id='request-start' data-format='dd/MM/yyyy hh:mm:ss' type='text' style='width:140px'/>
-            <span class='add-on'><i data-time-icon='icon-time' data-date-icon='icon-calendar'></i></span>
-        </span>
+        <input id='request-start' type='datetime-local' style='width:175px'/>
 
         <span class='add-on'>End:</span>
-        <span id='datetimepicker2'>
-            <input id='request-end' data-format='dd/MM/yyyy hh:mm:ss' type='text' style='width:140px'/>
-            <span class='add-on'><i data-time-icon='icon-time' data-date-icon='icon-calendar'></i></span>
-        </span>
+        <input id='request-end' type='datetime-local' style='width:175px'/>
 
         <button class='btn navigation-timewindow-set' type='button'><i class='icon-ok'></i></button>
     </div>

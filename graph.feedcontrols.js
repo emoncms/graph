@@ -1,5 +1,5 @@
 // graph.feedcontrols.js
-// Vue 2 component: feed options table and feed statistics table.
+// Vue 3 component: feed options table and feed statistics table.
 // Only mounted by view.php (not embed.php).
 
 import { state }                    from './graph.state.js';
@@ -11,8 +11,7 @@ import { graphDraw, graphReload }   from './graph.chart.js';
  * Must be called after Vue and _lang are available (from the init script).
  */
 export function initFeedControlsApp() {
-    new Vue({
-        el: '#feed-controls-app',
+    Vue.createApp({
         data() { return { state }; },
         computed: {
             feedlist()       { return this.state.feedlist; },
@@ -59,5 +58,5 @@ export function initFeedControlsApp() {
                 return Math.round((feed.stats.mean * this.time_in_window) / 3600);
             },
         },
-    });
+    }).mount('#feed-controls-app');
 }

@@ -35,9 +35,8 @@ function initFeedSelectorApp(feeds, feedlist) {
         for (const tag in tagMap) collapsedTags[tag] = !selectedTags.has(tag);
     }
 
-    feedSelectorApp = new Vue({
-        el: '#feed-selector-app',
-        data: { feeds, feedlist, collapsedTags },
+    feedSelectorApp = Vue.createApp({
+        data() { return { feeds, feedlist, collapsedTags }; },
         computed: {
             feedsByTag() {
                 const result = {};
@@ -53,14 +52,14 @@ function initFeedSelectorApp(feeds, feedlist) {
         },
         methods: {
             truncateName(name) { return name && name.length > 20 ? name.substr(0, 20) + '..' : name; },
-            toggleTag(tag)     { this.$set(this.collapsedTags, tag, !this.collapsedTags[tag]); },
+            toggleTag(tag)     { this.collapsedTags[tag] = !this.collapsedTags[tag]; },
             onFeedTitleClick(feedid) { this.onLeftChange(feedid, !this.leftChecked.has(feedid)); },
             onLeftChange(feedid, checked) {
                 let loaded = false;
                 for (let z = this.feedlist.length - 1; z >= 0; z--) {
                     if (this.feedlist[z].id == feedid) {
                         if (!checked) { this.feedlist.splice(z, 1); }
-                        else          { this.$set(this.feedlist[z], 'yaxis', 1); loaded = true; }
+                        else          { this.feedlist[z].yaxis = 1; loaded = true; }
                     }
                 }
                 if (!loaded && checked) pushfeedlist(feedid, 1);
@@ -71,7 +70,7 @@ function initFeedSelectorApp(feeds, feedlist) {
                 for (let z = this.feedlist.length - 1; z >= 0; z--) {
                     if (this.feedlist[z].id == feedid) {
                         if (!checked) { this.feedlist.splice(z, 1); }
-                        else          { this.$set(this.feedlist[z], 'yaxis', 2); loaded = true; }
+                        else          { this.feedlist[z].yaxis = 2; loaded = true; }
                     }
                 }
                 if (!loaded && checked) pushfeedlist(feedid, 2);
@@ -79,7 +78,7 @@ function initFeedSelectorApp(feeds, feedlist) {
             },
         },
         template: '#feed-selector-template',
-    });
+    }).mount('#feed-selector-app');
     return feedSelectorApp;
 }
 
@@ -100,7 +99,7 @@ export function loadFeedSelector() {
     // Expand tag groups that contain a selected feed.
     for (const feed of state.feedlist) {
         const tag = feed.tag || 'undefined';
-        feedSelectorApp.$set(feedSelectorApp.collapsedTags, tag, false);
+        feedSelectorApp.collapsedTags[tag] = false;
     }
 }
 

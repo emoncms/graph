@@ -62,15 +62,13 @@ defined('EMONCMS_EXEC') or die('Restricted access');
     }
 </style>
 <?php
-load_css("Lib/bootstrap-datetimepicker-0.0.11/css/bootstrap-datetimepicker.min.css");
 load_css("Modules/graph/graph.css");
 load_js("Lib/flot-5.1.0.min.js");
 load_js("Lib/misc/clipboard.js");
-load_js("Lib/bootstrap-datetimepicker-0.0.11/js/bootstrap-datetimepicker.min.js");
 load_js("Lib/moment.min.js");
 load_js("Lib/user_locale.js");
 load_js("Lib/misc/gettext.js");
-load_js("Lib/vue.min.js");
+load_js("Lib/vue.global.min.js");
 ?>
 
 <h3><?php echo tr('Data viewer'); ?></h3>
@@ -136,18 +134,12 @@ load_js("Lib/vue.min.js");
     
     <div class="input-prepend input-append" style="padding-right:5px">
         <span class="add-on" style="width:50px"><?php echo tr('Start') ?></span>
-        <span id="datetimepicker1">
-            <input id="request-start" data-format="dd/MM/yyyy hh:mm:ss" type="text" style="width:140px" />
-            <span class="add-on"><i data-time-icon="icon-time" data-date-icon="icon-calendar"></i></span>
-        </span>
+        <input id="request-start" type="datetime-local" style="width:185px" />
     </div>
-    
+
     <div class="input-prepend input-append" style="padding-right:5px">
         <span class="add-on" style="width:50px"><?php echo tr('End') ?></span>
-        <span id="datetimepicker2">
-            <input id="request-end" data-format="dd/MM/yyyy hh:mm:ss" type="text" style="width:140px" />
-            <span class="add-on"><i data-time-icon="icon-time" data-date-icon="icon-calendar"></i></span>
-        </span>
+        <input id="request-end" type="datetime-local" style="width:185px" />
     </div>
     
     <div class="input-prepend input-append" style="padding-right:5px">
@@ -352,7 +344,8 @@ load_js("Lib/vue.min.js");
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-for="feed in feedlist" v-if="feed.stats" :key="feed.id">
+                            <template v-for="feed in feedlist" :key="feed.id">
+                            <tr v-if="feed.stats">
                                 <td></td>
                                 <td class="col-primary" v-html="feedName(feed)"></td>
                                 <td>{{ feedQuality(feed) }}% ({{ feed.stats.npoints - feed.stats.npointsnull }}/{{ feed.stats.npoints }})</td>
@@ -363,6 +356,7 @@ load_js("Lib/vue.min.js");
                                 <td>{{ feed.stats.stdev.toFixed(feed.dp) }}</td>
                                 <td>{{ feedWh(feed) }}</td>
                             </tr>
+                            </template>
                         </tbody>
                     </table>
                 </div>

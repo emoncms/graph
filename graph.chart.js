@@ -19,7 +19,7 @@ import { fetchFeedData, fetchFeed } from './graph.api.js';
 import {
     feedStats,
     removeNullValues, scaleValues, offsetValues,
-    tooltip, parseTimepickerTime,
+    tooltip,
 } from './graph.utils.js';
 
 // ---------------------------------------------------------------------------
@@ -97,10 +97,6 @@ export function registerCsvPrinter(fn) { _printCsv = fn; }
 // setData()/draw() without creating a circular module dependency.
 let _plot = null;
 export function getPlotInstance() { return _plot; }
-
-// Datetimepicker jQuery plugin instances.
-let _picker1 = null;
-let _picker2 = null;
 
 // Flot hover state.
 let _previousPoint = null;
@@ -402,47 +398,62 @@ export function graphDraw() {
 
     if (!_embed) {
         for (const feed of state.feedlist) {
-            Vue.set(feed, 'stats', feedStats(feed.data ?? []));
+            feed.stats = feedStats(feed.data ?? []);
         }
         if (state.showcsv && _printCsv) _printCsv();
     }
 }
 
 // ---------------------------------------------------------------------------
-// Datetimepicker init
+// Datetime input helpers
 // ---------------------------------------------------------------------------
 
-export function datetimepickerInit() {
-    $('#datetimepicker1').datetimepicker({ language: 'en-EN' });
-    $('#datetimepicker2').datetimepicker({ language: 'en-EN' });
-
-    // Embed-only: manual time window toggle
-    $('.navigation-timewindow').on('click', function () {
-        $('#navigation-timemanual').show();
-        $('#navigation').hide();
-    });
-    $('.navigation-timewindow-set').on('click', function () {
-        $('#navigation-timemanual').hide();
-        $('#navigation').show();
-        if (reloadDatetimePrep()) graphReload();
-    });
-
-    _picker1 = $('#datetimepicker1').data('datetimepicker');
-    _picker2 = $('#datetimepicker2').data('datetimepicker');
+/** Convert a ms timestamp to the string format required by <input type="datetime-local">. */
+function msToDatetimeLocal(ms) {
+    const d   = new Date(ms);
+    const pad = n => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}` +
+           `T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
 /**
- * Read the start/end datetimepickers, validate them, and write to state.
- * Returns true on success, false (with an alert) on invalid input.
+ * Wire the two datetime-local inputs so user edits update state directly.
+ * Also sets up the embed-only manual time-window toggle buttons.
+ * (The reverse direction — state → input.value — is handled by initViewWatcher.)
+ */
+export function datetimepickerInit() {
+    const startEl = document.getElementById('request-start');
+    const endEl   = document.getElementById('request-end');
+    if (startEl) startEl.addEventListener('change', e => {
+        if (e.target.value) state.start = new Date(e.target.value).getTime();
+    });
+    if (endEl) endEl.addEventListener('change', e => {
+        if (e.target.value) state.end = new Date(e.target.value).getTime();
+    });
+
+    // Embed-only: toggle between the preset time-window bar and manual entry.
+    const timemanual = document.getElementById('navigation-timemanual');
+    const navigation = document.getElementById('navigation');
+    document.querySelector('.navigation-timewindow')?.addEventListener('click', () => {
+        if (timemanual) timemanual.style.display = '';
+        if (navigation) navigation.style.display = 'none';
+    });
+    document.querySelector('.navigation-timewindow-set')?.addEventListener('click', () => {
+        if (timemanual) timemanual.style.display = 'none';
+        if (navigation) navigation.style.display = '';
+        graphReload();
+    });
+}
+
+/**
+ * Validate that state.start/end form a usable time range.
+ * By Stage 2 the datetime-local inputs write directly to state on change,
+ * so this just guards against an invalid or uninitialised state.
+ * Returns true if valid, false (with an alert) if not.
  */
 export function reloadDatetimePrep() {
-    const start = parseTimepickerTime($('#request-start').val());
-    const end   = parseTimepickerTime($('#request-end').val());
-    if (!start) { alert('Please enter a valid start date.'); return false; }
-    if (!end)   { alert('Please enter a valid end date.');   return false; }
-    if (start >= end) { alert('Start date must be further back in time than end date.'); return false; }
-    state.start = start * 1000;
-    state.end   = end * 1000;
+    if (!state.start || !state.end)   { alert('Please enter a valid time range.'); return false; }
+    if (state.start >= state.end)     { alert('Start date must be earlier than end date.'); return false; }
     return true;
 }
 
@@ -451,34 +462,36 @@ export function reloadDatetimePrep() {
 // ---------------------------------------------------------------------------
 
 export function initViewWatcher() {
-    const watcher = new Vue();
-
-    function syncPickers() {
-        if (_picker1) { _picker1.setLocalDate(new Date(state.start)); _picker1.setEndDate(new Date(state.end)); }
-        if (_picker2) { _picker2.setLocalDate(new Date(state.end));   _picker2.setStartDate(new Date(state.start)); }
+    // Sync state.start/end back to the datetime-local inputs whenever they change
+    // (e.g. after zoom/pan/preset-time-window, not just manual user edits).
+    function syncDatetimeInputs() {
+        const el1 = document.getElementById('request-start');
+        const el2 = document.getElementById('request-end');
+        if (el1) el1.value = msToDatetimeLocal(state.start);
+        if (el2) el2.value = msToDatetimeLocal(state.end);
     }
 
-    watcher.$watch(() => state.start,    syncPickers);
-    watcher.$watch(() => state.end,      syncPickers);
-    watcher.$watch(() => state.interval, val => $('#request-interval').val(val));
-    watcher.$watch(() => state.limitinterval, val => {
+    Vue.watch(() => state.start, syncDatetimeInputs);
+    Vue.watch(() => state.end,   syncDatetimeInputs);
+    Vue.watch(() => state.interval, val => $('#request-interval').val(val));
+    Vue.watch(() => state.limitinterval, val => {
         const el = document.getElementById('request-limitinterval');
         if (el) el.checked = !!val;
     });
 
-    watcher.$watch(() => state.num_left, n => {
+    Vue.watch(() => state.num_left, n => {
         n > 0 ? $('#yaxis_left').show() : $('#yaxis_left').hide();
     }, { immediate: true });
 
-    watcher.$watch(() => state.num_right, n => {
+    Vue.watch(() => state.num_right, n => {
         n > 0 ? $('#yaxis_right').show() : $('#yaxis_right').hide();
     }, { immediate: true });
 
-    watcher.$watch(() => state.feedlist.length, len => {
+    Vue.watch(() => state.feedlist.length, len => {
         len > 0 ? $('.feed-options').show() : $('.feed-options').hide();
     }, { immediate: true });
 
-    watcher.$watch(() => state.showStats, showStats => {
+    Vue.watch(() => state.showStats, showStats => {
         if (showStats) {
             $('.feed-options-show-options').removeClass('hide');
             $('.feed-options-show-stats').addClass('hide');

@@ -1,5 +1,5 @@
 // graph.saved.js
-// Save / load / delete named graphs (Vue 2 sidebar app + REST wrappers).
+// Save / load / delete named graphs (Vue 3 sidebar app + REST wrappers).
 // Only used by view.php (not embed.php).
 
 import { state, fromSavePayload, toSavePayload } from './graph.state.js';
@@ -22,10 +22,8 @@ export let saveGraphsApp = null;
  * Must be called after _lang is available.
  */
 export function initSavedGraphsApp() {
-    saveGraphsApp = new Vue({
-        el: '#my_graphs',
-
-        data: {
+    saveGraphsApp = Vue.createApp({
+        data() { return {
             selected:  -1,
             collapsed: false,
             messages: {
@@ -40,7 +38,7 @@ export function initSavedGraphsApp() {
             delay:     1500,
             status:    '',
             graphName: '',
-        },
+        }; },
 
         computed: {
             graphsChanged() {
@@ -142,12 +140,12 @@ export function initSavedGraphsApp() {
             _setHashId(id) { if (this._getHashId() !== String(id)) window.location.hash = '/Saved/' + id; },
             _clearHash()   { history.replaceState(null, null, ' '); },
         },
-    });
+    }).mount('#my_graphs');
 
     // When the editor controls change, push updated data into the selected graph slot.
     $('#info').on('change', function () {
         if (!saveGraphsApp || saveGraphsApp.selected < 0) return;
-        Vue.set(saveGraphsApp.graphs, saveGraphsApp.selected, toSavePayload());
+        saveGraphsApp.graphs[saveGraphsApp.selected] = toSavePayload();
     });
 }
 
