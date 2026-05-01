@@ -37,8 +37,8 @@ load_js("Lib/vue.global.min.js");
 
 	<div id="navigation" style="padding-bottom:5px;">
 		<div class="input-prepend input-append" style="margin-bottom:0 !important">
-			<button class="app-btn graph_time_refresh" title="<?php echo tr('Refresh'); ?>" @click="onGraphTimeRefresh"><i class="icon-repeat"></i></button>
-			<select class="app-btn graph_time" style="width:110px; padding-left:5px" v-model="graphTimeHours" @change="onGraphTimeChange">
+			<button class="btn graph_time_refresh" title="<?php echo tr('Refresh'); ?>" @click="onGraphTimeRefresh"><i class="icon-repeat"></i></button>
+			<select class="btn graph_time" style="width:110px; padding-left:5px" v-model="graphTimeHours" @change="onGraphTimeChange">
 				<option value="1"><?php echo tr('1 hour'); ?></option>
 				<option value="6"><?php echo tr('6 hours'); ?></option>
 				<option value="12"><?php echo tr('12 hours'); ?></option>
@@ -48,13 +48,13 @@ load_js("Lib/vue.global.min.js");
 				<option value="720"><?php echo tr('Month'); ?></option>
 				<option value="8760"><?php echo tr('Year'); ?></option>
 			</select>
+
+			<button id="graph_zoomin" class="btn" style="min-width:40px" title="<?php echo tr('Zoom In'); ?>" @click="onZoomIn">+</button>
+			<button id="graph_zoomout" class="btn" style="min-width:40px" title="<?php echo tr('Zoom Out'); ?>" @click="onZoomOut">-</button>
+			<button id="graph_left" class="btn" style="min-width:40px" title="<?php echo tr('Earlier'); ?>" @click="onPanLeft"><</button>
+			<button id="graph_right" class="btn" style="min-width:40px" title="<?php echo tr('Later'); ?>" @click="onPanRight">></button>
+
 		</div>
-
-		<button id="graph_zoomin" class="app-btn" title="<?php echo tr('Zoom In'); ?>" @click="onZoomIn">+</button>
-		<button id="graph_zoomout" class="app-btn" title="<?php echo tr('Zoom Out'); ?>" @click="onZoomOut">-</button>
-		<button id="graph_left" class="app-btn" title="<?php echo tr('Earlier'); ?>" @click="onPanLeft"><</button>
-		<button id="graph_right" class="app-btn" title="<?php echo tr('Later'); ?>" @click="onPanRight">></button>
-
 		<div id="showcontrols" class="input-prepend input-append">
 			<span class="add-on"><?php echo tr('Show'); ?></span>
 			<span class="add-on"><?php echo tr('missing data'); ?>: <input type="checkbox" id="showmissing" style="margin-top:1px" v-model="state.showmissing"></span>
@@ -77,7 +77,7 @@ load_js("Lib/vue.global.min.js");
 			<input id="histogram-resolution" type="text" style="width:60px" value="100">
 		</div>
 
-		<button id="histogram-back" class="app-btn" style="float:right" @click="noop"><?php echo tr('Back to main view'); ?></button>
+		<button id="histogram-back" class="btn" style="float:right" @click="noop"><?php echo tr('Back to main view'); ?></button>
 	</div>
 
 	<div id="legend"></div>
@@ -86,6 +86,7 @@ load_js("Lib/vue.global.min.js");
 	</div>
 
 	<div id="info">
+		<div class="info-controls-panel">
 		<div class="input-prepend input-append" style="padding-right:5px">
 			<span class="add-on" style="width:50px"><?php echo tr('Start'); ?></span>
 			<input id="request-start" type="datetime-local" style="width:185px" v-model="startLocal">
@@ -115,14 +116,14 @@ load_js("Lib/vue.global.min.js");
 			</span>
 		</div>
 
-		<div>
+		<div class="info-axis-actions">
 			<div id="yaxis_left" class="input-append input-prepend" v-show="state.num_left > 0">
 				<span id="yaxis-left" class="add-on"><?php echo tr('Y-axis').' ('.tr('Left').')'; ?>:</span>
 				<span class="yaxis-minmax-label add-on"><?php echo tr('min'); ?></span>
 				<input class="yaxis-minmax" id="yaxis-min" type="text" v-model="state.yaxismin">
 				<span class="yaxis-minmax-label add-on"><?php echo tr('max'); ?></span>
 				<input class="yaxis-minmax" id="yaxis-max" type="text" v-model="state.yaxismax">
-				<button class="app-btn reset-yaxis" @click="resetYAxis('left')"><?php echo tr('Reset'); ?></button>
+				<button class="btn reset-yaxis" @click="resetYAxis('left')"><?php echo tr('Reset'); ?></button>
 			</div>
 
 			<div id="yaxis_right" class="input-append input-prepend" v-show="state.num_right > 0">
@@ -131,11 +132,11 @@ load_js("Lib/vue.global.min.js");
 				<input class="yaxis-minmax" id="yaxis-min2" type="text" v-model="state.yaxismin2">
 				<span class="yaxis-minmax-label add-on"><?php echo tr('max'); ?></span>
 				<input class="yaxis-minmax" id="yaxis-max2" type="text" v-model="state.yaxismax2">
-				<button class="app-btn reset-yaxis" @click="resetYAxis('right')"><?php echo tr('Reset'); ?></button>
+				<button class="btn reset-yaxis" @click="resetYAxis('right')"><?php echo tr('Reset'); ?></button>
 			</div>
 
-			<button id="reload" class="app-btn" style="vertical-align:top" @click="onReload"><?php echo tr('Reload'); ?></button>
-			<button id="clear" class="app-btn" style="vertical-align:top" @click="noop"><?php echo tr('Clear All'); ?></button>
+			<button id="reload" class="btn" style="vertical-align:top" @click="onReload"><?php echo tr('Reload'); ?></button>
+			<button id="clear" class="btn" style="vertical-align:top" @click="noop"><?php echo tr('Clear All'); ?></button>
 		</div>
 
 		<div class="input-prepend input-append">
@@ -145,6 +146,7 @@ load_js("Lib/vue.global.min.js");
 			<input type="text" class="remove-null-max-duration" style="width:60px" v-model="state.removeNullMaxDuration">
 			<span class="add-on"><?php echo tr('s'); ?></span>
 		</div>
+		</div>
 
 		<div id="window-info"></div><br>
 
@@ -152,8 +154,8 @@ load_js("Lib/vue.global.min.js");
 			<div class="group-card" :class="{'tables-collapsed': tablesCollapsed}">
 				<div class="group-card-header feed-options-header" @click="toggleTablesCollapsed">
 					<span class="group-name feed-options-title"><?php echo tr('Feeds in view'); ?></span>
-					<div class="feed-options-show-options app-btn app-btn-sm" :class="{hide: !state.showStats}" @click.stop.prevent="showOptions"><?php echo tr('Show options'); ?></div>
-					<div class="feed-options-show-stats app-btn app-btn-sm" :class="{hide: state.showStats}" @click.stop.prevent="showStats"><?php echo tr('Show statistics'); ?></div>
+					<div class="feed-options-show-options btn btn-sm" :class="{hide: !state.showStats}" @click.stop.prevent="showOptions"><?php echo tr('Show options'); ?></div>
+					<div class="feed-options-show-stats btn btn-sm" :class="{hide: state.showStats}" @click.stop.prevent="showStats"><?php echo tr('Show statistics'); ?></div>
 					<i class="collapse-icon icon-chevron-down"></i>
 				</div>
 
@@ -219,7 +221,7 @@ load_js("Lib/vue.global.min.js");
 										<option>3</option>
 									</select>
 								</td>
-								<td style="text-align:center"><button class="histogram app-btn" @click="noop"><?php echo tr('Histogram'); ?></button></td>
+								<td style="text-align:center"><button class="histogram btn" @click="noop"><?php echo tr('Histogram'); ?></button></td>
 							</tr>
 						</tbody>
 					</table>
@@ -270,7 +272,7 @@ load_js("Lib/vue.global.min.js");
 		<br>
 
 		<div class="input-prepend input-append">
-			<button class="app-btn" id="showcsv" @click="toggleCsv">{{ csvButtonLabel }}</button>
+			<button class="btn" id="showcsv" @click="toggleCsv">{{ csvButtonLabel }}</button>
 			<span class="add-on csvoptions" v-show="state.showcsv"><?php echo tr('Time format'); ?>:</span>
 			<select id="csvtimeformat" class="csvoptions" v-show="state.showcsv" v-model="state.csvtimeformat">
 				<option value="unix"><?php echo tr('Unix timestamp'); ?></option>
