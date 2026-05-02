@@ -146,7 +146,10 @@ load_js("Lib/vue.global.min.js");
 			<span class="add-on"><?php echo tr('s'); ?></span>
 		</div>
 
-		<div id="window-info" v-html="windowInfoHtml"></div><br>
+		<div id="window-info" v-if="windowInfo">
+				<b><?php echo tr('Window'); ?>:</b> {{ windowInfo.start }} <b>&#x2192;</b> {{ windowInfo.end }}<br>
+				<b><?php echo tr('Length'); ?>:</b> {{ windowInfo.length }}
+			</div><br>
 
 		<div class="feed-options" :class="{hide: state.feedlist.length===0 || histogramMode}" v-show="!histogramMode">
 			<div class="group-card" :class="{'tables-collapsed': tablesCollapsed}">
@@ -199,7 +202,7 @@ load_js("Lib/vue.global.min.js");
 									<a v-if="z > 0" @click="moveFeed(z, -1)" title="<?php echo tr('Move up'); ?>" style="cursor:pointer"><i class="icon-arrow-up"></i></a>
 									<a v-if="z < state.feedlist.length - 1" @click="moveFeed(z, 1)" title="<?php echo tr('Move down'); ?>" style="cursor:pointer"><i class="icon-arrow-down"></i></a>
 								</td>
-								<td class="col-primary" v-html="feedName(feed)"></td>
+								<td class="col-primary">{{ feedName(feed) }}</td>
 								<td>
 									<select style="width:80px" :value="feed.plottype" @change="setPlottype(feed, $event)">
 										<option value="lines"><?php echo tr('Lines'); ?></option>
@@ -256,7 +259,7 @@ load_js("Lib/vue.global.min.js");
 						<tbody>
 							<tr v-for="feed in state.feedlist" :key="'stats-'+feed.id">
 								<td></td>
-								<td class="col-primary" v-html="feedName(feed)"></td>
+								<td class="col-primary">{{ feedName(feed) }}</td>
 								<td>{{ feed.stats.quality }}% ({{ feed.stats.good }}/{{ feed.stats.total }})</td>
 								<td>{{ Number(feed.stats.min).toFixed(feed.dp) }}</td>
 								<td>{{ Number(feed.stats.max).toFixed(feed.dp) }}</td>
@@ -369,13 +372,13 @@ load_js("Lib/vue.global.min.js");
 </div>
 
 <script>
-var path = "<?php echo $path; ?>";
+var path = <?php echo json_encode($path); ?>;
 const min_feed_interval = <?php echo $min_feed_interval; ?>;
-const apikey = "<?php echo $apikey; ?>";
+const apikey = <?php echo json_encode($apikey); ?>;
 const apikeystr = apikey !== '' ? '&apikey=' + apikey : '';
-const feedidsLH = "<?php echo $feedidsLH; ?>";
-const feedidsRH = "<?php echo $feedidsRH; ?>";
-const load_savegraphs = "<?php echo $load_saved; ?>";
+const feedidsLH = <?php echo json_encode($feedidsLH); ?>;
+const feedidsRH = <?php echo json_encode($feedidsRH); ?>;
+const load_savegraphs = <?php echo json_encode($load_saved); ?>;
 var session_write = <?php echo isset($session['write']) ? (int) $session['write'] : 0; ?>;
 var graphTranslations = {
 	'Hide CSV Output': "<?php echo tr('Hide CSV Output'); ?>",

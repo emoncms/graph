@@ -47,10 +47,10 @@ const GraphLayoutApp = {
 	computed: {
 		canWriteGraphs: () => !isEmbedGraph && !!session_write,
 
-		windowInfoHtml() {
-			if (isEmbedGraph) return '';
+		windowInfo() {
+			if (isEmbedGraph) return null;
 			const { startMs, endMs } = this.getWindowRange();
-			if (!isFinite(startMs) || !isFinite(endMs) || endMs < startMs) return '';
+			if (!isFinite(startMs) || !isFinite(endMs) || endMs < startMs) return null;
 
 			const windowSecs = Math.max(0, Math.round((endMs - startMs) / 1000));
 			const hours = Math.floor(windowSecs / 3600);
@@ -62,8 +62,7 @@ const GraphLayoutApp = {
 					? moment(ms).format('D/MMM/YYYY HH:mm:ss')
 					: new Date(ms).toLocaleString();
 
-			return `<b>${GH.tr('Window')}:</b> ${formatTs(startMs)} <b>\u2192</b> ${formatTs(endMs)}<br>` +
-				`<b>${GH.tr('Length')}:</b> ${hours}h${mins} (${windowSecs} seconds)`;
+			return { start: formatTs(startMs), end: formatTs(endMs), length: `${hours}h${mins} (${windowSecs} seconds)` };
 		},
 
 		selectedSavedGraph() {
