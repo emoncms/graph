@@ -94,5 +94,5 @@ var graphTranslations = {
 };
 </script>
 
-<?php load_js("Modules/graph/helpers.js"); ?>
-<?php load_js("Modules/graph/main.js"); ?>
+<?php load_js("Modules/graph/graph.lib.js"); ?>
+<?php load_js("Modules/graph/graph.core.js"); ?>
