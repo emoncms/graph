@@ -26,6 +26,7 @@ load_js("Lib/flot-5.1.0.min.js");
 load_js("Lib/misc/clipboard.js");
 load_js("Lib/moment.min.js");
 load_js("Lib/vue.global.min.js");
+load_js("Lib/DateTimePicker.js");
 ?>
 
 <div id="graph-view-app">
@@ -86,13 +87,13 @@ load_js("Lib/vue.global.min.js");
 
 	<div id="info">
 		<div class="input-prepend input-append" style="padding-right:5px">
-			<span class="add-on" style="width:50px"><?php echo tr('Start'); ?></span>
-			<input id="request-start" type="datetime-local" style="width:185px" v-model="startLocal" @change="onReload">
+			<span class="add-on" style="width:45px"><?php echo tr('Start'); ?></span>
+			<date-time-picker v-model="startLocal" @change="onReload"></date-time-picker>
 		</div>
 
 		<div class="input-prepend input-append" style="padding-right:5px">
-			<span class="add-on" style="width:50px"><?php echo tr('End'); ?></span>
-			<input id="request-end" type="datetime-local" style="width:185px" v-model="endLocal" @change="onReload">
+			<span class="add-on" style="width:45px"><?php echo tr('End'); ?></span>
+			<date-time-picker v-model="endLocal" @change="onReload"></date-time-picker>
 		</div>
 
 		<div class="input-prepend input-append" style="padding-right:5px">

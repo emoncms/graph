@@ -286,8 +286,9 @@ const GraphLayoutApp = {
 		},
 
 		getWindowRange() {
-			const start = Date.parse(this.startLocal);
-			const end   = Date.parse(this.endLocal);
+			const parse = s => Date.parse(s && s.replace(' ', 'T'));
+			const start = parse(this.startLocal);
+			const end   = parse(this.endLocal);
 			if (!isFinite(start) || !isFinite(end) || start >= end) {
 				const now = Date.now();
 				return { startMs: now - 86400_000, endMs: now };
@@ -907,4 +908,4 @@ const GraphLayoutApp = {
 	},
 };
 
-Vue.createApp(GraphLayoutApp).mount('#graph-view-app');
+Vue.createApp(GraphLayoutApp).component('DateTimePicker', DateTimePicker).mount('#graph-view-app');
