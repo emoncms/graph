@@ -8,20 +8,33 @@ const INTERVAL_LADDER = [
 	3600, 7200, 10800, 14400, 18000, 21600, 43200, 86400,
 ];
 
+const coerceBoolean = (value, fallback = false) => {
+	if (value === undefined || value === null) return fallback;
+	if (typeof value === 'boolean') return value;
+	if (typeof value === 'number') return value !== 0;
+	if (typeof value === 'string') {
+		const v = value.trim().toLowerCase();
+		if (!v) return false;
+		if (['0', 'false', 'off', 'no', 'null', 'undefined'].includes(v)) return false;
+		if (['1', 'true', 'on', 'yes'].includes(v)) return true;
+	}
+	return !!value;
+};
+
 const GRAPH_STATE_SCHEMA = {
 	interval:      { default: 60,             coerce: v => (isFinite(Number(v)) ? Number(v) : 60) },
 	mode:          { default: 'interval',     coerce: v => String(v || 'interval') },
 	limitinterval: { default: 1,              coerce: v => (Number(v) ? 1 : 0) },
-	fixinterval:   { default: false,          coerce: v => !!v },
+	fixinterval:   { default: false,          coerce: v => coerceBoolean(v, false) },
 	floatingtime:  { default: 0,              coerce: v => (Number(v) ? 1 : 0) },
 	yaxismin:      { default: 'auto',         coerce: v => (v !== undefined ? String(v) : 'auto') },
 	yaxismax:      { default: 'auto',         coerce: v => (v !== undefined ? String(v) : 'auto') },
 	yaxismin2:     { default: 'auto',         coerce: v => (v !== undefined ? String(v) : 'auto') },
 	yaxismax2:     { default: 'auto',         coerce: v => (v !== undefined ? String(v) : 'auto') },
-	showmissing:   { default: true,           coerce: v => !!v },
-	showtag:       { default: false,          coerce: v => !!v },
-	showlegend:    { default: true,           coerce: v => (v === undefined ? true : !!v) },
-	showcsv:       { default: false,          coerce: v => !!v },
+	showmissing:   { default: true,           coerce: v => coerceBoolean(v, true) },
+	showtag:       { default: false,          coerce: v => coerceBoolean(v, false) },
+	showlegend:    { default: true,           coerce: v => coerceBoolean(v, true) },
+	showcsv:       { default: false,          coerce: v => coerceBoolean(v, false) },
 	csvtimeformat: { default: 'unix',         coerce: v => String(v || 'unix') },
 	csvnullvalues: { default: 'show',         coerce: v => String(v || 'show') },
 	csvheaders:    { default: 'showNameTag',  coerce: v => String(v || 'showNameTag') },
@@ -101,6 +114,7 @@ const fillShortNullGaps = (data, intervalSeconds, maxDurationSeconds) => {
 const applyScaleOffset = (data, scale, offset) => {
 	if (scale === 1 && offset === 0) return data;
 	return data.map(([t, v]) => {
+		if (v === null) return [t, null];
 		const n = Number(v);
 		return [t, isFinite(n) ? n * scale + offset : v];
 	});

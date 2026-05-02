@@ -135,6 +135,7 @@ const GraphLayoutApp = {
 		window.removeEventListener('hashchange', this._onHashChange);
 		window.removeEventListener('resize', this.onWindowResize);
 		clearTimeout(this.savedGraphStatusTimeout);
+		clearTimeout(this._resizeTimeout);
 	},
 
 	/* ── Methods ───────────────────────────────────────────────────────────── */
@@ -525,10 +526,16 @@ const GraphLayoutApp = {
 			bound.style.height = `${height}px`;
 		},
 
-		onWindowResize() { this.graphResize(); this.renderChart(); },
+		onWindowResize() {
+			this.graphResize();
+			clearTimeout(this._resizeTimeout);
+			this._resizeTimeout = setTimeout(() => this.renderChart(), 150);
+		},
 
 		buildPlotData() {
 			const p = this.getProcessingParams();
+			const { startMs, endMs } = this.getWindowRange();
+			const timeInWindowSeconds = (endMs - startMs) / 1000;
 
 			return this.state.feedlist.map(feed => {
 				let data = Array.isArray(feed.data) ? feed.data.map(pt => [pt[0], pt[1]]) : [];
@@ -536,13 +543,19 @@ const GraphLayoutApp = {
 				const scale  = isFinite(parseFloat(feed.scale))  ? parseFloat(feed.scale)  : 1;
 				const offset = isFinite(parseFloat(feed.offset)) ? parseFloat(feed.offset) : 0;
 
+				// 1. Fill null gaps with last value if enabled.
 				if (p.removeNull && data.length > 1)
 					data = GH.fillShortNullGaps(data, p.intervalSeconds, p.maxDuration);
 
+				// 2. Apply scale/offset to the data for plotting.
+				data = GH.applyScaleOffset(data, scale, offset);
+
+				// 3. Stats use the full processed data so nulls count toward quality
+				feed.stats = GH.calculateFeedStats(data, timeInWindowSeconds);
+
+				// 4. Removes remaining nulls if this option is disabled.
 				if (!this.state.showmissing)
 					data = data.filter(pt => pt[1] !== null);
-
-				data = GH.applyScaleOffset(data, scale, offset);
 
 				const label   = GH.buildFeedLabel(feed, this.state.showtag);
 				const stacked = !!feed.stack;
@@ -570,18 +583,8 @@ const GraphLayoutApp = {
 			this.graphResize();
 
 			const { startMs, endMs } = this.getWindowRange();
-			const timeInWindowSeconds = (endMs - startMs) / 1000;
 
 			const options = GH.buildFlotOptions(startMs, endMs, this.state);
-
-			// Update stats
-			const p = this.getProcessingParams();
-			for (const feed of this.state.feedlist) {
-				feed.stats = GH.calculateFeedStats(
-					GH.buildProcessedDataForStats(feed, p.intervalSeconds, p.maxDuration, p.removeNull),
-					timeInWindowSeconds
-				);
-			}
 
 			if (!window.Flot || typeof window.Flot.plot !== 'function') return;
 
