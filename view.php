@@ -30,7 +30,10 @@ load_js("Lib/vue.global.min.js");
 
 <div id="graph-view-app">
 	<h3><?php echo tr('Data viewer'); ?></h3>
-	<div id="error" style="display:none"></div>
+	<div id="error" class="alert" :class="errorType==='info' ? 'alert-info' : 'alert-danger'" v-show="errorMessage">
+		{{ errorMessage }}
+		<button type="button" class="btn" style="margin-left:8px" v-if="errorBadFeedIds.length" @click="onRemoveMissingFeeds"><?php echo tr('Remove missing'); ?></button>
+	</div>
 
 	<div id="navigation" style="padding-bottom:5px;" v-show="!histogramMode">
 		<div class="input-prepend input-append" style="margin-bottom:0 !important">
@@ -143,7 +146,7 @@ load_js("Lib/vue.global.min.js");
 			<span class="add-on"><?php echo tr('s'); ?></span>
 		</div>
 
-		<div id="window-info"></div><br>
+		<div id="window-info" v-html="windowInfoHtml"></div><br>
 
 		<div class="feed-options" :class="{hide: state.feedlist.length===0 || histogramMode}" v-show="!histogramMode">
 			<div class="group-card" :class="{'tables-collapsed': tablesCollapsed}">
@@ -379,6 +382,12 @@ var graphTranslations = {
 	'Show CSV Output': "<?php echo tr('Show CSV Output'); ?>",
 	'Copied': "<?php echo tr('Copied'); ?>",
 	'Copy not supported': "<?php echo tr('Copy not supported'); ?>",
+	'Request error': "<?php echo tr('Request error'); ?>",
+	'Window': "<?php echo tr('Window'); ?>",
+	'Length': "<?php echo tr('Length'); ?>",
+	'Please select a feed from the Feeds List': "<?php echo tr('Please select a feed from the Feeds List'); ?>",
+	'Remove missing': "<?php echo tr('Remove missing'); ?>",
+	'Graph not found': "<?php echo tr('Graph not found'); ?>",
 	'Graph Name required': "<?php echo tr('Graph Name required'); ?>",
 	'Saved': "<?php echo tr('Saved'); ?>",
 	'Deleted': "<?php echo tr('Deleted'); ?>"

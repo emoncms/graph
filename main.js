@@ -3,6 +3,7 @@
  * ─────────────────────────────────────────────────────────────────────────── */
 
 const GH = window.GraphHelpers;
+const isEmbedGraph = typeof graph_embed !== 'undefined' && !!graph_embed;
 
 /* ── Tiny fetch helpers ──────────────────────────────────────────────────── */
 
@@ -19,6 +20,9 @@ const postJson = (url, params) => fetch(url, {
 const GraphLayoutApp = {
 	data: () => ({
 		graphTimeHours: '168',
+		errorMessage: '',
+		errorType: 'danger',
+		errorBadFeedIds: [],
 		tablesCollapsed: false,
 		hiddenFeedIds: new Set(),
 		startLocal: GH.msToDatetimeLocal(Date.now() - 168 * 3600_000),
@@ -41,7 +45,26 @@ const GraphLayoutApp = {
 
 	/* ── Computed ──────────────────────────────────────────────────────────── */
 	computed: {
-		canWriteGraphs: () => !!session_write,
+		canWriteGraphs: () => !isEmbedGraph && !!session_write,
+
+		windowInfoHtml() {
+			if (isEmbedGraph) return '';
+			const { startMs, endMs } = this.getWindowRange();
+			if (!isFinite(startMs) || !isFinite(endMs) || endMs < startMs) return '';
+
+			const windowSecs = Math.max(0, Math.round((endMs - startMs) / 1000));
+			const hours = Math.floor(windowSecs / 3600);
+			const minsRaw = Math.round(((windowSecs / 3600) - hours) * 60);
+			const mins = minsRaw > 0 ? (minsRaw < 10 ? `0${minsRaw}` : String(minsRaw)) : '';
+
+			const formatTs = ms =>
+				typeof moment !== 'undefined'
+					? moment(ms).format('D/MMM/YYYY HH:mm:ss')
+					: new Date(ms).toLocaleString();
+
+			return `<b>${GH.tr('Window')}:</b> ${formatTs(startMs)} <b>\u2192</b> ${formatTs(endMs)}<br>` +
+				`<b>${GH.tr('Length')}:</b> ${hours}h${mins} (${windowSecs} seconds)`;
+		},
 
 		selectedSavedGraph() {
 			const idx = Number(this.savedGraphSelected);
@@ -90,13 +113,17 @@ const GraphLayoutApp = {
 
 	/* ── Lifecycle ─────────────────────────────────────────────────────────── */
 	mounted() {
-		menu?.show_l3?.();
+		if (!isEmbedGraph) menu?.show_l3?.();
 
 		this._onHashChange = this.onSavedHashChange.bind(this);
 		window.addEventListener('hashchange', this._onHashChange);
 		window.addEventListener('resize', this.onWindowResize);
 
-		if (this.canWriteGraphs) this.fetchSavedGraphs();
+		if (load_savegraphs) {
+			this.loadSavedGraphById(load_savegraphs);
+		} else if (this.canWriteGraphs) {
+			this.fetchSavedGraphs();
+		}
 		this.fetchFeeds();
 		this.fetchFeedData();
 		this.bindPlotEvents();
@@ -113,6 +140,52 @@ const GraphLayoutApp = {
 
 	/* ── Methods ───────────────────────────────────────────────────────────── */
 	methods: {
+		showInlineError(message, type = 'danger', badFeedIds = []) {
+			this.errorMessage = String(message || '').trim();
+			this.errorType = type === 'info' ? 'info' : 'danger';
+			this.errorBadFeedIds = Array.from(new Set((Array.isArray(badFeedIds) ? badFeedIds : []).map(String)));
+		},
+
+		clearInlineError() {
+			this.errorMessage = '';
+			this.errorType = 'danger';
+			this.errorBadFeedIds = [];
+		},
+
+		onRemoveMissingFeeds() {
+			if (!this.errorBadFeedIds.length) return;
+			const bad = new Set(this.errorBadFeedIds.map(String));
+			const kept = this.state.feedlist.filter(feed => !bad.has(String(feed.id)));
+			this.state.feedlist.splice(0, Infinity, ...kept);
+			this.clearInlineError();
+			this.fetchFeedData();
+		},
+
+		parseFeedDataErrors(response) {
+			const messages = [];
+			const badFeedIds = [];
+
+			if (response && typeof response === 'object' && !Array.isArray(response)) {
+				if (response.success === false && response.message) {
+					messages.push(response.message);
+					if (Array.isArray(response.feeds)) badFeedIds.push(...response.feeds.map(String));
+				}
+			}
+
+			if (Array.isArray(response)) {
+				for (const item of response) {
+					if (item?.data?.success === false) {
+						if (item.data.message) messages.push(item.data.message);
+						if (item.feedid !== undefined && item.feedid !== null) badFeedIds.push(String(item.feedid));
+					}
+				}
+			}
+
+			return {
+				messages: Array.from(new Set(messages.filter(Boolean))),
+				badFeedIds: Array.from(new Set(badFeedIds)),
+			};
+		},
 
 		/* ── Tooltip ─────────────────────────────────────────────────────── */
 		removeTooltip() {
@@ -262,7 +335,13 @@ const GraphLayoutApp = {
 
 		/* ── Data Fetch ──────────────────────────────────────────────────── */
 		fetchFeedData() {
-			if (!this.state.feedlist.length) { this.renderChart(); return; }
+			if (!this.state.feedlist.length) {
+				this.showInlineError(GH.tr('Please select a feed from the Feeds List'), 'info');
+				this.renderChart();
+				return;
+			}
+
+			this.clearInlineError();
 
 			const { startMs, endMs } = this.getWindowRange();
 			const params = GH.buildFeedDataParams(this.state.feedlist, startMs, endMs, this.state);
@@ -270,6 +349,13 @@ const GraphLayoutApp = {
 
 			getJson(`${path}feed/data.json?${params}`)
 				.then(response => {
+					const { messages, badFeedIds } = this.parseFeedDataErrors(response);
+					if (messages.length) {
+						this.showInlineError(`${GH.tr('Request error')}: ${messages.join(', ')}`, 'danger', badFeedIds);
+					} else {
+						this.clearInlineError();
+					}
+
 					const byId = {};
 					if (Array.isArray(response)) {
 						for (const item of response) {
@@ -281,7 +367,10 @@ const GraphLayoutApp = {
 					}
 					this.renderChart();
 				})
-				.catch(err => console.error('Failed to fetch feed data:', err));
+				.catch(err => {
+					console.error('Failed to fetch feed data:', err);
+					this.showInlineError(`${GH.tr('Request error')}: ${err?.message || String(err)}`, 'danger');
+				});
 		},
 
 		fetchFeeds() {
@@ -607,6 +696,7 @@ const GraphLayoutApp = {
 
 		onClearAll() {
 			this.hiddenFeedIds.clear();
+			this.clearInlineError();
 			this._previousHoverPoint = null;
 			this.removeTooltip();
 			this.state.feedlist.splice(0);
@@ -674,6 +764,25 @@ const GraphLayoutApp = {
 
 		findSavedGraphIndexById(id) {
 			return this.savedGraphs.findIndex(g => String(g.id) === String(id));
+		},
+
+		loadSavedGraphById(id) {
+			const graphId = String(id || '').trim();
+			if (!graphId) return;
+			this.clearInlineError();
+			getJson(`${path}graph/get?id=${encodeURIComponent(graphId)}${apikeystr}`)
+				.then(graph => {
+					if (graph && graph.success === false) throw new Error(GH.tr('Graph not found'));
+					this.savedGraphSelected = -1;
+					this.applySavedGraphPayload(graph);
+					this.clearInlineError();
+				})
+				.catch(err => {
+					console.error('Failed to load saved graph:', err);
+					this.state.feedlist.splice(0);
+					this.renderChart();
+					this.showInlineError(err?.message || GH.tr('Graph not found'));
+				});
 		},
 
 		// Apply persisted graph-level settings onto the live reactive state object
