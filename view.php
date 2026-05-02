@@ -57,7 +57,6 @@ load_js("Lib/vue.global.min.js");
 		</div>
 		<div id="showcontrols" class="input-prepend input-append">
 			<span class="add-on"><?php echo tr('Show'); ?></span>
-			<span class="add-on"><?php echo tr('missing data'); ?>: <input type="checkbox" id="showmissing" style="margin-top:1px" v-model="state.showmissing"></span>
 			<span class="add-on"><?php echo tr('legend'); ?>: <input type="checkbox" id="showlegend" style="margin-top:1px" v-model="state.showlegend"></span>
 			<span class="add-on"><?php echo tr('feed tag'); ?>: <input type="checkbox" id="showtag" style="margin-top:1px" v-model="state.showtag"></span>
 		</div>
@@ -139,11 +138,14 @@ load_js("Lib/vue.global.min.js");
 		</div>
 
 		<div class="input-prepend input-append" v-show="state.mode==='interval'">
-			<span class="add-on"><?php echo tr('Remove null values'); ?>:</span>
+			<span class="add-on"><?php echo tr('Fill null values with last'); ?></span>
 			<span class="add-on"><input type="checkbox" class="remove-null" style="margin-top:3px" v-model="state.removeNull" @change="onRemoveNullChange"></span>
-			<span class="add-on"><?php echo tr('Max fill length'); ?>:</span>
-			<input type="text" class="remove-null-max-duration" style="width:60px" v-model="state.removeNullMaxDuration" @change="onRemoveNullChange">
-			<span class="add-on"><?php echo tr('s'); ?></span>
+			<span class="add-on" v-if="state.removeNull" ><?php echo tr('Max fill length'); ?></span>
+			<input type="text" class="remove-null-max-duration" style="width:60px" v-if="state.removeNull" v-model="state.removeNullMaxDuration" @change="onRemoveNullChange">
+			<span class="add-on" v-if="state.removeNull" ><?php echo tr('s'); ?></span>
+			<span class="add-on"><?php echo tr('Show remaining'); ?></span>
+			<span class="add-on"><input type="checkbox" id="showmissing" style="margin-top:1px" v-model="state.showmissing"></span>
+
 		</div>
 
 		<div id="window-info" v-if="windowInfo">

@@ -246,7 +246,7 @@ const parseFeedIds = raw => {
 const defaultFeedProps = () => ({
 	plottype: 'lines', fill: 0, stack: 0,
 	scale: '1', offset: '0',
-	delta: 0, average: 0, dp: 1,
+	delta: 0, average: 1, dp: 1,
 	stats: {}, data: [], autoColor: '',
 });
 

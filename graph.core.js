@@ -567,7 +567,7 @@ const GraphLayoutApp = {
 
 				const PLOT_TYPES = {
 					lines:  () => { series.lines  = { show: !hidden, fill: fillVal, lineWidth: 2 }; },
-					bars:   () => { series.bars   = { show: !hidden, fill: fillVal, align: 'center', barWidth: 45 * 60 * 1000 }; },
+					bars:   () => { series.bars   = { show: !hidden, fill: fillVal, align: 'center', barWidth: p.intervalSeconds * 0.8 }; },
 					points: () => { series.points = { show: !hidden, radius: 3 }; },
 					steps:  () => { series.lines  = { show: !hidden, fill: fillVal, steps: true }; },
 				};
