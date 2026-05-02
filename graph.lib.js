@@ -247,7 +247,7 @@ const calculateHistogramBuckets = (data, type, resolution) => {
 		const key = Math.round(val / resolution) * resolution;
 		buckets[key] ??= 0;
 
-		const dt = (data[i][0] - data[i - 1][0]) * 0.001;
+		const dt = (data[i][0] - data[i - 1][0]);
 		buckets[key] += type === 'kwhatpower'
 			? (val * dt) / (3600 * 1000)
 			: dt; // timeatvalue

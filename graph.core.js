@@ -601,7 +601,7 @@ const GraphLayoutApp = {
 
 		/* ── Histogram ───────────────────────────────────────────────────── */
 		onHistogramClick(feedid) {
-			const feed = this.state.feedlist.find(f => f.id == feedid);
+			const feed = this.state.feedlist.find(f => String(f.id) === String(feedid));
 			if (!feed) return;
 
 			this.histogramMode = true;
@@ -618,7 +618,7 @@ const GraphLayoutApp = {
 
 		drawHistogram() {
 			if (!this.histogramMode || !this.activeHistogramFeed) return;
-			const feed       = this.state.feedlist.find(f => f.id == this.activeHistogramFeed);
+			const feed       = this.state.feedlist.find(f => String(f.id) === String(this.activeHistogramFeed));
 			if (!feed) return;
 
 			const resolution = parseFloat(this.histogramResolution) || 1;
