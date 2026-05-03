@@ -76,6 +76,59 @@ const createDefaultGraphState = () => ({
 
 const pad2 = n => String(n).padStart(2, '0');
 
+const toLocaleTag = value => {
+	const text = String(value || '').trim();
+	if (!text) return '';
+	return text.replace('_', '-');
+};
+
+const graphLocale = (() => {
+	const userLocale =
+		typeof window !== 'undefined' && window._user && window._user.lang
+			? window._user.lang
+			: '';
+	const docLocale = typeof document !== 'undefined' ? document.documentElement.lang : '';
+	return toLocaleTag(userLocale) || toLocaleTag(docLocale) || 'en-GB';
+})();
+
+const makeDateFormatter = options => {
+	try {
+		return new Intl.DateTimeFormat(graphLocale, options);
+	} catch {
+		return new Intl.DateTimeFormat('en-GB', options);
+	}
+};
+
+const monthFormatter = makeDateFormatter({ month: 'short' });
+const dayFormatter = makeDateFormatter({ weekday: 'short' });
+const tooltipFormatter = makeDateFormatter({
+	weekday: 'short',
+	year: 'numeric',
+	month: 'short',
+	day: 'numeric',
+	hour: '2-digit',
+	minute: '2-digit',
+});
+
+const monthNamesShort = Array.from({ length: 12 }, (_, month) =>
+	monthFormatter.format(new Date(Date.UTC(2020, month, 1)))
+);
+
+const dayNamesShort = Array.from({ length: 7 }, (_, day) =>
+	dayFormatter.format(new Date(Date.UTC(2020, 10, 1 + day)))
+);
+
+const formatGraphWindowTime = ms => {
+	const date = new Date(ms);
+	return `${date.getDate()}/${monthFormatter.format(date)}/${date.getFullYear()} ` +
+	       `${pad2(date.getHours())}:${pad2(date.getMinutes())}:${pad2(date.getSeconds())}`;
+};
+
+const formatGraphTooltipTime = seconds => {
+	const date = new Date(Number(seconds) * 1000);
+	return tooltipFormatter.format(date);
+};
+
 const msToDatetimeLocal = ms => {
 	const d = new Date(ms);
 	return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}` +
@@ -309,8 +362,8 @@ const buildFlotOptions = (startMs, endMs, state) => {
 	return {
 		lines:     { fill: false, lineWidth: 2 },
 		xaxis:     { mode: 'time', timezone: 'browser', min: startMs, max: endMs,
-		             monthNames: typeof moment !== 'undefined' ? moment.monthsShort() : null,
-		             dayNames:   typeof moment !== 'undefined' ? moment.weekdaysMin() : null },
+		             monthNames: monthNamesShort,
+		             dayNames:   dayNamesShort },
 		yaxes,
 		grid:      { hoverable: true, clickable: true },
 		selection: { mode: 'x', color: '#e8cfac', visualization: 'fill' },
@@ -397,6 +450,8 @@ window.GraphHelpers = {
 	buildFeedDataParams,
 	deriveProcessingParams,
 	suggestHistogramResolution,
+	formatGraphWindowTime,
+	formatGraphTooltipTime,
 	normalizeSavedGraphPayload,
 	buildStateFeedFromSaved,
 };

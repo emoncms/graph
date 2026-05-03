@@ -1,10 +1,6 @@
 /* Graph module styles */
 
-.content-container { max-width:1150px; }
-
-[v-cloak] {
-	visibility: hidden;
-}
+#graph-view-app { padding-top: 1rem; }
 
 #tables {
 	overflow: hidden;
@@ -33,11 +29,6 @@
 #placeholder {
 	width: 100%;
 	height: 100%;
-}
-
-.layout-note {
-	margin-top: 10px;
-	color: #666;
 }
 
 .feed-options {
@@ -108,28 +99,85 @@
     outline: none;
 }
 .legendLayer rect.background { fill: transparent; }
-#legend .legendColorBox {
-    display: inline-block;
-    margin-right: 0.3em;
-}
 #legend .legendColorBox > div > div {
     width: 0.3em !important;
     border-width: 0.4em !important;
 }
 #legend .faded { opacity: 0.4; }
 
-/* ---- Info panel layout ---- */
-#showcontrols {
-    float: right;
-    margin-right: 22px;
+/* ---- Graph nav controls (inside vis-card-nav) ---- */
+.graph-zoom-btns {
+    display: inline-flex;
 }
+
+.graph-nav-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    height: 30px;
+    padding: 0 10px;
+    font-size: 1rem;
+    font-family: inherit;
+    line-height: 1;
+    background-color: var(--accent-bg);
+    color: var(--accent);
+    border: 1px solid var(--accent-border);
+    border-left: none;
+    cursor: pointer;
+    transition: background-color 0.15s;
+    box-sizing: border-box;
+}
+.graph-zoom-btns .graph-nav-btn:first-child {
+    border-left: 1px solid var(--accent-border);
+    border-radius: 4px 0 0 4px;
+}
+.graph-zoom-btns .graph-nav-btn:last-child {
+    border-radius: 0 4px 4px 0;
+}
+.graph-nav-btn:hover {
+    background-color: var(--accent-bg-hover);
+    color: var(--text-primary);
+}
+
+/* Show controls (legend/tag checkboxes) inline at nav bar end */
+#showcontrols {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-left: auto;
+}
+
+/* ---- Info panel layout ---- */
 #yaxis-left { width: 110px; }
 #yaxis-right { width: 110px; }
 .yaxis-minmax-label { width: 30px; }
 .yaxis-minmax { width: 50px !important; }
-#info { padding-top: 20px; }
 .table { margin-bottom: 0 !important; }
 .csvoptions { width: auto; }
+
+/* Window info bar */
+.window-info {
+    font-size: var(--font-sm);
+    color: var(--text-secondary);
+    margin: 0.2rem 0 0;
+}
+
+/* Feed options group-card inside vis-card: integrate flush (no nested box) */
+.vis-card .feed-options .group-card {
+    border-left: none;
+    border-right: none;
+    border-bottom: none;
+    border-radius: 0;
+    margin-bottom: 0;
+}
+.vis-card .feed-options .group-card-header {
+    border-radius: 0;
+}
+/* Keep top border of the feed options section aligned with vis-card sections */
+.vis-card .feed-options {
+    border-top: 1px solid var(--border);
+}
 
 /* ---- Sidebar: feeds table ---- */
 #my_graphs {
@@ -177,26 +225,18 @@ table#feeds.table .caret {
 /* ---- Responsive ---- */
 @media (max-width: 610px) {
     #legend .col { position: relative; left: 0; }
-    #showcontrols { float: none; margin: 5px 0 0 0; }
+    #showcontrols { margin-left: 0; }
     .alert { margin-bottom: 5px; }
-    h3 { line-height: 20px; }
     #yaxis-left { width: 80px; }
     #yaxis-right { width: 80px; }
     .yaxis-minmax-label { width: 20px; }
     .yaxis-minmax { width: 35px !important; }
-    #info { padding-top: 5px; }
     .input-append { margin-bottom: 5px !important; }
+    .vis-card-controls { padding: 0.5rem; }
 }
 
-#legend .legendColorBox > div > div {
-    width: 0.3em !important;
-    border-width: 0.4em !important;
+@media (max-width: 480px) {
+    #graph_zoomin,
+    #graph_zoomout { display: none; }
 }
 
-#legend .faded {
-    opacity: 0.4;
-}
-
-.legendLayer rect.background {
-    fill: transparent;
-}

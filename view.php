@@ -22,24 +22,31 @@ if (isset($settings['feed']['min_feed_interval'])) {
 	$min_feed_interval = (int) $settings['feed']['min_feed_interval'];
 }
 load_css("Modules/graph/style.css");
-load_js("Lib/flot-5.1.0.min.js");
+load_js("Lib/js/flot-5.1.0.min.js");
 load_js("Lib/misc/clipboard.js");
-load_js("Lib/moment.min.js");
-load_js("Lib/vue.global.min.js");
 load_js("Lib/DateTimePicker.js");
 ?>
 
 <div id="graph-view-app">
-	<h3><?php echo tr('Data viewer'); ?></h3>
 	<div id="error" class="alert" :class="errorType==='info' ? 'alert-info' : 'alert-danger'" v-show="errorMessage">
 		{{ errorMessage }}
 		<button type="button" class="btn" style="margin-left:8px" v-if="errorBadFeedIds.length" @click="onRemoveMissingFeeds"><?php echo tr('Remove missing'); ?></button>
 	</div>
 
-	<div id="navigation" style="padding-bottom:5px;" v-show="!histogramMode">
-		<div class="input-prepend input-append" style="margin-bottom:0 !important">
-			<button class="btn graph_time_refresh" title="<?php echo tr('Refresh'); ?>" @click="onGraphTimeRefresh"><i class="icon-repeat"></i></button>
-			<select class="btn graph_time" style="width:110px; padding-left:5px" v-model="graphTimeHours" @change="onGraphTimeRefresh">
+	<!-- ── Graph card ─────────────────────────────────────────────── -->
+	<div class="vis-card">
+
+		<nav class="vis-card-topbar">
+			<div class="vis-card-title">
+				<span class="icon-show_chart text-accent"></span>
+				<?php echo tr('Data viewer'); ?>
+			</div>
+			<button class="btn" v-if="histogramMode" @click="onHistogramBackClick"><?php echo tr('Back to main view'); ?></button>
+		</nav>
+
+		<!-- Normal navigation controls -->
+		<div class="vis-card-nav" v-show="!histogramMode">
+			<select class="graph_time" style="width:110px" v-model="graphTimeHours" @change="onGraphTimeRefresh">
 				<option value="1"><?php echo tr('1 hour'); ?></option>
 				<option value="6"><?php echo tr('6 hours'); ?></option>
 				<option value="12"><?php echo tr('12 hours'); ?></option>
@@ -50,109 +57,121 @@ load_js("Lib/DateTimePicker.js");
 				<option value="8760"><?php echo tr('Year'); ?></option>
 			</select>
 
-			<button id="graph_zoomin" class="btn" style="min-width:40px" title="<?php echo tr('Zoom In'); ?>" @click="onZoomIn">+</button>
-			<button id="graph_zoomout" class="btn" style="min-width:40px" title="<?php echo tr('Zoom Out'); ?>" @click="onZoomOut">-</button>
-			<button id="graph_left" class="btn" style="min-width:40px" title="<?php echo tr('Earlier'); ?>" @click="onPan(-1)"><</button>
-			<button id="graph_right" class="btn" style="min-width:40px" title="<?php echo tr('Later'); ?>" @click="onPan(1)">></button>
-
-		</div>
-		<div id="showcontrols" class="input-prepend input-append">
-			<span class="add-on"><?php echo tr('Show'); ?></span>
-			<span class="add-on"><?php echo tr('legend'); ?>: <input type="checkbox" id="showlegend" style="margin-top:1px" v-model="state.showlegend"></span>
-			<span class="add-on"><?php echo tr('feed tag'); ?>: <input type="checkbox" id="showtag" style="margin-top:1px" v-model="state.showtag"></span>
-		</div>
-
-		<div style="clear:both"></div>
-	</div>
-
-	<div id="histogram-controls" style="padding-bottom:5px;" v-show="histogramMode">
-		<div class="input-prepend input-append">
-			<span class="add-on" style="width:100px"><b><?php echo tr('Histogram'); ?></b></span>
-			<span class="add-on" style="width:75px"><?php echo tr('Type'); ?></span>
-			<select style="width:150px" v-model="histogramType" @change="drawHistogram">
-				<option value="timeatvalue"><?php echo tr('Time at value'); ?></option>
-				<option value="kwhatpower"><?php echo tr('kWh at Power'); ?></option>
-			</select>
-			<span class="add-on" style="width:75px"><?php echo tr('Resolution'); ?></span>
-			<input type="text" style="width:60px" v-model="histogramResolution" @change="drawHistogram">
-		</div>
-
-		<button class="btn" style="float:right" @click="onHistogramBackClick"><?php echo tr('Back to main view'); ?></button>
-	</div>
-
-	<div id="legend"></div>
-	<div id="placeholder_bound" style="width:100%; height:400px;">
-		<div id="placeholder"></div>
-	</div>
-
-	<div id="info">
-		<div class="input-prepend input-append" style="padding-right:5px">
-			<span class="add-on" style="width:45px"><?php echo tr('Start'); ?></span>
-			<date-time-picker v-model="startLocal" @change="onReload"></date-time-picker>
-		</div>
-
-		<div class="input-prepend input-append" style="padding-right:5px">
-			<span class="add-on" style="width:45px"><?php echo tr('End'); ?></span>
-			<date-time-picker v-model="endLocal" @change="onReload"></date-time-picker>
-		</div>
-
-		<div class="input-prepend input-append" style="padding-right:5px">
-			<span class="add-on" style="width:50px"><?php echo tr('Type'); ?></span>
-			<select id="request-type" style="width:130px" v-model="state.mode" @change="onReload">
-				<option value="interval"><?php echo tr('Fixed Interval'); ?></option>
-				<option value="daily"><?php echo tr('Daily'); ?></option>
-				<option value="weekly"><?php echo tr('Weekly'); ?></option>
-				<option value="monthly"><?php echo tr('Monthly'); ?></option>
-				<option value="annual"><?php echo tr('Annual'); ?></option>
-			</select>
-		</div>
-
-		<div class="input-prepend input-append" style="padding-right:5px">
-			<span class="fixed-interval-options" v-show="state.mode==='interval'">
-				<input id="request-interval" type="text" style="width:60px" v-model="state.interval" :disabled="state.fixinterval" @change="onReload">
-				<span class="add-on"><?php echo tr('Fix'); ?> <input id="request-fixinterval" type="checkbox" style="margin-top:1px" v-model="state.fixinterval"></span>
-				<span class="add-on"><?php echo tr('Limit to data interval'); ?> <input id="request-limitinterval" type="checkbox" style="margin-top:1px" v-model="state.limitinterval"></span>
-			</span>
-		</div>
-
-		<div>
-			<div id="yaxis_left" class="input-append input-prepend" v-show="leftCount > 0">
-				<span id="yaxis-left" class="add-on"><?php echo tr('Y-axis').' ('.tr('Left').')'; ?>:</span>
-				<span class="yaxis-minmax-label add-on"><?php echo tr('min'); ?></span>
-				<input class="yaxis-minmax" id="yaxis-min" type="text" v-model="state.yaxismin" @change="onYAxisBoundsChange">
-				<span class="yaxis-minmax-label add-on"><?php echo tr('max'); ?></span>
-				<input class="yaxis-minmax" id="yaxis-max" type="text" v-model="state.yaxismax" @change="onYAxisBoundsChange">
-				<button class="btn reset-yaxis" @click="resetYAxis('left')"><?php echo tr('Reset'); ?></button>
-			</div>
-        </div>
-        <div>
-
-			<div id="yaxis_right" class="input-append input-prepend" v-show="rightCount > 0">
-				<span id="yaxis-right" class="add-on"><?php echo tr('Y-axis').' ('.tr('Right').')'; ?>:</span>
-				<span class="yaxis-minmax-label add-on"><?php echo tr('min'); ?></span>
-				<input class="yaxis-minmax" id="yaxis-min2" type="text" v-model="state.yaxismin2" @change="onYAxisBoundsChange">
-				<span class="yaxis-minmax-label add-on"><?php echo tr('max'); ?></span>
-				<input class="yaxis-minmax" id="yaxis-max2" type="text" v-model="state.yaxismax2" @change="onYAxisBoundsChange">
-				<button class="btn reset-yaxis" @click="resetYAxis('right')"><?php echo tr('Reset'); ?></button>
+			<div class="input-prepend input-append" style="margin-left:8px;">
+				<button class="btn" id="graph_zoomin" title="<?php echo tr('Zoom In'); ?>" @click="onZoomIn">+</button>
+				<button class="btn" id="graph_zoomout" title="<?php echo tr('Zoom Out'); ?>" @click="onZoomOut">−</button>
+				<button class="btn" id="graph_left" title="<?php echo tr('Earlier'); ?>" @click="onPan(-1)">‹</button>
+				<button class="btn" id="graph_right" title="<?php echo tr('Later'); ?>" @click="onPan(1)">›</button>
 			</div>
 
+			<div class="ctrl-group">
+				<span class="ctrl-label"><?php echo tr('Start'); ?></span>
+				<date-time-picker v-model="startLocal" @change="onReload"></date-time-picker>
+			</div>
+
+			<div class="ctrl-group">
+				<span class="ctrl-label"><?php echo tr('End'); ?></span>
+				<date-time-picker v-model="endLocal" @change="onReload"></date-time-picker>
+			</div>
+
+			<div id="showcontrols">
+				<label class="ctrl-checkbox"><input type="checkbox" id="showlegend" v-model="state.showlegend"> <?php echo tr('Legend'); ?></label>
+				<label class="ctrl-checkbox"><input type="checkbox" id="showtag" v-model="state.showtag"> <?php echo tr('Feed tag'); ?></label>
+			</div>
 		</div>
 
-		<div class="input-prepend input-append" v-show="state.mode==='interval'">
-			<span class="add-on"><?php echo tr('Fill null values with last'); ?></span>
-			<span class="add-on"><input type="checkbox" class="remove-null" style="margin-top:3px" v-model="state.removeNull" @change="onRemoveNullChange"></span>
-			<span class="add-on" v-if="state.removeNull" ><?php echo tr('Max fill length'); ?></span>
-			<input type="text" class="remove-null-max-duration" style="width:60px" v-if="state.removeNull" v-model="state.removeNullMaxDuration" @change="onRemoveNullChange">
-			<span class="add-on" v-if="state.removeNull" ><?php echo tr('s'); ?></span>
-			<span class="add-on"><?php echo tr('Show remaining'); ?></span>
-			<span class="add-on"><input type="checkbox" id="showmissing" style="margin-top:1px" v-model="state.showmissing"></span>
-
+		<!-- Histogram controls -->
+		<div class="vis-card-nav" v-show="histogramMode">
+			<div class="input-prepend input-append">
+				<span class="add-on" style="width:75px"><?php echo tr('Type'); ?></span>
+				<select style="width:150px" v-model="histogramType" @change="drawHistogram">
+					<option value="timeatvalue"><?php echo tr('Time at value'); ?></option>
+					<option value="kwhatpower"><?php echo tr('kWh at Power'); ?></option>
+				</select>
+				<span class="add-on" style="width:75px"><?php echo tr('Resolution'); ?></span>
+				<input type="text" style="width:60px" v-model="histogramResolution" @change="drawHistogram">
+			</div>
 		</div>
 
-		<div id="window-info" v-if="windowInfo">
-				<b><?php echo tr('Window'); ?>:</b> {{ windowInfo.start }} <b>&#x2192;</b> {{ windowInfo.end }}<br>
-				<b><?php echo tr('Length'); ?>:</b> {{ windowInfo.length }}
-			</div><br>
+		<!-- Graph area -->
+		<div class="vis-card-body">
+			<div id="legend"></div>
+			<div id="placeholder_bound" style="width:100%; height:400px;">
+				<div id="placeholder"></div>
+			</div>
+		</div>
+
+	</div>
+
+	<!-- ── Options card ───────────────────────────────────────────── -->
+	<div id="info" class="vis-card">
+
+		<nav class="vis-card-topbar">
+			<div class="vis-card-title">
+				<span class="icon-cog text-accent"></span>
+				<?php echo tr('Graph options'); ?>
+			</div>
+		</nav>
+
+		<div class="vis-card-controls">
+
+			<div class="controls-row">
+				<div class="input-prepend input-append">
+					<span class="add-on" style="width:50px"><?php echo tr('Type'); ?></span>
+					<select id="request-type" style="width:130px" v-model="state.mode" @change="onReload">
+						<option value="interval"><?php echo tr('Fixed Interval'); ?></option>
+						<option value="daily"><?php echo tr('Daily'); ?></option>
+						<option value="weekly"><?php echo tr('Weekly'); ?></option>
+						<option value="monthly"><?php echo tr('Monthly'); ?></option>
+						<option value="annual"><?php echo tr('Annual'); ?></option>
+					</select>
+				</div>
+
+				<div class="input-prepend input-append" v-show="state.mode==='interval'">
+					<input id="request-interval" type="text" style="width:60px" v-model="state.interval" :disabled="state.fixinterval" @change="onReload">
+					<span class="add-on"><?php echo tr('Fix'); ?> <input id="request-fixinterval" type="checkbox" style="margin-top:1px" v-model="state.fixinterval"></span>
+					<span class="add-on"><?php echo tr('Limit to data interval'); ?> <input id="request-limitinterval" type="checkbox" style="margin-top:1px" v-model="state.limitinterval"></span>
+				</div>
+			</div>
+
+			<div class="controls-row">
+				<div id="yaxis_left" class="input-append input-prepend" v-show="leftCount > 0">
+					<span id="yaxis-left" class="add-on"><?php echo tr('Y-axis').' ('.tr('Left').')'; ?>:</span>
+					<span class="yaxis-minmax-label add-on"><?php echo tr('min'); ?></span>
+					<input class="yaxis-minmax" id="yaxis-min" type="text" v-model="state.yaxismin" @change="onYAxisBoundsChange">
+					<span class="yaxis-minmax-label add-on"><?php echo tr('max'); ?></span>
+					<input class="yaxis-minmax" id="yaxis-max" type="text" v-model="state.yaxismax" @change="onYAxisBoundsChange">
+					<button class="btn reset-yaxis" @click="resetYAxis('left')"><?php echo tr('Reset'); ?></button>
+				</div>
+
+				<div id="yaxis_right" class="input-append input-prepend" v-show="rightCount > 0">
+					<span id="yaxis-right" class="add-on"><?php echo tr('Y-axis').' ('.tr('Right').')'; ?>:</span>
+					<span class="yaxis-minmax-label add-on"><?php echo tr('min'); ?></span>
+					<input class="yaxis-minmax" id="yaxis-min2" type="text" v-model="state.yaxismin2" @change="onYAxisBoundsChange">
+					<span class="yaxis-minmax-label add-on"><?php echo tr('max'); ?></span>
+					<input class="yaxis-minmax" id="yaxis-max2" type="text" v-model="state.yaxismax2" @change="onYAxisBoundsChange">
+					<button class="btn reset-yaxis" @click="resetYAxis('right')"><?php echo tr('Reset'); ?></button>
+				</div>
+			</div>
+
+			<div class="controls-row" v-show="state.mode==='interval'">
+				<div class="input-prepend input-append">
+					<span class="add-on"><?php echo tr('Fill null values with last'); ?></span>
+					<span class="add-on"><input type="checkbox" class="remove-null" style="margin-top:3px" v-model="state.removeNull" @change="onRemoveNullChange"></span>
+					<span class="add-on" v-if="state.removeNull"><?php echo tr('Max fill length'); ?></span>
+					<input type="text" class="remove-null-max-duration" style="width:60px" v-if="state.removeNull" v-model="state.removeNullMaxDuration" @change="onRemoveNullChange">
+					<span class="add-on" v-if="state.removeNull"><?php echo tr('s'); ?></span>
+					<span class="add-on"><?php echo tr('Show remaining'); ?></span>
+					<span class="add-on"><input type="checkbox" id="showmissing" style="margin-top:1px" v-model="state.showmissing"></span>
+				</div>
+			</div>
+
+			<div id="window-info" class="window-info" v-if="windowInfo">
+				<b><?php echo tr('Window'); ?>:</b> {{ windowInfo.start }} <b>&#x2192;</b> {{ windowInfo.end }}
+				&nbsp;&middot;&nbsp; <b><?php echo tr('Length'); ?>:</b> {{ windowInfo.length }}
+			</div>
+
+		</div><!-- .vis-card-controls -->
 
 		<div class="feed-options" :class="{hide: state.feedlist.length===0 || histogramMode}" v-show="!histogramMode">
 			<div class="group-card" :class="{'tables-collapsed': tablesCollapsed}">
@@ -277,41 +296,41 @@ load_js("Lib/DateTimePicker.js");
 			</div>
 		</div>
 
-		<br>
-
-		<div class="input-prepend input-append">
-			<button class="btn" id="showcsv" @click="toggleCsv">{{ csvButtonLabel }}</button>
-			<span class="add-on csvoptions" v-show="state.showcsv"><?php echo tr('Time format'); ?>:</span>
-			<select id="csvtimeformat" class="csvoptions" v-show="state.showcsv" v-model="state.csvtimeformat">
-				<option value="unix"><?php echo tr('Unix timestamp'); ?></option>
-				<option value="seconds"><?php echo tr('Seconds since start'); ?></option>
-				<option value="datestr"><?php echo tr('Date-time string'); ?></option>
-			</select>
-			<span class="add-on csvoptions" v-show="state.showcsv"><?php echo tr('Null values'); ?>:</span>
-			<select id="csvnullvalues" class="csvoptions" v-show="state.showcsv" v-model="state.csvnullvalues">
-				<option value="show"><?php echo tr('Show'); ?></option>
-				<option value="lastvalue"><?php echo tr('Replace with last value'); ?></option>
-				<option value="remove"><?php echo tr('Remove whole line'); ?></option>
-			</select>
-			<span class="add-on csvoptions" v-show="state.showcsv"><?php echo tr('Headers'); ?>:</span>
-			<select id="csvheaders" class="csvoptions" v-show="state.showcsv" v-model="state.csvheaders">
-				<option value="showNameTag"><?php echo tr('Show name and tag'); ?></option>
-				<option value="showName"><?php echo tr('Show name'); ?></option>
-				<option value="hide"><?php echo tr('Hide'); ?></option>
-			</select>
-		</div>
-
-		<div class="input-prepend">
-			<button id="download-csv" class="csvoptions btn" v-show="state.showcsv" @click="onDownloadCsv"><?php echo tr('Download'); ?></button>
-		</div>
-
-		<div class="input-append">
-			<button class="csvoptions btn" id="copy-csv" type="button" v-show="state.showcsv" @click="onCopyCsv"><?php echo tr('Copy'); ?> <i class="icon-share-alt"></i></button>
-		</div>
-
-		<span id="copy-csv-feedback" class="csvoptions" v-show="state.showcsv"></span>
-
-		<textarea id="csv" style="width:98%; height:500px; margin-top:10px" v-show="state.showcsv" v-model="csvText"></textarea>
+		<div class="vis-card-controls" style="border-top: 1px solid var(--border)">
+			<div class="controls-row">
+				<div class="input-prepend input-append">
+					<button class="btn" id="showcsv" @click="toggleCsv">{{ csvButtonLabel }}</button>
+					<span class="add-on csvoptions" v-show="state.showcsv"><?php echo tr('Time format'); ?>:</span>
+					<select id="csvtimeformat" class="csvoptions" v-show="state.showcsv" v-model="state.csvtimeformat">
+						<option value="unix"><?php echo tr('Unix timestamp'); ?></option>
+						<option value="seconds"><?php echo tr('Seconds since start'); ?></option>
+						<option value="datestr"><?php echo tr('Date-time string'); ?></option>
+					</select>
+				</div>
+				<div class="input-prepend input-append" v-show="state.showcsv">
+					<span class="add-on csvoptions"><?php echo tr('Null values'); ?>:</span>
+					<select id="csvnullvalues" class="csvoptions" v-model="state.csvnullvalues">
+						<option value="show"><?php echo tr('Show'); ?></option>
+						<option value="lastvalue"><?php echo tr('Replace with last value'); ?></option>
+						<option value="remove"><?php echo tr('Remove whole line'); ?></option>
+					</select>
+				</div>
+				<div class="input-prepend input-append" v-show="state.showcsv">
+					<span class="add-on csvoptions"><?php echo tr('Headers'); ?>:</span>
+					<select id="csvheaders" class="csvoptions" v-model="state.csvheaders">
+						<option value="showNameTag"><?php echo tr('Show name and tag'); ?></option>
+						<option value="showName"><?php echo tr('Show name'); ?></option>
+						<option value="hide"><?php echo tr('Hide'); ?></option>
+					</select>
+				</div>
+				<div class="ctrl-actions" v-show="state.showcsv">
+					<button id="download-csv" class="btn csvoptions" @click="onDownloadCsv"><?php echo tr('Download'); ?></button>
+					<button class="btn csvoptions" id="copy-csv" type="button" @click="onCopyCsv"><?php echo tr('Copy'); ?> <i class="icon-share-alt"></i></button>
+					<span id="copy-csv-feedback" class="csvoptions"></span>
+				</div>
+			</div>
+			<textarea id="csv" style="width:100%; height:500px; box-sizing:border-box" v-show="state.showcsv" v-model="csvText"></textarea>
+		</div><!-- .vis-card-controls (csv) -->
 
 		<Teleport to=".menu-l3">
 			<div class="htop"></div>

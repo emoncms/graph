@@ -26,7 +26,6 @@ if (isset($settings['feed']['min_feed_interval'])) {
 
 load_css("Modules/graph/style.css");
 load_js("Lib/flot-5.1.0.min.js");
-load_js("Lib/moment.min.js");
 load_js("Lib/vue.global.min.js");
 ?>
 

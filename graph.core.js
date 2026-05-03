@@ -58,8 +58,8 @@ const GraphLayoutApp = {
 			const mins = minsRaw > 0 ? (minsRaw < 10 ? `0${minsRaw}` : String(minsRaw)) : '';
 
 			const formatTs = ms =>
-				typeof moment !== 'undefined'
-					? moment(ms).format('D/MMM/YYYY HH:mm:ss')
+				typeof GH.formatGraphWindowTime === 'function'
+					? GH.formatGraphWindowTime(ms)
 					: new Date(ms).toLocaleString();
 
 			return { start: formatTs(startMs), end: formatTs(endMs), length: `${hours}h${mins} (${windowSecs} seconds)` };
@@ -476,8 +476,8 @@ const GraphLayoutApp = {
 				if (!isFinite(raw)) { this.removeTooltip(); return; }
 
 				const value = `${raw.toFixed(dp)} ${this.getFeedUnit(feed?.id)}`;
-				const date  = typeof moment !== 'undefined'
-					? moment(datapoint[0]*1000).format('llll')
+				const date  = typeof GH.formatGraphTooltipTime === 'function'
+					? GH.formatGraphTooltipTime(datapoint[0])
 					: new Date(datapoint[0]*1000).toString();
 				const ts = datapoint[0];
 
