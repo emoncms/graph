@@ -115,8 +115,10 @@ const GraphLayoutApp = {
 		if (!isEmbedGraph) menu?.show_l3?.();
 
 		this._onHashChange = this.onSavedHashChange.bind(this);
+		this._onColorModeChange = () => this.renderChart();
 		window.addEventListener('hashchange', this._onHashChange);
 		window.addEventListener('resize', this.onWindowResize);
+		window.addEventListener('colormodechange', this._onColorModeChange);
 
 		if (load_savegraphs) {
 			this.loadSavedGraphById(load_savegraphs);
@@ -134,6 +136,7 @@ const GraphLayoutApp = {
 		this.removeTooltip();
 		window.removeEventListener('hashchange', this._onHashChange);
 		window.removeEventListener('resize', this.onWindowResize);
+		window.removeEventListener('colormodechange', this._onColorModeChange);
 		clearTimeout(this.savedGraphStatusTimeout);
 		clearTimeout(this._resizeTimeout);
 	},
