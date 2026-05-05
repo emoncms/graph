@@ -21,10 +21,9 @@ $min_feed_interval = 10;
 if (isset($settings['feed']['min_feed_interval'])) {
 	$min_feed_interval = (int) $settings['feed']['min_feed_interval'];
 }
-load_css("Modules/graph/style.css");
 load_js("Lib/js/flot-5.1.0.min.js");
-load_js("Lib/misc/clipboard.js");
-load_js("Lib/DateTimePicker.js");
+load_js("Lib/js/clipboard.js");
+load_js("Lib/js/DateTimePicker.js");
 ?>
 
 <div id="graph-view-app">
@@ -34,10 +33,10 @@ load_js("Lib/DateTimePicker.js");
 	</div>
 
 	<!-- ── Graph card ─────────────────────────────────────────────── -->
-	<div class="vis-card">
+	<div class="card" style="background-color: var(--bg-body)">
 
-		<nav class="vis-card-topbar">
-			<div class="vis-card-title">
+		<nav class="card-header">
+			<div class="card-name">
 				<span class="icon-show_chart text-accent"></span>
 				<?php echo tr('Data viewer'); ?>
 			</div>
@@ -45,7 +44,7 @@ load_js("Lib/DateTimePicker.js");
 		</nav>
 
 		<!-- Normal navigation controls -->
-		<div class="vis-card-nav" v-show="!histogramMode">
+		<div class="card-header" v-show="!histogramMode">
 			<select class="graph_time" style="width:110px" v-model="graphTimeHours" @change="onGraphTimeRefresh">
 				<option value="1"><?php echo tr('1 hour'); ?></option>
 				<option value="6"><?php echo tr('6 hours'); ?></option>
@@ -81,7 +80,7 @@ load_js("Lib/DateTimePicker.js");
 		</div>
 
 		<!-- Histogram controls -->
-		<div class="vis-card-nav" v-show="histogramMode">
+		<div class="card-header" v-show="histogramMode">
 			<div class="input-prepend input-append">
 				<span class="add-on" style="width:75px"><?php echo tr('Type'); ?></span>
 				<select style="width:150px" v-model="histogramType" @change="drawHistogram">
@@ -94,7 +93,7 @@ load_js("Lib/DateTimePicker.js");
 		</div>
 
 		<!-- Graph area -->
-		<div class="vis-card-body">
+		<div class="card-body">
 			<div id="legend"></div>
 			<div id="placeholder_bound" style="width:100%; height:400px;">
 				<div id="placeholder"></div>
@@ -104,16 +103,16 @@ load_js("Lib/DateTimePicker.js");
 	</div>
 
 	<!-- ── Options card ───────────────────────────────────────────── -->
-	<div id="info" class="vis-card">
+	<div id="info" class="card">
 
-		<nav class="vis-card-topbar">
-			<div class="vis-card-title">
-				<span class="icon-cog text-accent"></span>
+		<nav class="card-header">
+			<span class="icon-cog text-accent card-header-icon"></span>
+			<div class="card-name">
 				<?php echo tr('Graph options'); ?>
 			</div>
 		</nav>
 
-		<div class="vis-card-controls">
+		<div class="card-controls">
 
 			<div class="controls-row">
 				<div class="input-prepend input-append">
@@ -171,12 +170,13 @@ load_js("Lib/DateTimePicker.js");
 				&nbsp;&middot;&nbsp; <b><?php echo tr('Length'); ?>:</b> {{ windowInfo.length }}
 			</div>
 
-		</div><!-- .vis-card-controls -->
+		</div><!-- .card-controls -->
 
 		<div class="feed-options" :class="{hide: state.feedlist.length===0 || histogramMode}" v-show="!histogramMode">
-			<div class="group-card" :class="{'tables-collapsed': tablesCollapsed}">
-				<div class="group-card-header feed-options-header" @click="toggleTablesCollapsed">
-					<span class="group-name feed-options-title"><?php echo tr('Feeds in view'); ?></span>
+			<div class="card" :class="{'tables-collapsed': tablesCollapsed}">
+				<div class="card-header feed-options-header" @click="toggleTablesCollapsed">
+					<span class="card-accent"></span>
+					<span class="card-name feed-options-title"><?php echo tr('Feeds in view'); ?></span>
 
                     <button class="btn" @click="onClearAll"><?php echo tr('Clear All'); ?></button>
 
@@ -296,7 +296,7 @@ load_js("Lib/DateTimePicker.js");
 			</div>
 		</div>
 
-		<div class="vis-card-controls" style="border-top: 1px solid var(--border)">
+		<div class="card-controls" style="border-top: 1px solid var(--border)">
 			<div class="controls-row">
 				<div class="input-prepend input-append">
 					<button class="btn" id="showcsv" @click="toggleCsv">{{ csvButtonLabel }}</button>
@@ -330,7 +330,7 @@ load_js("Lib/DateTimePicker.js");
 				</div>
 			</div>
 			<textarea id="csv" style="width:100%; height:500px; box-sizing:border-box" v-show="state.showcsv" v-model="csvText"></textarea>
-		</div><!-- .vis-card-controls (csv) -->
+		</div><!-- .card-controls (csv) -->
 
 		<Teleport to=".menu-l3">
 			<div class="htop"></div>

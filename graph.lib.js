@@ -356,16 +356,20 @@ const applyYAxisBounds = (axis, min, max) => {
 };
 
 const buildFlotOptions = (startMs, endMs, state) => {
-	const yaxes = [{}, { alignTicksWithAxis: 1, position: 'right' }];
+	const isLight = document.documentElement.classList.contains('color-mode-light');
+	const labelColor = isLight ? '#333' : '#ddd';
+	const labelFont  = { color: labelColor, fill: labelColor };
+	const yaxes = [{ font: labelFont }, { alignTicksWithAxis: 1, position: 'right', font: labelFont }];
 	applyYAxisBounds(yaxes[0], state.yaxismin,  state.yaxismax);
 	applyYAxisBounds(yaxes[1], state.yaxismin2, state.yaxismax2);
 	return {
 		lines:     { fill: false, lineWidth: 2 },
 		xaxis:     { mode: 'time', timezone: 'browser', min: startMs, max: endMs,
 		             monthNames: monthNamesShort,
-		             dayNames:   dayNamesShort },
+		             dayNames:   dayNamesShort,
+		             font: labelFont },
 		yaxes,
-		grid:      { hoverable: true, clickable: true },
+		grid:      { hoverable: true, clickable: true, borderWidth: 0, color: labelColor },
 		selection: { mode: 'x', color: '#e8cfac', visualization: 'fill' },
 		legend:    { show: state.showlegend, position: 'nw' },
 		toggle:    { scale: 'visible' },
