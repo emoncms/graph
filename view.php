@@ -26,6 +26,10 @@ load_js("Lib/js/clipboard.js");
 load_js("Lib/js/DateTimePicker.js");
 ?>
 
+<style>
+.content-container { max-width: 1150px; }
+</style>
+
 <div id="graph-view-app">
 	<div id="error" class="alert" :class="errorType==='info' ? 'alert-info' : 'alert-danger'" v-show="errorMessage">
 		{{ errorMessage }}
