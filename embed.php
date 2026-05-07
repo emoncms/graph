@@ -1,178 +1,97 @@
 <?php
 defined('EMONCMS_EXEC') or die('Restricted access');
-    /*
-    All Emoncms code is released under the GNU Affero General Public License.
-    See COPYRIGHT.txt and LICENSE.txt.
+/*
+All Emoncms code is released under the GNU Affero General Public License.
+See COPYRIGHT.txt and LICENSE.txt.
 
-    ---------------------------------------------------------------------
-    Emoncms - open source energy visualisation
-    Part of the OpenEnergyMonitor project:
-    http://openenergymonitor.org
-    */
+---------------------------------------------------------------------
+Emoncms - open source energy visualisation
+Part of the OpenEnergyMonitor project:
+http://openenergymonitor.org
+*/
 
-    global $path, $embed, $settings;
-    global $fullwidth;
-    $fullwidth = true;
-    
-    $graphid = get("graphid");
-    
-    $apikey = "";
-    if (isset($_GET['apikey'])) $apikey = $_GET['apikey'];
-    
-    $min_feed_interval = 10;
-    if (isset($settings['feed']['min_feed_interval'])) {
-         $min_feed_interval = (int) $settings['feed']['min_feed_interval'];
-    }
+global $path, $session, $settings;
 
-    $js_css_version = 6;
+$apikey      = $_GET['apikey'] ?? '';
+$feedidsLH   = $_GET['feedidsLH'] ?? '';
+$feedidsRH   = $_GET['feedidsRH'] ?? '';
+$graphid     = $_GET['graphid'] ?? '';
+$load_saved  = $_GET['load'] ?? '';
+$load_saved  = $graphid !== '' ? $graphid : $load_saved;
+
+$min_feed_interval = 10;
+if (isset($settings['feed']['min_feed_interval'])) {
+	$min_feed_interval = (int) $settings['feed']['min_feed_interval'];
+}
+
+load_css("Modules/graph/style.css");
+load_js("Lib/flot-5.1.0.min.js");
+load_js("Lib/vue.global.min.js");
 ?>
 
-<!--[if IE]><script language="javascript" type="text/javascript" src="<?php echo $path;?>Lib/flot/excanvas.min.js"></script><![endif]-->
-<script>var min_feed_interval = <?php echo $min_feed_interval; ?>;</script>
-<script language="javascript" type="text/javascript" src="<?php echo $path;?>Lib/flot/jquery.flot.min.js"></script>
-<script language="javascript" type="text/javascript" src="<?php echo $path;?>Lib/flot/jquery.flot.time.min.js"></script>
-<script language="javascript" type="text/javascript" src="<?php echo $path;?>Lib/flot/jquery.flot.selection.min.js"></script>
-<script language="javascript" type="text/javascript" src="<?php echo $path;?>Lib/flot/jquery.flot.touch.min.js"></script>
-<script language="javascript" type="text/javascript" src="<?php echo $path;?>Lib/flot/jquery.flot.togglelegend.min.js"></script>
-<script language="javascript" type="text/javascript" src="<?php echo $path; ?>Lib/flot/jquery.flot.stack.min.js"></script>
-<script language="javascript" type="text/javascript" src="<?php echo $path;?>Modules/graph/vis.helper.js?v=<?php echo $js_css_version; ?>"></script>
-<link href="<?php echo $path; ?>Lib/bootstrap-datetimepicker-0.0.11/css/bootstrap-datetimepicker.min.css" rel="stylesheet">
-<script language="javascript" type="text/javascript" src="<?php echo $path; ?>Lib/bootstrap-datetimepicker-0.0.11/js/bootstrap-datetimepicker.min.js"></script>
-<link href="<?php echo $path; ?>Modules/graph/graph.css?v=<?php echo $js_css_version; ?>" rel="stylesheet">
-<script src="<?php echo $path; ?>Lib/vue.min.js?v=<?php echo $js_css_version; ?>"></script>
+<div id="graph-view-app" class="graph-embed-view">
+	<div id="error" class="alert" :class="errorType==='info' ? 'alert-info' : 'alert-danger'" v-show="errorMessage">
+		{{ errorMessage }}
+		<button type="button" class="btn" style="margin-left:8px" v-if="errorBadFeedIds.length" @click="onRemoveMissingFeeds"><?php echo tr('Remove missing'); ?></button>
+	</div>
 
-<div id='navigation-timemanual' style='right:1px; display: none;'>
-    <div class='input-prepend input-append' style='margin-bottom:5px' >
-        <span class='add-on'>Select time window</span>
+	<div id="navigation" style="padding-bottom:4px;" v-show="!histogramMode">
+		<div class="input-prepend input-append" style="margin-bottom:0 !important; margin-left:2px;">
+			<button class="btn graph_time_refresh" title="<?php echo tr('Refresh'); ?>" @click="onGraphTimeRefresh"><i class="icon-repeat"></i></button>
+			<select class="btn graph_time" style="width:95px; padding-left:5px" v-model="graphTimeHours" @change="onGraphTimeRefresh">
+				<option value="1"><?php echo tr('1 hour'); ?></option>
+				<option value="6"><?php echo tr('6 hours'); ?></option>
+				<option value="12"><?php echo tr('12 hours'); ?></option>
+				<option value="24"><?php echo tr('24 hours'); ?></option>
+				<option value="168"><?php echo tr('1 Week'); ?></option>
+				<option value="336"><?php echo tr('2 Weeks'); ?></option>
+				<option value="720"><?php echo tr('Month'); ?></option>
+				<option value="8760"><?php echo tr('Year'); ?></option>
+			</select>
+			<button id="graph_zoomin" class="btn" style="min-width:40px" title="<?php echo tr('Zoom In'); ?>" @click="onZoomIn">+</button>
+			<button id="graph_zoomout" class="btn" style="min-width:40px" title="<?php echo tr('Zoom Out'); ?>" @click="onZoomOut">-</button>
+			<button id="graph_left" class="btn" style="min-width:40px" title="<?php echo tr('Earlier'); ?>" @click="onPan(-1)"><</button>
+			<button id="graph_right" class="btn" style="min-width:40px" title="<?php echo tr('Later'); ?>" @click="onPan(1)">></button>
+		</div>
+	</div>
 
-        <span class='add-on'>Start:</span>
-        <span id='datetimepicker1'>
-            <input id='request-start' data-format='dd/MM/yyyy hh:mm:ss' type='text' style='width:140px'/>
-            <span class='add-on'><i data-time-icon='icon-time' data-date-icon='icon-calendar'></i></span>
-        </span>
+	<div class="input-prepend input-append" style="margin-bottom:5px">
+		<span class="add-on"><?php echo tr('Start'); ?>:</span>
+		<input id="request-start" type="datetime-local" style="width:185px" v-model="startLocal" @change="onReload">
+		<span class="add-on"><?php echo tr('End'); ?>:</span>
+		<input id="request-end" type="datetime-local" style="width:185px" v-model="endLocal" @change="onReload">
+	</div>
 
-        <span class='add-on'>End:</span>
-        <span id='datetimepicker2'>
-            <input id='request-end' data-format='dd/MM/yyyy hh:mm:ss' type='text' style='width:140px'/>
-            <span class='add-on'><i data-time-icon='icon-time' data-date-icon='icon-calendar'></i></span>
-        </span>
-
-        <button class='btn navigation-timewindow-set' type='button'><i class='icon-ok'></i></button>
-    </div>
-</div>
-
-<div id="navigation" style="padding-bottom:2px;" >
-    <div class="input-prepend input-append" style="margin-bottom:0 !important; margin-left:2px;">
-        <button class='btn graph_time_refresh' title="<?php echo tr('Refresh') ?>"><i class="icon-repeat"></i></button>
-        <select class='btn graph_time' style="width:90px; padding-left:5px">
-            <option value='1'><?php echo tr('1 hour') ?></option>
-            <option value='6'><?php echo tr('6 hours') ?></option>
-            <option value='12'><?php echo tr('12 hours') ?></option>
-            <option value='24'><?php echo tr('24 hours') ?></option>
-            <option value='168' selected><?php echo tr('1 Week') ?></option>
-            <option value='336'><?php echo tr('2 Weeks') ?></option>        
-            <option value='720'><?php echo tr('Month') ?></option>
-            <option value='8760'><?php echo tr('Year') ?></option>
-        </select>
-    </div>
-    <!--
-    <button class='btn graph_time' type='button' data-time='1'>D</button>
-    <button class='btn graph_time' type='button' data-time='7'>W</button>
-    <button class='btn graph_time' type='button' data-time='30'>M</button>
-    <button class='btn graph_time' type='button' data-time='365'>Y</button>-->
-<button class='btn navigation-timewindow' type='button'><i class='icon-resize-horizontal'></i></button>
-    <button id='graph_zoomin' class='btn'>+</button>
-    <button id='graph_zoomout' class='btn'>-</button>
-    <button id='graph_left' class='btn'><</button>
-    <button id='graph_right' class='btn'>></button>
-</div>
-
-<div id="legend"></div>
-<div id="placeholder_bound" style="width:100%; height:100%">
-    <div id="placeholder"></div>
+	<div id="legend"></div>
+	<div id="placeholder_bound" style="width:100%; height:100%">
+		<div id="placeholder"></div>
+	</div>
 </div>
 
 <script>
-    var apikey = "<?php echo $apikey; ?>";
-    var apikeystr = "";
-    if (apikey!="") apikeystr = "&apikey="+apikey;
+var path = "<?php echo $path; ?>";
+const graph_embed = true;
+const min_feed_interval = <?php echo $min_feed_interval; ?>;
+const apikey = "<?php echo $apikey; ?>";
+const apikeystr = apikey !== '' ? '&apikey=' + apikey : '';
+const feedidsLH = "<?php echo $feedidsLH; ?>";
+const feedidsRH = "<?php echo $feedidsRH; ?>";
+const load_savegraphs = "<?php echo $load_saved; ?>";
+var session_write = 0;
+var graphTranslations = {
+	'Hide CSV Output': "<?php echo tr('Hide CSV Output'); ?>",
+	'Show CSV Output': "<?php echo tr('Show CSV Output'); ?>",
+	'Copied': "<?php echo tr('Copied'); ?>",
+	'Copy not supported': "<?php echo tr('Copy not supported'); ?>",
+	'Request error': "<?php echo tr('Request error'); ?>",
+	'Please select a feed from the Feeds List': "<?php echo tr('Please select a feed from the Feeds List'); ?>",
+	'Remove missing': "<?php echo tr('Remove missing'); ?>",
+	'Graph not found': "<?php echo tr('Graph not found'); ?>",
+	'Graph Name required': "<?php echo tr('Graph Name required'); ?>",
+	'Saved': "<?php echo tr('Saved'); ?>",
+	'Deleted': "<?php echo tr('Deleted'); ?>"
+};
 </script>
 
-<script language="javascript" type="text/javascript" src="<?php echo $path;?>Lib/moment.min.js?v=<?php echo $js_css_version; ?>"></script>
-<script language="javascript" type="text/javascript" src="<?php echo $path;?>Modules/graph/graph.js?v=<?php echo $js_css_version; ?>"></script>
-
-<script>
-    $("body").css("background","none");
-    embed = true;
-    
-    var graphid = "<?php echo $graphid; ?>";
-
-    var _lang = <?php
-        $lang['Select a feed'] = tr('Select a feed');
-        $lang['Please select a feed from the Feeds List'] = tr('Please select a feed from the Feeds List');
-        $lang['Select graph'] = tr('Select graph');
-        $lang['Show CSV Output'] = tr('Show CSV Output');
-        $lang['Hide CSV Output'] = tr('Hide CSV Output');
-        $lang['Lines'] = tr('Lines');
-        $lang['Bars'] = tr('Bars');
-        $lang['Points'] = tr('Points');
-        $lang['Steps'] = tr('Steps');
-        $lang['Histogram'] = tr('Histogram');
-        $lang['Move up'] = tr('Move up');
-        $lang['Move down'] = tr('Move down');
-        $lang['Window'] = tr('Window');
-        $lang['Length'] = tr('Length');
-        echo json_encode($lang) . ';';
-        echo "\n";
-    ?>
-    
-    $.ajax({
-        url: path+"/graph/get?id="+graphid,
-        async: true,
-        dataType: "json",
-        success: function(result) {
-            
-            if (result.mode==undefined) result.mode = 'interval';
-            
-            view.start = result.start;
-            view.end = result.end;
-            view.mode = result.mode;
-            view.interval = result.interval;
-            view.limitinterval = result.limitinterval;
-            view.fixinterval = result.fixinterval;
-            floatingtime = result.floatingtime,
-            yaxismin = result.yaxismin;
-            yaxismax = result.yaxismax;
-            yaxismin2 = result.yaxismin2;
-            yaxismax2 = result.yaxismax2;
-            feedlist = result.feedlist;
-            
-            // show settings
-            showmissing = result.showmissing;
-            showtag = result.showtag;
-            showlegend = result.showlegend;
-            
-            if (floatingtime) {
-                var timewindow = view.end - view.start;
-                var now = Math.round(+new Date * 0.001)*1000;
-                view.end = now;
-                view.start = view.end - timewindow;
-            }
-
-            if (result.source != undefined && result.source == 'groups'){
-                vis_mode = 'groups';
-                 $.ajax({url: path + "/group/mygroups.json", async: false, dataType: "json", success: function (data_in) {
-                    groups = data_in;
-                }});                
-            }
-            else
-                vis_mode = 'user';
-
-            datetimepickerInit();
-            graph_resize();
-            graph_reload();
-        }
-    });
-    
-
-</script>
+<?php load_js("Modules/graph/graph.lib.js"); ?>
+<?php load_js("Modules/graph/graph.core.js"); ?>
