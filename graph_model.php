@@ -106,7 +106,7 @@ class Graph
             $graphs['groups'] = array();
             $groups = $this->group->grouplist($userid);
             foreach ($groups as $group) {
-                $gid = $group['groupid'];
+                $gid = (int) $group['groupid'];
                 $result = $this->mysqli->query("SELECT id,data FROM graph WHERE `groupid`='$gid'");
                 while ($row = $result->fetch_array()) {
                     $data = json_decode($row['data']);
