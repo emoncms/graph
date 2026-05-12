@@ -1,6 +1,6 @@
 {
     "name"         : "Graph",
-    "version"      : "2.2.7",
+    "version"      : "2.2.8",
     "location"     : "/var/www/emoncms/Modules",
     "branches_available": ["stable","master"]
 }
