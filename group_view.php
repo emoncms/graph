@@ -36,7 +36,7 @@ defined('EMONCMS_EXEC') or die('Restricted access');
 <script language="javascript" type="text/javascript" src="<?php echo $path;?>Lib/flot/flot.min.js"></script>
 -->
 <script language="javascript" type="text/javascript" src="<?php echo $path;?>Modules/graph/vis.helper.js"></script>
-<script language="javascript" type="text/javascript" src="<?php echo $path;?>Lib/misc/clipboard.js"></script>
+<script language="javascript" type="text/javascript" src="<?php echo $path;?>Lib/js/clipboard.js"></script>
 
 <!-- toggle button to choose User or Group. Documentation: http://bootstrapswitch.com/options.html -->
 <link href="<?php echo $path; ?>Modules/graph/Lib/bootstrap-switch.css" rel="stylesheet">

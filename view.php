@@ -56,7 +56,7 @@ defined('EMONCMS_EXEC') or die('Restricted access');
 
 <script>var min_feed_interval = <?php echo $min_feed_interval; ?>;</script>
 <script src="<?php echo $path;?>Modules/graph/vis.helper.js?v=<?php echo $v; ?>"></script>
-<script src="<?php echo $path;?>Lib/misc/clipboard.js?v=<?php echo $v; ?>"></script>
+<script src="<?php echo $path;?>Lib/js/clipboard.js?v=<?php echo $v; ?>"></script>
 <script src="<?php echo $path; ?>Lib/bootstrap-datetimepicker-0.0.11/js/bootstrap-datetimepicker.min.js"></script>
 <script src="<?php echo $path; ?>Lib/vue.min.js?v=<?php echo $v; ?>"></script>
 
