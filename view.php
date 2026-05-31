@@ -225,6 +225,8 @@ table#feeds.table .caret { border-top-color: currentColor !important; display: i
 .feed-header { background: var(--bg-card-header); font-weight: bold; border-bottom: 1px solid var(--border); }
 .feed-select { accent-color: var(--accent); cursor: pointer; }
 
+.interval-input-auto { cursor: pointer; background-color: #e9ecef; color: #555; }
+
 </style>
 
 <div id="graph-view-app">
@@ -323,24 +325,63 @@ table#feeds.table .caret { border-top-color: currentColor !important; display: i
 						<option value="annual"><?php echo tr('Annual'); ?></option>
 					</select>
 
-					<input v-show="state.mode==='interval'" id="request-interval" type="text" v-model="state.interval" :disabled="state.fixinterval" @change="onReload" style="width:50px; text-align:center">
-					<span v-show="state.mode==='interval'" class="add-on"><?php echo tr('Fix'); ?></span>
-					<span v-show="state.mode==='interval'" class="add-on"><input id="request-fixinterval" type="checkbox" v-model="state.fixinterval"></span>
+					<input v-show="state.mode==='interval'" id="request-interval" type="text"
+						:value="state.fixinterval ? state.interval : state.interval + 's (auto)'"
+						:readonly="!state.fixinterval"
+						:class="{'interval-input-auto': !state.fixinterval}"
+						:title="state.fixinterval ? '' : '<?php echo tr('Click to edit and fix interval'); ?>'"
+						@click="onIntervalInputClick"
+						@keydown="onIntegerKeydown"
+						@change="onIntervalInputChange"
+						style="width:90px; text-align:center">
+					<button v-show="state.mode==='interval' && state.fixinterval" class="btn add-on" @click="onIntervalResetAuto" title="<?php echo tr('Return to auto interval'); ?>">&#x2715;</button>
 				</div>
 
 				<div class="axes-controls">
 					<div id="yaxis_left" class="input-prepend input-append mr-2" v-show="leftCount > 0">
 						<span class="add-on px-2">L</span>
-						<input class="yaxis-minmax" id="yaxis-min" type="text" v-model="state.yaxismin" @change="onYAxisBoundsChange">
-						<input class="yaxis-minmax" id="yaxis-max" type="text" v-model="state.yaxismax" @change="onYAxisBoundsChange">
-						<button class="btn reset-yaxis" @click="resetYAxis('left')"><?php echo tr('Reset'); ?></button>
+						<!-- Left Y-axis min -->
+						<input class="yaxis-minmax" id="yaxis-min" type="text"
+							:value="state.yaxismin === 'auto' ? 'auto' : state.yaxismin"
+							:readonly="state.yaxismin === 'auto'"
+							:class="{'interval-input-auto': state.yaxismin === 'auto'}"
+							:title="state.yaxismin === 'auto' ? '<?php echo tr('Click to set min'); ?>' : ''"
+							@click="onYAxisInputClick('left', 'min', $event)"
+							@keydown="onDecimalKeydown"
+							@change="onYAxisMinMaxChange('left', 'min', $event)">
+						<!-- Left Y-axis max -->
+						<input class="yaxis-minmax" id="yaxis-max" type="text"
+							:value="state.yaxismax === 'auto' ? 'auto' : state.yaxismax"
+							:readonly="state.yaxismax === 'auto'"
+							:class="{'interval-input-auto': state.yaxismax === 'auto'}"
+							:title="state.yaxismax === 'auto' ? '<?php echo tr('Click to set max'); ?>' : ''"
+							@click="onYAxisInputClick('left', 'max', $event)"
+							@keydown="onDecimalKeydown"
+							@change="onYAxisMinMaxChange('left', 'max', $event)">
+						<button class="btn add-on" v-show="!leftAxisIsAuto" @click="resetYAxis('left')">&#x2715;</button>
 					</div>
 
 					<div id="yaxis_right" class="input-prepend input-append" v-show="rightCount > 0">
 						<span class="add-on px-2">R</span>
-						<input class="yaxis-minmax" id="yaxis-min2" type="text" v-model="state.yaxismin2" @change="onYAxisBoundsChange">
-						<input class="yaxis-minmax" id="yaxis-max2" type="text" v-model="state.yaxismax2" @change="onYAxisBoundsChange">
-						<button class="btn reset-yaxis" @click="resetYAxis('right')"><?php echo tr('Reset'); ?></button>
+						<!-- Right Y-axis min -->
+						<input class="yaxis-minmax" id="yaxis-min2" type="text"
+							:value="state.yaxismin2 === 'auto' ? 'auto' : state.yaxismin2"
+							:readonly="state.yaxismin2 === 'auto'"
+							:class="{'interval-input-auto': state.yaxismin2 === 'auto'}"
+							:title="state.yaxismin2 === 'auto' ? '<?php echo tr('Click to set min'); ?>' : ''"
+							@click="onYAxisInputClick('right', 'min', $event)"
+							@keydown="onDecimalKeydown"
+							@change="onYAxisMinMaxChange('right', 'min', $event)">
+						<!-- Right Y-axis max -->
+						<input class="yaxis-minmax" id="yaxis-max2" type="text"
+							:value="state.yaxismax2 === 'auto' ? 'auto' : state.yaxismax2"
+							:readonly="state.yaxismax2 === 'auto'"
+							:class="{'interval-input-auto': state.yaxismax2 === 'auto'}"
+							:title="state.yaxismax2 === 'auto' ? '<?php echo tr('Click to set max'); ?>' : ''"
+							@click="onYAxisInputClick('right', 'max', $event)"
+							@keydown="onDecimalKeydown"
+							@change="onYAxisMinMaxChange('right', 'max', $event)">
+						<button class="btn add-on" v-show="!rightAxisIsAuto" @click="resetYAxis('right')">&#x2715;</button>
 					</div>
 				</div>
 			</div>

@@ -94,10 +94,12 @@ const GraphLayoutApp = {
 			}, {});
 		},
 
-		leftChecked()  { return new Set(this.state.feedlist.filter(f => f.yaxis !== 2).map(f => f.id)); },
-		rightChecked() { return new Set(this.state.feedlist.filter(f => f.yaxis === 2).map(f => f.id)); },
-		leftCount()    { return this.state.feedlist.filter(f => f.yaxis !== 2).length; },
-		rightCount()   { return this.state.feedlist.filter(f => f.yaxis === 2).length; },
+		leftChecked()    { return new Set(this.state.feedlist.filter(f => f.yaxis !== 2).map(f => f.id)); },
+		rightChecked()   { return new Set(this.state.feedlist.filter(f => f.yaxis === 2).map(f => f.id)); },
+		leftCount()      { return this.state.feedlist.filter(f => f.yaxis !== 2).length; },
+		rightCount()     { return this.state.feedlist.filter(f => f.yaxis === 2).length; },
+		leftAxisIsAuto()  { return this.state.yaxismin  === 'auto' && this.state.yaxismax  === 'auto'; },
+		rightAxisIsAuto() { return this.state.yaxismin2 === 'auto' && this.state.yaxismax2 === 'auto'; },
 	},
 
 	/* ── Watchers ──────────────────────────────────────────────────────────── */
@@ -313,6 +315,43 @@ const GraphLayoutApp = {
 		},
 
 		onReload()            { const r = this.getWindowRange(); this.setWindowAndReload(r.startMs, r.endMs, false); },
+
+		onIntervalInputClick() {
+			if (this.state.fixinterval) return;
+			this.state.fixinterval = true;
+			this.$nextTick(() => {
+				const input = document.getElementById('request-interval');
+				if (input) { input.focus(); input.select(); }
+			});
+		},
+
+		onIntervalInputChange(event) {
+			const val = parseInt(event.target.value, 10);
+			if (!isNaN(val) && val > 0) this.state.interval = String(val);
+			this.onReload();
+		},
+
+		onIntervalResetAuto() {
+			this.state.fixinterval = false;
+			this.onReload();
+		},
+
+		/* Allow only positive integers (for interval seconds) */
+		onIntegerKeydown(event) {
+			const nav = ['Backspace','Delete','Tab','Escape','Enter','ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','End'];
+			if (nav.includes(event.key) || event.ctrlKey || event.metaKey) return;
+			if (!/^\d$/.test(event.key)) event.preventDefault();
+		},
+
+		/* Allow signed decimals (for y-axis bounds) */
+		onDecimalKeydown(event) {
+			const nav = ['Backspace','Delete','Tab','Escape','Enter','ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','End'];
+			if (nav.includes(event.key) || event.ctrlKey || event.metaKey) return;
+			if (!/^[\d.\-]$/.test(event.key)) { event.preventDefault(); return; }
+			const val = event.target.value;
+			if (event.key === '-' && val.length !== 0) { event.preventDefault(); return; }
+			if (event.key === '.' && val.includes('.')) event.preventDefault();
+		},
 
 		onGraphTimeRefresh() {
 			const hours  = Number(this.graphTimeHours) || 168;
@@ -678,7 +717,21 @@ const GraphLayoutApp = {
 		},
 
 		/* ── Y-Axis Controls ─────────────────────────────────────────────── */
-		onYAxisBoundsChange() { this.renderChart(); },
+		onYAxisInputClick(side, bound, event) {
+			const key = side === 'left'
+				? (bound === 'min' ? 'yaxismin' : 'yaxismax')
+				: (bound === 'min' ? 'yaxismin2' : 'yaxismax2');
+			if (this.state[key] !== 'auto') return;
+			this.state[key] = '';
+			this.$nextTick(() => { if (event?.target) event.target.focus(); });
+		},
+
+		onYAxisMinMaxChange(side, bound, event) {
+			const val = event.target.value;
+			if (side === 'left')  { if (bound === 'min') this.state.yaxismin  = val; else this.state.yaxismax  = val; }
+			if (side === 'right') { if (bound === 'min') this.state.yaxismin2 = val; else this.state.yaxismax2 = val; }
+			this.renderChart();
+		},
 
 		resetYAxis(side) {
 			if (side === 'left')  { this.state.yaxismin  = 'auto'; this.state.yaxismax  = 'auto'; }
