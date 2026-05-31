@@ -27,6 +27,7 @@ load_js("Lib/js/vue.global.prod-3.5.22.min.js");
 load_js("Lib/js/flot-5.1.0.js");
 load_js("Lib/js/clipboard.js");
 load_js("Lib/js/DateTimePicker.js");
+load_css("Theme/css/datetimepicker.css");
 
 ?>
 
@@ -34,6 +35,14 @@ load_js("Lib/js/DateTimePicker.js");
 body {
 	background: none;
 }
+#legend { width: 100%; float: right; position: relative; z-index: 2; font-size: 13px; }
+#legend .col { position: absolute; top: 0; }
+#legend .right { right: 0.8em; }
+#legend .left { left: 0; }
+.legendLayer rect.background { fill: rgba(255, 255, 255, 0.6); }
+.legend { font-size: 13px; }
+
+#graph_zoomin, #graph_zoomout, #graph_left, #graph_right { font-weight: 700; }
 </style>
 
 <div id="graph-view-app" class="graph-embed-view">
@@ -42,7 +51,7 @@ body {
 		<button type="button" class="btn" style="margin-left:8px" v-if="errorBadFeedIds.length" @click="onRemoveMissingFeeds"><?php echo tr('Remove missing'); ?></button>
 	</div>
 
-	<div id="navigation" style="padding-bottom:4px;" v-show="!histogramMode">
+	<div id="navigation" style="padding-bottom:4px;" v-show="!histogramMode && !showTimeManual">
 		<div class="input-prepend input-append" style="margin-bottom:0 !important; margin-left:2px;">
 			<button class="btn graph_time_refresh" title="<?php echo tr('Refresh'); ?>" @click="onGraphTimeRefresh"><i class="icon-repeat"></i></button>
 			<select class="btn graph_time" style="width:95px; padding-left:5px" v-model="graphTimeHours" @change="onGraphTimeRefresh">
@@ -55,18 +64,25 @@ body {
 				<option value="720"><?php echo tr('Month'); ?></option>
 				<option value="8760"><?php echo tr('Year'); ?></option>
 			</select>
-			<button id="graph_zoomin" class="btn" style="min-width:40px" title="<?php echo tr('Zoom In'); ?>" @click="onZoomIn">+</button>
-			<button id="graph_zoomout" class="btn" style="min-width:40px" title="<?php echo tr('Zoom Out'); ?>" @click="onZoomOut">-</button>
-			<button id="graph_left" class="btn" style="min-width:40px" title="<?php echo tr('Earlier'); ?>" @click="onPan(-1)"><</button>
+		</div>
+		<div style="margin-bottom:0 !important; margin-left:4px; display:inline-block;">&nbsp;
+			<button class="btn navigation-timewindow" title="<?php echo tr('Select time window'); ?>" @click="showTimeManual = true"><i class="icon-resize-horizontal"></i></button>&nbsp;
+			<button id="graph_zoomin" class="btn" style="min-width:40px" title="<?php echo tr('Zoom In'); ?>" @click="onZoomIn">+</button>&nbsp;
+			<button id="graph_zoomout" class="btn" style="min-width:40px" title="<?php echo tr('Zoom Out'); ?>" @click="onZoomOut">-</button>&nbsp;
+			<button id="graph_left" class="btn" style="min-width:40px" title="<?php echo tr('Earlier'); ?>" @click="onPan(-1)"><</button>&nbsp;
 			<button id="graph_right" class="btn" style="min-width:40px" title="<?php echo tr('Later'); ?>" @click="onPan(1)">></button>
 		</div>
 	</div>
 
-	<div class="input-prepend input-append" style="margin-bottom:5px">
-		<span class="add-on"><?php echo tr('Start'); ?>:</span>
-		<input id="request-start" type="datetime-local" style="width:185px" v-model="startLocal" @change="onReload">
-		<span class="add-on"><?php echo tr('End'); ?>:</span>
-		<input id="request-end" type="datetime-local" style="width:185px" v-model="endLocal" @change="onReload">
+	<div v-show="!histogramMode && showTimeManual" style="margin-bottom:4px; margin-left:2px">
+		<div class="input-prepend input-append">
+			<span class="add-on"><?php echo tr('Select time window'); ?></span>
+			<span class="add-on"><?php echo tr('Start'); ?></span>
+			<date-time-picker v-model="startLocal" @change="onReload"></date-time-picker>
+			<span class="add-on"><?php echo tr('End'); ?></span>
+			<date-time-picker v-model="endLocal" @change="onReload"></date-time-picker>
+			<button class="btn navigation-timewindow-set" title="<?php echo tr('Done'); ?>" @click="showTimeManual = false"><i class="icon-ok"></i></button>
+		</div>
 	</div>
 
 	<div id="legend"></div>

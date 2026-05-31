@@ -98,12 +98,12 @@ body {
 #feed-options-table td input[type="checkbox"], #feed-stats-table td input[type="checkbox"] { vertical-align: middle; margin: 0; position: relative; top: -1px; }
 #tooltip { z-index: 1001; }
 
-#legend { width: 100%; float: right; position: relative; z-index: 2; font-size: 13px; }
+#legend { width: 100%; float: right; position: relative; z-index: 2; font-size: 12px; }
 #legend .col { position: absolute; top: 0; }
 #legend .right { right: 0.8em; }
 #legend .left { left: 0; }
-.legendLayer rect.background { fill: transparent; }
-
+.legendLayer rect.background { fill: rgba(255, 255, 255, 0.6); }
+.legend { font-size: 14px; }
 #graph_zoomin,
 #graph_zoomout,
 #graph_left,

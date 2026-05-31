@@ -346,7 +346,7 @@ const normalizeColor = color => {
 /* ── Plot / Chart Helpers ────────────────────────────────────────────────── */
 
 const buildFeedLabel = (feed, showtag) =>
-	(showtag && feed.tag ? `${feed.tag}/` : '') + feed.name;
+	(showtag && feed.tag ? `${feed.tag}: ` : '') + feed.name;
 
 const applyYAxisBounds = (axis, min, max) => {
 	let explicit = false;

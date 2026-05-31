@@ -41,6 +41,7 @@ const GraphLayoutApp = {
 		activeHistogramFeed: null,
 		histogramType: 'timeatvalue',
 		histogramResolution: 1,
+		showTimeManual: false,
 	}),
 
 	/* ── Computed ──────────────────────────────────────────────────────────── */
