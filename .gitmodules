@@ -1,3 +1,0 @@
-[submodule "Lib/timezone-js"]
-	path = Lib/timezone-js
-	url = git://github.com/mde/timezone-js.git

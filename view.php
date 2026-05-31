@@ -1,433 +1,694 @@
 <?php
 defined('EMONCMS_EXEC') or die('Restricted access');
-    /*
-    All Emoncms code is released under the GNU Affero General Public License.
-    See COPYRIGHT.txt and LICENSE.txt.
+/*
+All Emoncms code is released under the GNU Affero General Public License.
+See COPYRIGHT.txt and LICENSE.txt.
 
-    ---------------------------------------------------------------------
-    Emoncms - open source energy visualisation
-    Part of the OpenEnergyMonitor project:
-    http://openenergymonitor.org
-    */
+---------------------------------------------------------------------
+Emoncms - open source energy visualisation
+Part of the OpenEnergyMonitor project:
+http://openenergymonitor.org
+*/
 
-    global $path, $embed, $session, $settings;
-    $userid = 0;
-    $v = 28;
-    
-    $feedidsLH = "";
-    if (isset($_GET['feedidsLH'])) $feedidsLH = $_GET['feedidsLH'];
+global $path, $session, $settings;
 
-    $feedidsRH = "";
-    if (isset($_GET['feedidsRH'])) $feedidsRH = $_GET['feedidsRH'];
+$apikey     = $_GET['apikey']    ?? '';
+$feedidsLH  = $_GET['feedidsLH'] ?? '';
+$feedidsRH  = $_GET['feedidsRH'] ?? '';
+$load_saved = $_GET['load']      ?? '';
 
-    $load_saved = "";
-    if (isset($_GET['load'])) $load_saved = $_GET['load'];
-    
-    $apikey = "";
-    if (isset($_GET['apikey'])) $apikey = $_GET['apikey'];
-    
-    $min_feed_interval = 10;
-    if (isset($settings['feed']['min_feed_interval'])) {
-         $min_feed_interval = (int) $settings['feed']['min_feed_interval'];
-    }
-    
+$min_feed_interval = 10;
+if (isset($settings['feed']['min_feed_interval'])) {
+	$min_feed_interval = (int) $settings['feed']['min_feed_interval'];
+}
+load_js("Lib/js/vue.global.prod-3.5.22.min.js");
+load_js("Lib/js/flot-5.1.0.mod.min.js");
+load_js("Lib/js/clipboard.js");
+load_js("Lib/js/DateTimePicker.js");
+load_css("Theme/css/datetimepicker.css");
 ?>
 
-<!--[if IE]><script src="<?php echo $path;?>Lib/flot/excanvas.min.js"></script><![endif]-->
-
 <style>
-    [v-cloak] {
-        visibility: hidden
-    }
+
+body {
+	background-color: whitesmoke;
+}
+
+.content-container { max-width: 1150px; }
+
+#placeholder_bound.has-error {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 18px;
+	box-sizing: border-box;
+}
+
+#placeholder_bound .graph-window-error {
+	width: 100%;
+	height: 100%;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	text-align: center;
+	color: #253040;
+	border-radius: 10px;
+}
+
+#placeholder_bound .graph-window-error.is-error {
+	background: linear-gradient(180deg, #fff5f5 0%, #ffe9e9 100%);
+	color: #7a1d1d;
+}
+
+#placeholder_bound .graph-window-error.is-info {
+	background-color: rgba(183, 213, 238, 0.3);
+	color: #1f4e75;
+}
+
+#placeholder_bound .graph-window-error .graph-window-error-title {
+	font-size: 17px;
+	font-weight: 600;
+}
+
+#placeholder_bound .graph-window-error .graph-window-error-actions {
+	display: flex;
+	justify-content: center;
+}
+
+#placeholder_bound .graph-window-error .graph-window-error-actions .btn {
+	margin: 0;
+}
+
+
+/* ==========================================================================
+   9. GRAPH MODULE & DATA VIEW
+   ========================================================================== */
+
+#graph-view-app { padding-top: 1rem; }
+#tables { overflow: hidden; }
+#feed-options-table input, #feed-options-table select { margin-bottom: 0; }
+#feed-stats-table {
+	display: grid;
+	grid-template-columns: 1fr repeat(7, max-content);
+	font-family: var(--font-mono);
+	font-size: 13px;
+	color: var(--text-secondary);
+}
+#feed-stats-table thead,
+#feed-stats-table tbody,
+#feed-stats-table tr { display: contents; }
+#feed-stats-table th, #feed-stats-table td { white-space: nowrap; padding: 4px clamp(6px, 1.2vw, 25px); }
+#feed-stats-table td:first-child, #feed-stats-table th:first-child { white-space: normal; }
+#placeholder { width: 100%; height: 100%; }
+.feed-options { overflow-x: auto; }
+.feed-options-show-options, .feed-options-show-stats { margin-left: auto; flex-shrink: 0; }
+.feed-options-show-options.hide, .feed-options-show-stats.hide { display: none !important; }
+#feed-options-table td input[type="checkbox"], #feed-stats-table td input[type="checkbox"] { vertical-align: middle; margin: 0; position: relative; top: -1px; }
+#tooltip { z-index: 1001; }
+
+#legend { width: 100%; float: right; position: relative; z-index: 2; font-size: 12px; }
+#legend .col { position: absolute; top: 0; }
+#legend .right { right: 0.8em; }
+#legend .left { left: 0; }
+.legendLayer rect.background { fill: rgba(255, 255, 255, 0.6); }
+.legend { font-size: 14px; }
+#graph_zoomin,
+#graph_zoomout,
+#graph_left,
+#graph_right {
+	font-weight: 700;
+}
+
+#showcontrols { display: inline-flex; align-items: center; gap: 0.75rem; margin-left: auto; }
+.ctrl-checkbox { display: inline-flex; align-items: center; gap: 0.35rem; margin: 0; }
+
+.controls-row-top {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+}
+
+.controls-row-top .interval-controls {
+	flex: 1 1 0;
+	display: flex;
+	justify-content: flex-start;
+}
+
+.controls-row-top .axes-controls {
+	flex: 1 1 0;
+	display: flex;
+	justify-content: flex-end;
+	align-items: flex-start;
+	gap: 0.5rem;
+	flex-wrap: wrap;
+}
+
+.interval-options-row {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+}
+
+.interval-toggle-grid {
+	display: flex;
+	gap: 0.75rem;
+	flex-wrap: wrap;
+}
+
+.interval-toggle-item {
+	flex: 1 1 220px;
+	display: flex;
+	align-items: center;
+	justify-content: flex-start;
+	gap: 0.5rem;
+	margin: 0;
+}
+
+.interval-toggle-item-end {
+	justify-content: flex-end;
+}
+
+.interval-toggle-item input[type="checkbox"] {
+	margin: 0;
+}
+
+.interval-toggle-check {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5rem;
+	margin: 0;
+}
+
+.interval-max-fill {
+	display: inline-flex;
+	align-items: center;
+	margin-left: 0.5rem;
+}
+
+@media (max-width: 768px) {
+	.controls-row-top {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.controls-row-top .interval-controls {
+		justify-content: flex-start;
+	}
+
+	.controls-row-top .axes-controls {
+		justify-content: flex-start;
+	}
+
+	.interval-toggle-grid {
+		flex-direction: column;
+		gap: 0.35rem;
+	}
+
+	.interval-options-row {
+		gap: 0.35rem;
+	}
+
+	.interval-toggle-item {
+		flex: 0 1 auto;
+		justify-content: flex-start;
+		gap: 0.35rem;
+		flex-wrap: wrap;
+	}
+
+	.interval-toggle-item-end {
+		justify-content: flex-start;
+	}
+
+	.interval-max-fill {
+		margin-left: 0;
+	}
+}
+
+/* -- Info panel & Sidebar -- */
+#yaxis-left { width: 110px; }
+#yaxis-right { width: 110px; }
+.yaxis-minmax-label { width: 30px; }
+.yaxis-minmax { width: 50px !important; }
+.csvoptions { width: auto; }
+.window-info { font-size: var(--font-sm); color: var(--text-secondary); margin: 0.2rem 0 0; }
+
+#my_graphs { width: 13rem; overflow: hidden; position: relative; }
+#my_graphs h4 a { color: var(--l2-title); display: block; }
+#my_graphs h4 a:hover { text-decoration: underline; }
+#my_graphs h5 { color: var(--l2-title); }
+#my_graphs input { width: 12rem; }
+#my_graphs select { width: 13rem; }
+
+table#feeds.table thead th {
+    border-top: 2px solid var(--bg-l2); font-weight: normal !important;
+    color: var(--l2-title); cursor: pointer; transition: all .3s ease-in; padding-left: 0;
+}
+table#feeds.table thead th:hover { color: var(--l2-text); text-decoration: underline; }
+table#feeds.table input[type="checkbox"] { margin: 0; }
+table#feeds.table tbody tr > * { border-color: var(--bg-l2); }
+table#feeds.table tbody tr th { cursor: pointer; transition: all .3s ease-in; font-weight: normal; }
+table#feeds.table tbody tr th:hover { text-decoration: underline; }
+table#feeds.table tbody tr th.feed-title span { max-width: 9em; }
+table#feeds.table .caret { border-top-color: currentColor !important; display: inline-block; vertical-align: middle; margin-right: .4em; }
+
+.feed-header { background: var(--bg-card-header); font-weight: bold; border-bottom: 1px solid var(--border); }
+.feed-select { accent-color: var(--accent); cursor: pointer; }
+
+.interval-input-auto { cursor: pointer; background-color: #e9ecef; color: #555; }
+
 </style>
-<link href="<?php echo $path; ?>Lib/bootstrap-datetimepicker-0.0.11/css/bootstrap-datetimepicker.min.css" rel="stylesheet">
-<link href="<?php echo $path; ?>Modules/graph/graph.css?v=<?php echo $v; ?>" rel="stylesheet">
 
-<script src="<?php echo $path;?>Lib/flot/jquery.flot.merged.js"></script>
-<!-- <script src="<?php echo $path;?>Lib/flot/jquery.flot.min.js"></script>
-<script src="<?php echo $path;?>Lib/flot/jquery.flot.time.min.js"></script>
-<script src="<?php echo $path;?>Lib/flot/jquery.flot.selection.min.js"></script>
-<script src="<?php echo $path;?>Lib/flot/jquery.flot.touch.min.js"></script>
-<script src="<?php echo $path;?>Lib/flot/jquery.flot.togglelegend.min.js"></script>
-<script src="<?php echo $path;?>Lib/flot/jquery.flot.resize.min.js"></script>
-<script src="<?php echo $path; ?>Lib/flot/jquery.flot.stack.min.js"></script>
--->
-<script src="<?php echo $path; ?>Lib/flot/jquery.flot.stack.min.js"></script>
+<div id="graph-view-app">
+	<!-- ── Graph card ─────────────────────────────────────────────── -->
+	<div class="card mt-2">
 
-<script>var min_feed_interval = <?php echo $min_feed_interval; ?>;</script>
-<script src="<?php echo $path;?>Modules/graph/vis.helper.js?v=<?php echo $v; ?>"></script>
-<script src="<?php echo $path;?>Lib/js/clipboard.js?v=<?php echo $v; ?>"></script>
-<script src="<?php echo $path; ?>Lib/bootstrap-datetimepicker-0.0.11/js/bootstrap-datetimepicker.min.js"></script>
-<script src="<?php echo $path; ?>Lib/vue.min.js?v=<?php echo $v; ?>"></script>
+		<nav class="card-header">
+			<div class="card-name">
+				<span class="svg-icon-show_chart_bold text-accent" style="color: var(--accent)"></span>&nbsp;
+				<?php echo tr('Data viewer'); ?>
+			</div>
+			<button class="btn" v-if="histogramMode" @click="onHistogramBackClick"><?php echo tr('Back to main view'); ?></button>
+		</nav>
 
-<h3><?php echo tr('Data viewer'); ?></h3>
-<div id="error" style="display:none"></div>
+		<!-- Normal navigation controls -->
+		<div class="card-header" v-show="!histogramMode && !showTimeManual" style="background-color: #eee;">
+			<div class="input-prepend input-append my-0">
+				<button class="btn graph_time_refresh" title="<?php echo tr('Refresh'); ?>" @click="onGraphTimeRefresh"><i class="icon-repeat"></i></button>
+				<select class="btn graph_time my-0" v-model="graphTimeHours" @change="onGraphTimeRefresh" style="width:auto;">
+					<option value="1"><?php echo tr('1 hour'); ?></option>
+					<option value="6"><?php echo tr('6 hours'); ?></option>
+					<option value="12"><?php echo tr('12 hours'); ?></option>
+					<option value="24"><?php echo tr('24 hours'); ?></option>
+					<option value="168"><?php echo tr('1 Week'); ?></option>
+					<option value="336"><?php echo tr('2 Weeks'); ?></option>
+					<option value="720"><?php echo tr('Month'); ?></option>
+					<option value="8760"><?php echo tr('Year'); ?></option>
+				</select>
+			</div>
 
-<div id="navigation" style="padding-bottom:5px;">
+			<button class="btn my-0" style="margin-left:8px;" title="<?php echo tr('Select time window'); ?>" @click="showTimeManual = true"><i class="icon-resize-horizontal"></i></button>
 
-    <div class="input-prepend input-append" style="margin-bottom:0 !important">
-        <button class='btn graph_time_refresh' title="<?php echo tr('Refresh') ?>"><i class="icon-repeat"></i></button>
-        <select class='btn graph_time' style="width:110px; padding-left:5px">
-            <option value='1'><?php echo tr('1 hour') ?></option>
-            <option value='6'><?php echo tr('6 hours') ?></option>
-            <option value='12'><?php echo tr('12 hours') ?></option>
-            <option value='24'><?php echo tr('24 hours') ?></option>
-            <option value='168' selected><?php echo tr('1 Week') ?></option>
-            <option value='336'><?php echo tr('2 Weeks') ?></option>        
-            <option value='720'><?php echo tr('Month') ?></option>
-            <option value='8760'><?php echo tr('Year') ?></option>
-        </select>
-    </div>
-    <!--
-    <button class='btn graph_time' type='button' data-time='1' title="<?php echo tr('Day') ?>"><?php echo tr('D') ?></button>
-    <button class='btn graph_time' type='button' data-time='7' title="<?php echo tr('Week') ?>"><?php echo tr('W') ?></button>
-    <button class='btn graph_time' type='button' data-time='30' title="<?php echo tr('Month') ?>"><?php echo tr('M') ?></button>
-    <button class='btn graph_time' type='button' data-time='365' title="<?php echo tr('Year') ?>"><?php echo tr('Y') ?></button>
-    -->
-    
-    <button id='graph_zoomin' class='btn' title="<?php echo tr('Zoom In') ?>">+</button>
-    <button id='graph_zoomout' class='btn' title="<?php echo tr('Zoom Out') ?>">-</button>
-    <button id='graph_left' class='btn' title="<?php echo tr('Earlier') ?>"><</button>
-    <button id='graph_right' class='btn' title="<?php echo tr('Later') ?>">></button>
-    
-    <div id="showcontrols" class="input-prepend input-append">
-    <span class="add-on"><?php echo tr('Show') ?></span>
-    <span class="add-on"><?php echo tr('missing data') ?>: <input type="checkbox" id="showmissing" style="margin-top:1px" /></span>
-    <span class="add-on"><?php echo tr('legend') ?>: <input type="checkbox" id="showlegend" style="margin-top:1px" /></span>
-    <span class="add-on"><?php echo tr('feed tag') ?>: <input type="checkbox" id="showtag" style="margin-top:1px" /></span>
-    </div>
-    
-    <div style="clear:both"></div>
+			<div class="btn-group my-0" style="margin-left:8px;">
+				<button class="btn px-3" id="graph_zoomin" title="<?php echo tr('Zoom In'); ?>" @click="onZoomIn">+</button>
+				<button class="btn px-3" id="graph_zoomout" title="<?php echo tr('Zoom Out'); ?>" @click="onZoomOut">−</button>
+				<button class="btn px-3" id="graph_left" title="<?php echo tr('Earlier'); ?>" @click="onPan(-1)"><</button>
+				<button class="btn px-3" id="graph_right" title="<?php echo tr('Later'); ?>" @click="onPan(1)">></button>
+			</div>
+
+			<div id="showcontrols">
+				<label class="ctrl-checkbox"><input type="checkbox" id="showlegend" v-model="state.showlegend"> <?php echo tr('Legend'); ?></label>
+				<label class="ctrl-checkbox"><input type="checkbox" id="showtag" v-model="state.showtag"> <?php echo tr('Feed tag'); ?></label>
+			</div>
+		</div>
+
+		<!-- Date-time picker controls -->
+		<div class="card-header" v-show="!histogramMode && showTimeManual" style="background-color: #eee;">
+			<div class="input-prepend input-append my-0">
+				<span class="add-on"><?php echo tr('Start'); ?></span>
+				<date-time-picker v-model="startLocal" @change="onReload"></date-time-picker>
+			</div>
+
+			<div class="input-prepend input-append my-0">
+				<span class="add-on"><?php echo tr('End'); ?></span>
+				<date-time-picker v-model="endLocal" @change="onReload"></date-time-picker>
+			</div>
+
+			<button class="btn my-0" title="<?php echo tr('Done'); ?>" @click="showTimeManual = false"><i class="icon-ok"></i></button>
+		</div>
+
+		<!-- Histogram controls -->
+		<div class="card-header" v-show="histogramMode">
+			<div class="input-prepend input-append">
+				<span class="add-on"><?php echo tr('Type'); ?></span>
+				<select v-model="histogramType" @change="drawHistogram">
+					<option value="timeatvalue"><?php echo tr('Time at value'); ?></option>
+					<option value="kwhatpower"><?php echo tr('kWh at Power'); ?></option>
+				</select>
+				<span class="add-on"><?php echo tr('Resolution'); ?></span>
+				<input type="text" v-model="histogramResolution" @change="drawHistogram">
+			</div>
+		</div>
+
+		<!-- Graph area -->
+		<div class="card-body">
+			<div id="legend" v-show="!errorMessage"></div>
+			<div id="placeholder_bound" :class="{'has-error': !!errorMessage}" style="width:100%; height:400px;">
+				<div id="placeholder" v-show="!errorMessage"></div>
+				<div id="error" class="graph-window-error" :class="errorType==='info' ? 'is-info' : 'is-error'" v-show="errorMessage">
+					<div class="graph-window-error-title">{{ errorMessage }}</div>
+					<div class="graph-window-error-actions" v-if="errorBadFeedIds.length">
+						<button type="button" class="btn" @click="onRemoveMissingFeeds"><?php echo tr('Remove missing'); ?></button>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="card-body" style="border-top: 1px solid var(--border)" v-show="!histogramMode">
+			<div id="window-info" class="window-info" v-if="windowInfo">
+				<b><?php echo tr('Window'); ?>:</b> {{ windowInfo.start }} <b>&#x2192;</b> {{ windowInfo.end }}
+				&nbsp;&middot;&nbsp; <b><?php echo tr('Length'); ?>:</b> {{ windowInfo.length }}
+			</div>
+
+		</div>
+	<!-- ── Options card ───────────────────────────────────────────── -->
+
+		<div class="card-controls" style="border-top: 1px solid var(--border); background-color: #eee;" v-show="!histogramMode">
+
+			<div class="controls-row controls-row-top">
+				<div class="input-prepend input-append interval-controls">
+					<span class="add-on"><?php echo tr('Type'); ?></span>
+					<select id="request-type" v-model="state.mode" @change="onReload" style="width:auto">
+						<option value="interval"><?php echo tr('Fixed Interval'); ?></option>
+						<option value="daily"><?php echo tr('Daily'); ?></option>
+						<option value="weekly"><?php echo tr('Weekly'); ?></option>
+						<option value="monthly"><?php echo tr('Monthly'); ?></option>
+						<option value="annual"><?php echo tr('Annual'); ?></option>
+					</select>
+
+					<input v-show="state.mode==='interval'" id="request-interval" type="text"
+						:value="state.fixinterval ? state.interval : state.interval + 's (auto)'"
+						:readonly="!state.fixinterval"
+						:class="{'interval-input-auto': !state.fixinterval}"
+						:title="state.fixinterval ? '' : '<?php echo tr('Click to edit and fix interval'); ?>'"
+						@click="onIntervalInputClick"
+						@keydown="onIntegerKeydown"
+						@change="onIntervalInputChange"
+						style="width:90px; text-align:center">
+					<button v-show="state.mode==='interval' && state.fixinterval" class="btn add-on" @click="onIntervalResetAuto" title="<?php echo tr('Return to auto interval'); ?>">&#x2715;</button>
+				</div>
+
+				<div class="axes-controls">
+					<div id="yaxis_left" class="input-prepend input-append mr-2" v-show="leftCount > 0">
+						<span class="add-on px-2">L</span>
+						<!-- Left Y-axis min -->
+						<input class="yaxis-minmax" id="yaxis-min" type="text"
+							:value="state.yaxismin === 'auto' ? 'auto' : state.yaxismin"
+							:readonly="state.yaxismin === 'auto'"
+							:class="{'interval-input-auto': state.yaxismin === 'auto'}"
+							:title="state.yaxismin === 'auto' ? '<?php echo tr('Click to set min'); ?>' : ''"
+							@click="onYAxisInputClick('left', 'min', $event)"
+							@keydown="onDecimalKeydown"
+							@change="onYAxisMinMaxChange('left', 'min', $event)">
+						<!-- Left Y-axis max -->
+						<input class="yaxis-minmax" id="yaxis-max" type="text"
+							:value="state.yaxismax === 'auto' ? 'auto' : state.yaxismax"
+							:readonly="state.yaxismax === 'auto'"
+							:class="{'interval-input-auto': state.yaxismax === 'auto'}"
+							:title="state.yaxismax === 'auto' ? '<?php echo tr('Click to set max'); ?>' : ''"
+							@click="onYAxisInputClick('left', 'max', $event)"
+							@keydown="onDecimalKeydown"
+							@change="onYAxisMinMaxChange('left', 'max', $event)">
+						<button class="btn add-on" v-show="!leftAxisIsAuto" @click="resetYAxis('left')">&#x2715;</button>
+					</div>
+
+					<div id="yaxis_right" class="input-prepend input-append" v-show="rightCount > 0">
+						<span class="add-on px-2">R</span>
+						<!-- Right Y-axis min -->
+						<input class="yaxis-minmax" id="yaxis-min2" type="text"
+							:value="state.yaxismin2 === 'auto' ? 'auto' : state.yaxismin2"
+							:readonly="state.yaxismin2 === 'auto'"
+							:class="{'interval-input-auto': state.yaxismin2 === 'auto'}"
+							:title="state.yaxismin2 === 'auto' ? '<?php echo tr('Click to set min'); ?>' : ''"
+							@click="onYAxisInputClick('right', 'min', $event)"
+							@keydown="onDecimalKeydown"
+							@change="onYAxisMinMaxChange('right', 'min', $event)">
+						<!-- Right Y-axis max -->
+						<input class="yaxis-minmax" id="yaxis-max2" type="text"
+							:value="state.yaxismax2 === 'auto' ? 'auto' : state.yaxismax2"
+							:readonly="state.yaxismax2 === 'auto'"
+							:class="{'interval-input-auto': state.yaxismax2 === 'auto'}"
+							:title="state.yaxismax2 === 'auto' ? '<?php echo tr('Click to set max'); ?>' : ''"
+							@click="onYAxisInputClick('right', 'max', $event)"
+							@keydown="onDecimalKeydown"
+							@change="onYAxisMinMaxChange('right', 'max', $event)">
+						<button class="btn add-on" v-show="!rightAxisIsAuto" @click="resetYAxis('right')">&#x2715;</button>
+					</div>
+				</div>
+			</div>
+
+			<div class="controls-row interval-options-row" v-show="state.mode==='interval'">
+				<div class="interval-toggle-grid">
+					<!--
+					<label class="interval-toggle-item" for="request-limitinterval">
+						<input id="request-limitinterval" type="checkbox" v-model="state.limitinterval">
+						<span><?php echo tr('Limit to data interval'); ?></span>
+					</label>-->
+
+					<div class="interval-toggle-item">
+						<label class="interval-toggle-check" for="request-removenull">
+							<input id="request-removenull" type="checkbox" class="remove-null" v-model="state.removeNull" @change="onRemoveNullChange">
+							<span><?php echo tr('Fill nulls with last value'); ?></span>
+						</label>
+						<span class="input-prepend input-append interval-max-fill my-0" v-if="state.removeNull">
+							<span class="add-on"><?php echo tr('Max fill'); ?></span>
+							<input type="text" class="remove-null-max-duration" v-model="state.removeNullMaxDuration" @change="onRemoveNullChange" style="width:50px; text-align:center">
+							<span class="add-on"><?php echo tr('seconds'); ?></span>
+						</span>
+					</div>
+
+					<label class="interval-toggle-item interval-toggle-item-end" for="showmissing">
+						<input type="checkbox" id="showmissing" v-model="state.showmissing">
+						<span><?php echo tr('Show gaps'); ?></span>
+					</label>
+				</div>
+
+
+			</div>
+
+		</div><!-- .card-controls -->
+	</div>
+	<!-- ── Feeds options & stats ───────────────────────────────────────────── -->
+	<div class="card mt-3">
+
+		<div class="feed-options" :class="{hide: state.feedlist.length===0 || histogramMode}" v-show="!histogramMode">
+			<div class="card">
+				<div class="card-header feed-options-header">
+					<span class="card-accent"></span>
+					<span class="card-name feed-options-title"><?php echo tr('Feeds in view'); ?></span>
+
+					<div class="feed-options-show-options btn btn-sm" :class="{hide: !state.showStats}" @click.stop.prevent="showOptions"><?php echo tr('Show options'); ?></div>
+					<div class="feed-options-show-stats btn btn-sm" :class="{hide: state.showStats}" @click.stop.prevent="showStats"><?php echo tr('Show stats'); ?></div>
+				</div>
+
+				<div id="tables">
+					<table id="feed-options-table" v-show="!state.showStats">
+						<colgroup>
+							<col style="width:40px">
+							<col>
+							<col style="width:100px">
+							<col style="width:65px">
+							<col style="width:55px">
+							<col style="width:65px">
+							<col style="width:72px">
+							<col style="width:72px">
+							<col style="width:70px">
+							<col style="width:100px">
+							<col style="width:50px">
+							<col style="width:130px">
+						</colgroup>
+						<thead>
+							<tr>
+								<th></th>
+								<th><?php echo tr('Feed'); ?></th>
+								<th><?php echo tr('Type'); ?></th>
+								<th><?php echo tr('Color'); ?></th>
+								<th><?php echo tr('Fill'); ?></th>
+								<th><?php echo tr('Stack'); ?></th>
+								<th style="text-align:center"><?php echo tr('Scale'); ?></th>
+								<th style="text-align:center"><?php echo tr('Offset'); ?></th>
+								<th style="text-align:center"><?php echo tr('Delta'); ?></th>
+								<th style="text-align:center"><?php echo tr('Average'); ?></th>
+								<th><?php echo tr('DP'); ?></th>
+								<th></th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr v-for="(feed, z) in state.feedlist" :key="feed.id">
+								<td>
+									<a v-if="z > 0" @click="moveFeed(z, -1)" title="<?php echo tr('Move up'); ?>" style="cursor:pointer"><i class="icon-arrow-up"></i></a>
+									<a v-if="z < state.feedlist.length - 1" @click="moveFeed(z, 1)" title="<?php echo tr('Move down'); ?>" style="cursor:pointer"><i class="icon-arrow-down"></i></a>
+								</td>
+								<td class="col-primary">{{ feedName(feed) }}</td>
+								<td>
+									<select style="width:80px" :value="feed.plottype" @change="setPlottype(feed, $event)">
+										<option value="lines"><?php echo tr('Lines'); ?></option>
+										<option value="bars"><?php echo tr('Bars'); ?></option>
+										<option value="points"><?php echo tr('Points'); ?></option>
+										<option value="steps"><?php echo tr('Steps'); ?></option>
+									</select>
+								</td>
+								<td><input type="color" style="width:46px" :value="feedColor(feed)" @input="setColor(feed, $event)"></td>
+								<td style="text-align:center"><input type="checkbox" :checked="!!feed.fill" @change="setFill(feed, $event)"></td>
+								<td style="text-align:center"><input type="checkbox" :checked="!!feed.stack" @change="setStack(feed, $event)"></td>
+								<td style="text-align:center"><input type="text" style="width:50px" :value="feed.scale" @change="setScale(feed, $event)"></td>
+								<td style="text-align:center"><input type="text" style="width:50px" :value="feed.offset" @change="setOffset(feed, $event)"></td>
+								<td style="text-align:center"><input type="checkbox" :checked="!!feed.delta" @change="setDelta(feed, $event)"></td>
+								<td style="text-align:center"><input type="checkbox" :checked="!!feed.average" @change="setAverage(feed, $event)"></td>
+								<td>
+									<select style="width:50px" :value="feed.dp" @change="setDp(feed, $event)">
+										<option>0</option>
+										<option>1</option>
+										<option>2</option>
+										<option>3</option>
+									</select>
+								</td>
+								<td style="text-align:center"><button class="histogram btn" @click="onHistogramClick(feed.id)"><?php echo tr('Histogram'); ?></button></td>
+							</tr>
+						</tbody>
+					</table>
+
+					<table v-show="state.showStats" id="feed-stats-table">
+						<thead>
+							<tr>
+								<th><?php echo tr('Feed'); ?></th>
+								<th><?php echo tr('Quality'); ?></th>
+								<th><?php echo tr('Min'); ?></th>
+								<th><?php echo tr('Max'); ?></th>
+								<th><?php echo tr('Diff'); ?></th>
+								<th><?php echo tr('Mean'); ?></th>
+								<th><?php echo tr('Stdev'); ?></th>
+								<th><?php echo tr('Wh'); ?></th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr v-for="feed in state.feedlist" :key="'stats-'+feed.id">
+								<td>{{ feedName(feed) }}</td>
+								<td>{{ feed.stats.quality }}% ({{ feed.stats.good }}/{{ feed.stats.total }})</td>
+								<td>{{ Number(feed.stats.min).toFixed(feed.dp) }}</td>
+								<td>{{ Number(feed.stats.max).toFixed(feed.dp) }}</td>
+								<td>{{ Number(feed.stats.diff).toFixed(feed.dp) }}</td>
+								<td>{{ Number(feed.stats.mean).toFixed(feed.dp) }}</td>
+								<td>{{ Number(feed.stats.stdev).toFixed(feed.dp) }}</td>
+								<td>{{ Number(feed.stats.wh).toFixed(1) }}</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</div>
+		</div>
+
+		<div class="card-controls" style="border-top: 1px solid var(--border)">
+			<div class="controls-row">
+				<div class="input-prepend">
+					<button class="btn" id="showcsv" @click="toggleCsv">{{ csvButtonLabel }}</button>
+					<span class="add-on csvoptions" v-show="state.showcsv"><?php echo tr('Time format'); ?>:</span>
+					<select id="csvtimeformat" class="csvoptions" v-show="state.showcsv" v-model="state.csvtimeformat">
+						<option value="unix"><?php echo tr('Unix timestamp'); ?></option>
+						<option value="seconds"><?php echo tr('Seconds since start'); ?></option>
+						<option value="datestr"><?php echo tr('Date-time string'); ?></option>
+					</select>
+				</div>
+				<div class="input-prepend" v-show="state.showcsv">
+					<span class="add-on csvoptions"><?php echo tr('Null values'); ?>:</span>
+					<select id="csvnullvalues" class="csvoptions" v-model="state.csvnullvalues">
+						<option value="show"><?php echo tr('Show'); ?></option>
+						<option value="lastvalue"><?php echo tr('Replace with last value'); ?></option>
+						<option value="remove"><?php echo tr('Remove whole line'); ?></option>
+					</select>
+				</div>
+				<div class="input-prepend" v-show="state.showcsv">
+					<span class="add-on csvoptions"><?php echo tr('Headers'); ?>:</span>
+					<select id="csvheaders" class="csvoptions" v-model="state.csvheaders">
+						<option value="showNameTag"><?php echo tr('Show name and tag'); ?></option>
+						<option value="showName"><?php echo tr('Show name'); ?></option>
+						<option value="hide"><?php echo tr('Hide'); ?></option>
+					</select>
+				</div>
+				<div class="ctrl-actions" v-show="state.showcsv">
+					<button id="download-csv" class="btn csvoptions" @click="onDownloadCsv"><?php echo tr('Download'); ?></button>
+					<button class="btn csvoptions" id="copy-csv" type="button" @click="onCopyCsv"><?php echo tr('Copy'); ?> <i class="icon-share-alt"></i></button>
+					<span id="copy-csv-feedback" class="csvoptions"></span>
+				</div>
+			</div>
+			<textarea id="csv" style="width:100%; height:500px; box-sizing:border-box" v-show="state.showcsv" v-model="csvText"></textarea>
+		</div><!-- .card-controls (csv) -->
+
+		<Teleport to=".menu-l3">
+			<div class="htop"></div>
+			<h3 class="l3-title mx-3"><?php echo tr('Graph'); ?></h3>
+
+			<!-- Feed selector -->
+			<table id="feeds" class="table table-condensed mx-3" style="width:90%">
+				<colgroup>
+					<col style="width:70%">
+					<col style="width:15%">
+					<col style="width:15%">
+				</colgroup>
+				<template v-for="(tagFeeds, tag) in feedsByTag" :key="tag">
+					<thead>
+						<tr class="tagheading" tabindex="0" @click="toggleTag(tag)" @keyup.enter="toggleTag(tag)">
+							<th colspan="3"><span class="caret"></span>{{ tag }}</th>
+						</tr>
+					</thead>
+					<tbody v-show="!collapsedTags[tag]">
+						<tr v-for="feed in tagFeeds" :key="feed.id" style="color:#666">
+							<th class="feed-title" tabindex="0"
+								@click="toggleFeedLeft(feed.id)" @keyup.enter="toggleFeedLeft(feed.id)">
+								<span class="text-truncate d-inline-block">{{ feed.name.length > 20 ? feed.name.substr(0,20)+'..' : feed.name }}</span>
+							</th>
+							<td><input type="checkbox" :checked="leftChecked.has(feed.id)" @change="onYAxisChange(feed.id, 1, $event.target.checked)"></td>
+							<td><input type="checkbox" :checked="rightChecked.has(feed.id)" @change="onYAxisChange(feed.id, 2, $event.target.checked)"></td>
+						</tr>
+					</tbody>
+				</template>
+			</table>
+
+			<!-- My Graphs -->
+			<div id="my_graphs" class="px-3">
+				<h4>
+					<a href="#" @click.prevent="savedGraphsCollapsed = !savedGraphsCollapsed">
+						<?php echo tr('My Graphs'); ?>
+						<span class="arrow arrow-down pull-right"></span>
+					</a>
+				</h4>
+				<div v-if="!savedGraphsCollapsed">
+					<select id="graph-select" v-model="savedGraphSelected" style="margin-bottom:8px">
+						<option value="-1"><?php echo tr('Select graph'); ?> :</option>
+						<option v-for="(g, i) in savedGraphs" :key="g.id" :value="i">[#{{ g.id }}] {{ g.name }}</option>
+					</select>
+					<h5><?php echo tr('Graph Name'); ?>:</h5>
+					<input id="graphName" v-model="savedGraphName" type="text" placeholder="<?php echo tr('Graph Name'); ?>" style="margin-bottom:8px" :disabled="!canWriteGraphs">
+					<small class="help-block">
+						<span v-if="savedGraphSelected > -1"><?php echo tr('Selected graph id'); ?>: {{ savedGraphs[savedGraphSelected].id }}</span>
+						<span v-else><?php echo tr('None selected'); ?></span>
+					</small>
+					<small class="help-block" v-if="savedGraphSelected > -1">
+						{{ savedGraphChanged ? '<?php echo tr('Changed'); ?>' : '<?php echo tr('No changes'); ?>' }}
+					</small>
+					<button class="btn" @click="onDeleteSavedGraph" :disabled="!canWriteGraphs || savedGraphSelected < 0"><?php echo tr('Delete'); ?></button>&nbsp;
+					<button class="btn" @click="onSaveSavedGraph" :disabled="!canSaveSavedGraph"><?php echo tr('Save'); ?></button>
+					<small class="help-block" v-if="savedGraphStatus">{{ savedGraphStatus }}</small>
+				</div>
+			</div>
+		</Teleport>
+	</div>
 </div>
-
-<div id="histogram-controls" style="padding-bottom:5px; display:none;">
-    <div class="input-prepend input-append">
-        <span class="add-on" style="width:100px"><b><?php echo tr('Histogram') ?></b></span>
-        <span class="add-on" style="width:75px"><?php echo tr('Type') ?></span>
-        <select id="histogram-type" style="width:150px">
-            <option value="timeatvalue" ><?php echo tr('Time at value') ?></option>
-            <option value="kwhatpower" ><?php echo tr('kWh at Power') ?></option>
-        </select>
-        <span class="add-on" style="width:75px"><?php echo tr('Resolution') ?></span>
-        <input id="histogram-resolution" type="text" style="width:60px"/>
-    </div>
-    
-    <button id="histogram-back" class="btn" style="float:right"><?php echo tr('Back to main view') ?></button>
-</div>
-<div id="legend"></div>
-<div id="placeholder_bound" style="width:100%; height:400px;">
-    <div id="placeholder"></div>
-</div>
-
-<div id="info">
-    
-    <div class="input-prepend input-append" style="padding-right:5px">
-        <span class="add-on" style="width:50px"><?php echo tr('Start') ?></span>
-        <span id="datetimepicker1">
-            <input id="request-start" data-format="dd/MM/yyyy hh:mm:ss" type="text" style="width:140px" />
-            <span class="add-on"><i data-time-icon="icon-time" data-date-icon="icon-calendar"></i></span>
-        </span>
-    </div>
-    
-    <div class="input-prepend input-append" style="padding-right:5px">
-        <span class="add-on" style="width:50px"><?php echo tr('End') ?></span>
-        <span id="datetimepicker2">
-            <input id="request-end" data-format="dd/MM/yyyy hh:mm:ss" type="text" style="width:140px" />
-            <span class="add-on"><i data-time-icon="icon-time" data-date-icon="icon-calendar"></i></span>
-        </span>
-    </div>
-    
-    <div class="input-prepend input-append" style="padding-right:5px">
-        <span class="add-on" style="width:50px"><?php echo tr('Type') ?></span>
-        <select id="request-type" style="width:130px">
-            <option value="interval"><?php echo tr('Fixed Interval') ?></option>
-            <option value="daily"><?php echo tr('Daily') ?></option>
-            <option value="weekly"><?php echo tr('Weekly') ?></option>
-            <option value="monthly"><?php echo tr('Monthly') ?></option>
-            <option value="annual"><?php echo tr('Annual') ?></option>
-        </select>
-        
-    </div>
-    <div class="input-prepend input-append" style="padding-right:5px">
-        
-        <span class="fixed-interval-options">
-            <input id="request-interval" type="text" style="width:60px" />
-            <span class="add-on"><?php echo tr('Fix') ?> <input id="request-fixinterval" type="checkbox" style="margin-top:1px" /></span>
-            <span class="add-on"><?php echo tr('Limit to data interval') ?> <input id="request-limitinterval" type="checkbox" style="margin-top:1px" checked></span>
-        </span>
-    </div>
-    <div>
-        <div id="yaxis_left" class="input-append input-prepend">
-            <span id="yaxis-left" class="add-on"><?php echo tr('Y-axis').' ('.tr('Left').')' ?>:</span>
-            <span class="yaxis-minmax-label add-on"><?php echo tr('min') ?></span>
-            <input class="yaxis-minmax" id="yaxis-min" type="text" value="auto">
-            <span class="yaxis-minmax-label add-on"><?php echo tr('max') ?></span>
-            <input class="yaxis-minmax" id="yaxis-max" type="text" value="auto">
-            <button class="btn reset-yaxis"><?php echo tr('Reset') ?></button>
-        </div>
-        <div id="yaxis_right" class="input-append input-prepend">
-            <span id="yaxis-right" class="add-on"><?php echo tr('Y-axis').' ('.tr('Right').')' ?>:</span>
-            <span class="yaxis-minmax-label add-on"><?php echo tr('min') ?></span>
-            <input class="yaxis-minmax" id="yaxis-min2" type="text" value="auto">
-            <span class="yaxis-minmax-label add-on"><?php echo tr('max') ?></span>
-            <input class="yaxis-minmax" id="yaxis-max2" type="text" value="auto">
-            <button class="btn reset-yaxis"><?php echo tr('Reset') ?></button>
-        </div>
-        <button id="reload" class="btn" style="vertical-align:top"><?php echo tr('Reload') ?></button>
-        <button id="clear" class="btn" style="vertical-align:top"><?php echo tr('Clear All') ?></button>
-    </div>
-
-    <!-- 
-        var remove_null = $(".remove-null")[0].checked;
-    var remove_null_max_duration = $(".remove-null-max-duration").val();
--->
-    <div class="input-prepend input-append">
-        <span class="add-on"><?php echo tr('Remove null values') ?>:</span>
-        <span class="add-on"><input type="checkbox" class="remove-null" style="margin-top:3px" /></span>
-        <span class="add-on"><?php echo tr('Max fill length') ?>:</span>
-        <input type="text" class="remove-null-max-duration" value="900" style="width:60px"/>
-        <span class="add-on"><?php echo tr('s') ?></span>
-    </div>
-    
-    <div id="window-info" style=""></div><br>
-    
-    <div class="feed-options hide">
-        <div class="feed-options-header">
-            <div class="feed-options-show-options btn btn-default hide"><?php echo tr('Show options') ?></div>
-            <div class="feed-options-show-stats btn btn-default"><?php echo tr('Show statistics') ?></div>
-            <a href="#tables" class="feed-options-title">
-                <span class="caret pull-left"></span>
-                <?php echo tr('Feeds in view') ?>
-            </a>
-        </div>
-
-        <div id="tables">
-            <table id="feed-options-table" class="table">
-                <tr>
-                    <th></th>
-                    <th><?php echo tr('Feed') ?></th>
-                    <th><?php echo tr('Type') ?></th>
-                    <th><?php echo tr('Color') ?></th>
-                    <th><?php echo tr('Fill') ?></th>
-                    <th><?php echo tr('Stack') ?></th>
-                    <th style='text-align:center'><?php echo tr('Scale') ?></th>
-                    <th style='text-align:center'><?php echo tr('Offset') ?></th>
-                    <th style='text-align:center'><?php echo tr('Delta') ?></th>
-                    <th style='text-align:center'><?php echo tr('Average') ?></th>
-                    <th><?php echo tr('DP') ?></th><th style="width:120px"></th>
-                </tr>
-                <tbody id="feed-controls"></tbody>
-            </table>
-            
-            <table id="feed-stats-table" class="table hide">
-                <tr>
-                    <th></th>
-                    <th><?php echo tr('Feed') ?></th>
-                    <th><?php echo tr('Quality') ?></th>
-                    <th><?php echo tr('Min') ?></th>
-                    <th><?php echo tr('Max') ?></th>
-                    <th><?php echo tr('Diff') ?></th>
-                    <th><?php echo tr('Mean') ?></th>
-                    <th><?php echo tr('Stdev') ?></th>
-                    <th><?php echo tr('Wh') ?></th>
-                </tr>
-                <tbody id="feed-stats"></tbody>
-            </table>
-        </div>
-    </div>
-    <br>
-    
-    <div class="input-prepend input-append">
-        <button class="btn" id="showcsv" ><?php echo tr('Show CSV Output') ?></button>
-        <span class="add-on csvoptions"><?php echo tr('Time format') ?>:</span>
-        <select id="csvtimeformat" class="csvoptions">
-            <option value="unix"><?php echo tr('Unix timestamp') ?></option>
-            <option value="seconds"><?php echo tr('Seconds since start') ?></option>
-            <option value="datestr"><?php echo tr('Date-time string') ?></option>
-        </select>
-        <span class="add-on csvoptions"><?php echo tr('Null values') ?>:</span>
-        <select id="csvnullvalues" class="csvoptions">
-            <option value="show"><?php echo tr('Show') ?></option>
-            <option value="lastvalue"><?php echo tr('Replace with last value') ?></option>
-            <option value="remove"><?php echo tr('Remove whole line') ?></option>
-        </select>
-        <span class="add-on csvoptions"><?php echo tr('Headers') ?>:</span>
-        <select id="csvheaders" class="csvoptions">
-            <option value="showNameTag"><?php echo tr('Show name and tag') ?></option>
-            <option value="showName"><?php echo tr('Show name') ?></option>
-            <option value="hide"><?php echo tr('Hide') ?></option>
-        </select>
-    </div>
-
-    <div class="input-prepend">
-    <button id="download-csv" class="csvoptions btn "><?php echo tr('Download') ?></button>
-    </div>
-    <div class="input-append"><!-- just to match the styling of the other items -->
-        <button onclick="copyToClipboardCustomMsg(document.getElementById('csv'), 'copy-csv-feedback','<?php echo tr('Copied') ?>')" class="csvoptions btn hidden" id="copy-csv" type="button"><?php echo tr('Copy') ?> <i class="icon-share-alt"></i></button>
-    </div>
-
-    <span id="copy-csv-feedback" class="csvoptions"></span>
-    
-    <textarea id="csv" style="width:98%; height:500px; display:none; margin-top:10px"></textarea>
-    
-    <!-- Graph sidebar hidden element: moved to actual sidebar by javascript -->
-    <div id="sidebar_html" class="hide"><?php echo view("Modules/graph/Views/sidebar.php",array()); ?></div>
-</div>
-
 
 <script>
-    var apikey = "<?php echo $apikey; ?>";
-    var apikeystr = "";
-    if (apikey!="") apikeystr = "&apikey="+apikey;
+var path = <?php echo json_encode($path); ?>;
+const min_feed_interval = <?php echo $min_feed_interval; ?>;
+const apikey = <?php echo json_encode($apikey); ?>;
+const apikeystr = apikey !== '' ? '&apikey=' + apikey : '';
+const feedidsLH = <?php echo json_encode($feedidsLH); ?>;
+const feedidsRH = <?php echo json_encode($feedidsRH); ?>;
+const load_savegraphs = <?php echo json_encode($load_saved); ?>;
+var session_write = <?php echo isset($session['write']) ? (int) $session['write'] : 0; ?>;
+var graphTranslations = {
+	'Hide CSV Output': "<?php echo tr('Hide CSV Output'); ?>",
+	'Show CSV Output': "<?php echo tr('Show CSV Output'); ?>",
+	'Copied': "<?php echo tr('Copied'); ?>",
+	'Copy not supported': "<?php echo tr('Copy not supported'); ?>",
+	'Request error': "<?php echo tr('Request error'); ?>",
+	'Window': "<?php echo tr('Window'); ?>",
+	'Length': "<?php echo tr('Length'); ?>",
+	'Please select a feed from the Feeds List': "<?php echo tr('Please select a feed from the Feeds List'); ?>",
+	'Remove missing': "<?php echo tr('Remove missing'); ?>",
+	'Graph not found': "<?php echo tr('Graph not found'); ?>",
+	'Graph Name required': "<?php echo tr('Graph Name required'); ?>",
+	'Saved': "<?php echo tr('Saved'); ?>",
+	'Deleted': "<?php echo tr('Deleted'); ?>"
+};
 </script>
 
-<script src="<?php echo $path;?>Modules/graph/graph.js?v=<?php echo $v; ?>"></script>
-<script src="<?php echo $path;?>Lib/moment.min.js?v=1"></script>
-<script>
-    var _user = {
-        lang : "<?php if (isset($_SESSION['lang'])) echo $_SESSION['lang']; ?>"
-    }
-    _locale_loaded = function (event){
-        // callback when locale file loaded
-        graph_reload(); // redraw xaxis with correct monthNames and dayNames
-    }
-</script>
-<script src="<?php echo $path; ?>Lib/user_locale.js"></script>
-<script src="<?php echo $path; ?>Lib/misc/gettext.js"></script>
-
-<script>
-    var session_write = <?php echo $session["write"]; ?>;
-    var userid = <?php echo $userid; ?>;
-    var feedidsLH = "<?php echo $feedidsLH; ?>";
-    var feedidsRH = "<?php echo $feedidsRH; ?>";
-    var load_savegraphs = "<?php echo $load_saved; ?>";
-    var feeds = false;
-
-    var _lang = <?php
-        $lang['Select a feed'] = tr('Select a feed');
-        $lang['Please select a feed from the Feeds List'] = tr('Please select a feed from the Feeds List');
-        $lang['Select graph'] = tr('Select graph');
-        $lang['Show CSV Output'] = tr('Show CSV Output');
-        $lang['Hide CSV Output'] = tr('Hide CSV Output');
-        $lang['Lines'] = tr('Lines');
-        $lang['Bars'] = tr('Bars');
-        $lang['Points'] = tr('Points');
-        $lang['Steps'] = tr('Steps');
-        $lang['Histogram'] = tr('Histogram');
-        $lang['Move up'] = tr('Move up');
-        $lang['Move down'] = tr('Move down');
-        $lang['Window'] = tr('Window');
-        $lang['Length'] = tr('Length');
-        echo json_encode($lang) . ';';
-        echo "\n";
-    ?>;
-    
-    // Load public feeds for a particular user
-    if (public_userid) {
-    
-        var public_username_str = "";
-        if (public_userid) public_username_str = public_username+"/";    
-    
-        $.ajax({
-            url: path+public_username_str+"feed/list.json", async: false, dataType: "json",
-            success: function(data_in) { feeds = data_in; }
-        });
-    } else {
-        // Load user feeds    
-        $.ajax({
-            url: path+"feed/list.json"+apikeystr, async: false, dataType: "json",
-            success: function(data_in) { feeds = data_in; }
-        });
-    }
-
-    // stops a part upgrade error - this change requires emoncms/emoncms repo to also be updated
-    // keep button hidden if new version of clipboard.js is not available
-    if (typeof copyToClipboardCustomMsg === 'function') {
-        document.getElementById('copy-csv').classList.remove('hidden');
-    } else {
-        copyToClipboardCustomMsg = function () {}
-    }
-    
-    if (load_savegraphs=="") {
-
-        // Assign active feedid from URL
-        var urlparts = window.location.pathname.split("graph/");
-        if (urlparts.length==2) {
-            var feedids = urlparts[1].split(",");
-                for (var z in feedids) {
-                    var feedid = parseInt(feedids[z]);
-                     
-                    if (feedid) {
-                        var f = getfeed(feedid);
-                    if (f==false) f = getfeedpublic(feedid);
-                    if (f!=false) feedlist.push({id:feedid, name:f.name, tag:f.tag, yaxis:1, fill:0, scale: 1.0, average:0, delta:0, dp:1, plottype:'lines'});
-                      }
-                }
-        }
-        
-        // Left hand feed ids property
-        if (feedidsLH!="") {
-            var feedids = feedidsLH.split(",");
-                for (var z in feedids) {
-                    var feedid = parseInt(feedids[z]);
-                     
-                    if (feedid) {
-                        var f = getfeed(feedid);
-                    if (f==false) f = getfeedpublic(feedid);
-                    if (f!=false) feedlist.push({id:feedid, name:f.name, tag:f.tag, yaxis:1, fill:0, scale: 1.0, average:0, delta:0, dp:1, plottype:'lines'});
-                      }
-                }
-        }
-
-        // Right hand feed ids property
-        if (feedidsRH!="") {
-            var feedids = feedidsRH.split(",");
-                for (var z in feedids) {
-                    var feedid = parseInt(feedids[z]);
-                     
-                    if (feedid) {
-                        var f = getfeed(feedid);
-                    if (f==false) f = getfeedpublic(feedid);
-                    if (f!=false) feedlist.push({id:feedid, name:f.name, tag:f.tag, yaxis:2, fill:0, scale: 1.0, average:0, delta:0, dp:1, plottype:'lines'});
-                      }
-                }
-        }
-    }
-
-    graph_init_editor();
-    load_feed_selector();
-    
-    graph_resize();
-    
-    var timeWindow = 3600000*24.0*7;
-    var now = Math.round(+new Date * 0.001)*1000;
-    view.start = now - timeWindow;
-    view.end = now;
-    view.calc_interval();
-    
-    graph_reload();
-
-    $(function(){
-        // manually add hide/show
-        $('#tables').collapse()
-
-        // trigger hide/show
-        $('.feed-options-title').on('click', function (event) {
-            event.preventDefault();
-            event.target.querySelector('.caret').classList.toggle('open');
-            $('#tables').collapse('toggle');
-        })
-    });
-
-    <?php
-    $translations = array(
-        "Received data not in correct format. Check the logs for more details" => tr("Received data not in correct format. Check the logs for more details"),
-        "Request error" => tr("Request error"),
-        "User" => tr("User"),
-        "Browser" => tr("Browser"),
-        "Authentication Required" => tr("Authentication Required")
-    );
-    printf("var translations = %s;\n",json_encode($translations));
-    ?>
-
-</script>
+<?php load_js("Modules/graph/graph.lib.js"); ?>
+<?php load_js("Modules/graph/graph.core.js"); ?>
