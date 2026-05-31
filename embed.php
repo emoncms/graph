@@ -24,7 +24,7 @@ if (isset($settings['feed']['min_feed_interval'])) {
 	$min_feed_interval = (int) $settings['feed']['min_feed_interval'];
 }
 load_js("Lib/js/vue.global.prod-3.5.22.min.js");
-load_js("Lib/js/flot-5.1.0.js");
+load_js("Lib/js/flot-5.1.0.mod.min.js");
 load_js("Lib/js/clipboard.js");
 load_js("Lib/js/DateTimePicker.js");
 load_css("Theme/css/datetimepicker.css");
