@@ -86,7 +86,8 @@ body {
    ========================================================================== */
 
 #graph-view-app { padding-top: 1rem; }
-#tables { overflow: hidden; }
+#tables { overflow-x: auto; overflow-y: visible; }
+#feed-options-table { min-width: 860px; }
 #feed-options-table input, #feed-options-table select { margin-bottom: 0; }
 #feed-stats-table {
 	display: grid;
@@ -187,22 +188,39 @@ body {
 }
 
 @media (max-width: 768px) {
+	/* Tighten top nav card-header on mobile */
+	.card-header {
+		padding: 0.35rem 0.6rem;
+		gap: 0.3rem;
+	}
+
+	/* Keep interval + axes on same row, wrap if needed */
 	.controls-row-top {
-		flex-direction: column;
-		align-items: stretch;
+		flex-wrap: wrap;
+		align-items: center;
 	}
 
 	.controls-row-top .interval-controls {
+		flex: 1 1 auto;
 		justify-content: flex-start;
 	}
 
 	.controls-row-top .axes-controls {
+		flex: 0 1 auto;
 		justify-content: flex-start;
 	}
 
+	/* card-controls slightly tighter on mobile */
+	.card-controls {
+		padding: 0.5rem 0.6rem;
+	}
+
+	/* Fill nulls + show gaps on same line */
 	.interval-toggle-grid {
-		flex-direction: column;
-		gap: 0.35rem;
+		flex-direction: row;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: 0.5rem 1rem;
 	}
 
 	.interval-options-row {
@@ -692,3 +710,10 @@ var graphTranslations = {
 
 <?php load_js("Modules/graph/graph.lib.js"); ?>
 <?php load_js("Modules/graph/graph.core.js"); ?>
+<script>
+// On mobile/tablet viewports, start with both l2 and l3 fully hidden
+// so the graph fills the screen without sidebars overlapping content.
+if (window.innerWidth < 1150 && typeof menu !== 'undefined') {
+    menu.hide_l2();
+}
+</script>
