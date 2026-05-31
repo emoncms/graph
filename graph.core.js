@@ -546,8 +546,15 @@ const GraphLayoutApp = {
 			const bound       = document.getElementById('placeholder_bound');
 			const placeholder = document.getElementById('placeholder');
 			if (!bound || !placeholder) return;
-			const width  = bound.clientWidth;
-			const height = Math.max(300, width * 0.5);
+			const width = bound.clientWidth;
+			let height;
+			if (isEmbedGraph) {
+				const nav = document.getElementById('navigation') || document.querySelector('.graph-embed-view > div:first-child');
+				const navHeight = nav ? nav.offsetHeight : 0;
+				height = Math.max(200, window.innerHeight - navHeight - 8);
+			} else {
+				height = Math.max(300, width * 0.5);
+			}
 			placeholder.style.cssText += `width:${width}px;height:${height}px;`;
 			bound.style.height = `${height}px`;
 		},
