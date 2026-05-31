@@ -94,8 +94,8 @@ const GraphLayoutApp = {
 			}, {});
 		},
 
-		leftChecked()    { return new Set(this.state.feedlist.filter(f => f.yaxis !== 2).map(f => f.id)); },
-		rightChecked()   { return new Set(this.state.feedlist.filter(f => f.yaxis === 2).map(f => f.id)); },
+		leftChecked()    { return new Set(this.state.feedlist.filter(f => f.yaxis !== 2).map(f => String(f.id))); },
+		rightChecked()   { return new Set(this.state.feedlist.filter(f => f.yaxis === 2).map(f => String(f.id))); },
 		leftCount()      { return this.state.feedlist.filter(f => f.yaxis !== 2).length; },
 		rightCount()     { return this.state.feedlist.filter(f => f.yaxis === 2).length; },
 		leftAxisIsAuto()  { return this.state.yaxismin  === 'auto' && this.state.yaxismax  === 'auto'; },
@@ -115,7 +115,12 @@ const GraphLayoutApp = {
 
 	/* ── Lifecycle ─────────────────────────────────────────────────────────── */
 	mounted() {
-		if (!isEmbedGraph) menu?.show_l3?.();
+		if (!isEmbedGraph) {
+			this.$nextTick(() => {
+				if (menu) menu.active_l3 = 'graph';
+				menu?.show_l3?.();
+			});
+		}
 
 		this._onHashChange = this.onSavedHashChange.bind(this);
 		this._onColorModeChange = () => this.renderChart();
@@ -430,7 +435,11 @@ const GraphLayoutApp = {
 							: true;
 					}
 					this.collapsedTags = nextCollapsedTags;
-					if (!load_savegraphs) this.applyUrlFeedSelection();
+					if (this.state.feedlist.length) {
+						this.expandTagsForSelectedFeeds();
+					} else if (!load_savegraphs) {
+						this.applyUrlFeedSelection();
+					}
 				})
 				.catch(err => console.error('Failed to fetch feed list:', err));
 		},
@@ -761,17 +770,19 @@ const GraphLayoutApp = {
 		setAverage(feed, e){ this._setFeedPropFetch(feed,  'average', e.target.checked ? 1 : 0); },
 		setDp(feed, e)     { this._setFeedPropRender(feed, 'dp',      Number(e.target.value)); },
 
-		toggleFeedLeft(feedid)            { this.onYAxisChange(feedid, 1, !this.leftChecked.has(feedid)); },
+		normalizeFeedId(feedid)           { return String(feedid); },
+		toggleFeedLeft(feedid)            { this.onYAxisChange(feedid, 1, !this.leftChecked.has(this.normalizeFeedId(feedid))); },
 		toggleTag(tag)                    { this.collapsedTags[tag] = !this.collapsedTags[tag]; },
 
 		showOptions()                     { this.state.showStats = false; },
 		showStats()                       { this.state.showStats = true; },
 
 		onYAxisChange(feedid, yaxis, checked) {
-			const idx = this.state.feedlist.findIndex(f => f.id === feedid);
+			const normalizedFeedId = this.normalizeFeedId(feedid);
+			const idx = this.state.feedlist.findIndex(f => this.normalizeFeedId(f.id) === normalizedFeedId);
 			if (checked) {
 				if (idx === -1) {
-					const feed = this.feeds.find(f => f.id === feedid);
+					const feed = this.feeds.find(f => this.normalizeFeedId(f.id) === normalizedFeedId);
 					if (feed) this.state.feedlist.push(Object.assign(GH.defaultFeedProps(), { yaxis }, feed));
 				} else {
 					this.state.feedlist[idx].yaxis = yaxis;

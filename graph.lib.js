@@ -420,7 +420,15 @@ const normalizeSavedGraphPayload = (graph = {}) => ({
 
 const buildStateFeedFromSaved = feed => {
 	const normalized = normalizeSavedFeed(feed);
-	return { ...defaultFeedProps(), ...normalized, id: String(normalized.id), autoColor: '', stats: {}, data: [] };
+	const numericId = Number(normalized.id);
+	return {
+		...defaultFeedProps(),
+		...normalized,
+		id: isFinite(numericId) && numericId > 0 ? numericId : normalized.id,
+		autoColor: '',
+		stats: {},
+		data: []
+	};
 };
 
 /* ── Public API ──────────────────────────────────────────────────────────── */
