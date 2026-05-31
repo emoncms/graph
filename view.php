@@ -87,7 +87,9 @@ body {
 
 #graph-view-app { padding-top: 1rem; }
 #tables { overflow-x: auto; overflow-y: visible; }
-#feed-options-table { min-width: 860px; }
+#feed-options-table { table-layout: auto; min-width: 700px; }
+/* Allow the feeds card to scroll horizontally; .card's global overflow:hidden clips #tables otherwise */
+.feed-options .card { overflow-x: auto; }
 #feed-options-table input, #feed-options-table select { margin-bottom: 0; }
 #feed-stats-table {
 	display: grid;
