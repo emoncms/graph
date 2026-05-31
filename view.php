@@ -86,13 +86,22 @@ body {
    ========================================================================== */
 
 #graph-view-app { padding-top: 1rem; }
-#tables { overflow: hidden; max-height: 2000px; transition: max-height 0.25s ease-in-out; }
-.tables-collapsed #tables { max-height: 0; }
-.collapse-icon { display: inline-block; transition: transform 0.2s ease; }
-.tables-collapsed .collapse-icon { transform: rotate(-90deg); }
+#tables { overflow: hidden; }
 #feed-options-table input, #feed-options-table select { margin-bottom: 0; }
+#feed-stats-table {
+	display: grid;
+	grid-template-columns: 1fr repeat(7, max-content);
+	font-family: var(--font-mono);
+	font-size: 13px;
+	color: var(--text-secondary);
+}
+#feed-stats-table thead,
+#feed-stats-table tbody,
+#feed-stats-table tr { display: contents; }
+#feed-stats-table th, #feed-stats-table td { white-space: nowrap; padding: 4px clamp(6px, 1.2vw, 25px); }
+#feed-stats-table td:first-child, #feed-stats-table th:first-child { white-space: normal; }
 #placeholder { width: 100%; height: 100%; }
-.feed-options, .feed-options #tables { overflow-x: auto; }
+.feed-options { overflow-x: auto; }
 .feed-options-show-options, .feed-options-show-stats { margin-left: auto; flex-shrink: 0; }
 .feed-options-show-options.hide, .feed-options-show-stats.hide { display: none !important; }
 #feed-options-table td input[type="checkbox"], #feed-stats-table td input[type="checkbox"] { vertical-align: middle; margin: 0; position: relative; top: -1px; }
@@ -112,6 +121,7 @@ body {
 }
 
 #showcontrols { display: inline-flex; align-items: center; gap: 0.75rem; margin-left: auto; }
+.ctrl-checkbox { display: inline-flex; align-items: center; gap: 0.35rem; margin: 0; }
 
 .controls-row-top {
 	display: flex;
@@ -192,6 +202,26 @@ body {
 
 	.interval-toggle-grid {
 		flex-direction: column;
+		gap: 0.35rem;
+	}
+
+	.interval-options-row {
+		gap: 0.35rem;
+	}
+
+	.interval-toggle-item {
+		flex: 0 1 auto;
+		justify-content: flex-start;
+		gap: 0.35rem;
+		flex-wrap: wrap;
+	}
+
+	.interval-toggle-item-end {
+		justify-content: flex-start;
+	}
+
+	.interval-max-fill {
+		margin-left: 0;
 	}
 }
 
@@ -235,32 +265,45 @@ table#feeds.table .caret { border-top-color: currentColor !important; display: i
 
 		<nav class="card-header">
 			<div class="card-name">
-				<span class="svg-icon-show_chart text-accent"></span>
+				<span class="svg-icon-show_chart_bold text-accent" style="color: var(--accent)"></span>&nbsp;
 				<?php echo tr('Data viewer'); ?>
 			</div>
 			<button class="btn" v-if="histogramMode" @click="onHistogramBackClick"><?php echo tr('Back to main view'); ?></button>
 		</nav>
 
 		<!-- Normal navigation controls -->
-		<div class="card-header" v-show="!histogramMode" style="background-color: #eee;">
-			<select class="graph_time my-0" v-model="graphTimeHours" @change="onGraphTimeRefresh" style="width:auto;">
-				<option value="1"><?php echo tr('1 hour'); ?></option>
-				<option value="6"><?php echo tr('6 hours'); ?></option>
-				<option value="12"><?php echo tr('12 hours'); ?></option>
-				<option value="24"><?php echo tr('24 hours'); ?></option>
-				<option value="168"><?php echo tr('1 Week'); ?></option>
-				<option value="336"><?php echo tr('2 Weeks'); ?></option>
-				<option value="720"><?php echo tr('Month'); ?></option>
-				<option value="8760"><?php echo tr('Year'); ?></option>
-			</select>
-
-			<div class="btn-group my-0" style="margin-left:8px;">
-				<button class="btn" id="graph_zoomin" title="<?php echo tr('Zoom In'); ?>" @click="onZoomIn">+</button>
-				<button class="btn" id="graph_zoomout" title="<?php echo tr('Zoom Out'); ?>" @click="onZoomOut">−</button>
-				<button class="btn" id="graph_left" title="<?php echo tr('Earlier'); ?>" @click="onPan(-1)">‹</button>
-				<button class="btn" id="graph_right" title="<?php echo tr('Later'); ?>" @click="onPan(1)">›</button>
+		<div class="card-header" v-show="!histogramMode && !showTimeManual" style="background-color: #eee;">
+			<div class="input-prepend input-append my-0">
+				<button class="btn graph_time_refresh" title="<?php echo tr('Refresh'); ?>" @click="onGraphTimeRefresh"><i class="icon-repeat"></i></button>
+				<select class="btn graph_time my-0" v-model="graphTimeHours" @change="onGraphTimeRefresh" style="width:auto;">
+					<option value="1"><?php echo tr('1 hour'); ?></option>
+					<option value="6"><?php echo tr('6 hours'); ?></option>
+					<option value="12"><?php echo tr('12 hours'); ?></option>
+					<option value="24"><?php echo tr('24 hours'); ?></option>
+					<option value="168"><?php echo tr('1 Week'); ?></option>
+					<option value="336"><?php echo tr('2 Weeks'); ?></option>
+					<option value="720"><?php echo tr('Month'); ?></option>
+					<option value="8760"><?php echo tr('Year'); ?></option>
+				</select>
 			</div>
 
+			<button class="btn my-0" style="margin-left:8px;" title="<?php echo tr('Select time window'); ?>" @click="showTimeManual = true"><i class="icon-resize-horizontal"></i></button>
+
+			<div class="btn-group my-0" style="margin-left:8px;">
+				<button class="btn px-3" id="graph_zoomin" title="<?php echo tr('Zoom In'); ?>" @click="onZoomIn">+</button>
+				<button class="btn px-3" id="graph_zoomout" title="<?php echo tr('Zoom Out'); ?>" @click="onZoomOut">−</button>
+				<button class="btn px-3" id="graph_left" title="<?php echo tr('Earlier'); ?>" @click="onPan(-1)"><</button>
+				<button class="btn px-3" id="graph_right" title="<?php echo tr('Later'); ?>" @click="onPan(1)">></button>
+			</div>
+
+			<div id="showcontrols">
+				<label class="ctrl-checkbox"><input type="checkbox" id="showlegend" v-model="state.showlegend"> <?php echo tr('Legend'); ?></label>
+				<label class="ctrl-checkbox"><input type="checkbox" id="showtag" v-model="state.showtag"> <?php echo tr('Feed tag'); ?></label>
+			</div>
+		</div>
+
+		<!-- Date-time picker controls -->
+		<div class="card-header" v-show="!histogramMode && showTimeManual" style="background-color: #eee;">
 			<div class="input-prepend input-append my-0">
 				<span class="add-on"><?php echo tr('Start'); ?></span>
 				<date-time-picker v-model="startLocal" @change="onReload"></date-time-picker>
@@ -271,10 +314,7 @@ table#feeds.table .caret { border-top-color: currentColor !important; display: i
 				<date-time-picker v-model="endLocal" @change="onReload"></date-time-picker>
 			</div>
 
-			<div id="showcontrols">
-				<label class="ctrl-checkbox"><input type="checkbox" id="showlegend" v-model="state.showlegend"> <?php echo tr('Legend'); ?></label>
-				<label class="ctrl-checkbox"><input type="checkbox" id="showtag" v-model="state.showtag"> <?php echo tr('Feed tag'); ?></label>
-			</div>
+			<button class="btn my-0" title="<?php echo tr('Done'); ?>" @click="showTimeManual = false"><i class="icon-ok"></i></button>
 		</div>
 
 		<!-- Histogram controls -->
@@ -408,7 +448,7 @@ table#feeds.table .caret { border-top-color: currentColor !important; display: i
 
 					<label class="interval-toggle-item interval-toggle-item-end" for="showmissing">
 						<input type="checkbox" id="showmissing" v-model="state.showmissing">
-						<span><?php echo tr('Show remaining'); ?></span>
+						<span><?php echo tr('Show gaps'); ?></span>
 					</label>
 				</div>
 
@@ -421,17 +461,13 @@ table#feeds.table .caret { border-top-color: currentColor !important; display: i
 	<div class="card mt-3">
 
 		<div class="feed-options" :class="{hide: state.feedlist.length===0 || histogramMode}" v-show="!histogramMode">
-			<div class="card" :class="{'tables-collapsed': tablesCollapsed}">
-				<div class="card-header feed-options-header" @click="toggleTablesCollapsed">
+			<div class="card">
+				<div class="card-header feed-options-header">
 					<span class="card-accent"></span>
 					<span class="card-name feed-options-title"><?php echo tr('Feeds in view'); ?></span>
 
-                    <button class="btn" @click="onClearAll"><?php echo tr('Clear All'); ?></button>
-
-
 					<div class="feed-options-show-options btn btn-sm" :class="{hide: !state.showStats}" @click.stop.prevent="showOptions"><?php echo tr('Show options'); ?></div>
-					<div class="feed-options-show-stats btn btn-sm" :class="{hide: state.showStats}" @click.stop.prevent="showStats"><?php echo tr('Show statistics'); ?></div>
-					<i class="collapse-icon icon-chevron-down"></i>
+					<div class="feed-options-show-stats btn btn-sm" :class="{hide: state.showStats}" @click.stop.prevent="showStats"><?php echo tr('Show stats'); ?></div>
 				</div>
 
 				<div id="tables">
@@ -501,21 +537,9 @@ table#feeds.table .caret { border-top-color: currentColor !important; display: i
 						</tbody>
 					</table>
 
-					<table id="feed-stats-table" v-show="state.showStats">
-						<colgroup>
-							<col style="width:40px">
-							<col>
-							<col style="width:155px">
-							<col style="width:72px">
-							<col style="width:72px">
-							<col style="width:65px">
-							<col style="width:65px">
-							<col style="width:75px">
-							<col style="width:65px">
-						</colgroup>
+					<table v-show="state.showStats" id="feed-stats-table">
 						<thead>
 							<tr>
-								<th></th>
 								<th><?php echo tr('Feed'); ?></th>
 								<th><?php echo tr('Quality'); ?></th>
 								<th><?php echo tr('Min'); ?></th>
@@ -528,8 +552,7 @@ table#feeds.table .caret { border-top-color: currentColor !important; display: i
 						</thead>
 						<tbody>
 							<tr v-for="feed in state.feedlist" :key="'stats-'+feed.id">
-								<td></td>
-								<td class="col-primary">{{ feedName(feed) }}</td>
+								<td>{{ feedName(feed) }}</td>
 								<td>{{ feed.stats.quality }}% ({{ feed.stats.good }}/{{ feed.stats.total }})</td>
 								<td>{{ Number(feed.stats.min).toFixed(feed.dp) }}</td>
 								<td>{{ Number(feed.stats.max).toFixed(feed.dp) }}</td>

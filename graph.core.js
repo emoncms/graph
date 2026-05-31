@@ -23,7 +23,7 @@ const GraphLayoutApp = {
 		errorMessage: '',
 		errorType: 'danger',
 		errorBadFeedIds: [],
-		tablesCollapsed: false,
+
 		hiddenFeedIds: new Set(),
 		startLocal: GH.msToDatetimeLocal(Date.now() - 168 * 3600_000),
 		endLocal:   GH.msToDatetimeLocal(Math.round(Date.now() / 1000) * 1000),
@@ -763,7 +763,7 @@ const GraphLayoutApp = {
 
 		toggleFeedLeft(feedid)            { this.onYAxisChange(feedid, 1, !this.leftChecked.has(feedid)); },
 		toggleTag(tag)                    { this.collapsedTags[tag] = !this.collapsedTags[tag]; },
-		toggleTablesCollapsed()           { this.tablesCollapsed = !this.tablesCollapsed; },
+
 		showOptions()                     { this.state.showStats = false; },
 		showStats()                       { this.state.showStats = true; },
 
