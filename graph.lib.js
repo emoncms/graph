@@ -356,7 +356,7 @@ const applyYAxisBounds = (axis, min, max) => {
 };
 
 const buildFlotOptions = (startMs, endMs, state) => {
-	const isLight = document.documentElement.classList.contains('color-mode-light');
+	const isLight = true; //document.documentElement.classList.contains('color-mode-light');
 	const labelColor = isLight ? '#333' : '#ddd';
 	const labelFont  = { color: labelColor, fill: labelColor };
 	const yaxes = [{ font: labelFont }, { alignTicksWithAxis: 1, position: 'right', font: labelFont }];

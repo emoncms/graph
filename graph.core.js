@@ -382,9 +382,30 @@ const GraphLayoutApp = {
 				.then(data => {
 					if (!Array.isArray(data)) return;
 					this.feeds = data;
+					const nextCollapsedTags = {};
+					for (const feed of data) {
+						const tag = feed.tag || 'undefined';
+						nextCollapsedTags[tag] = Object.prototype.hasOwnProperty.call(this.collapsedTags, tag)
+							? this.collapsedTags[tag]
+							: true;
+					}
+					this.collapsedTags = nextCollapsedTags;
 					if (!load_savegraphs) this.applyUrlFeedSelection();
 				})
 				.catch(err => console.error('Failed to fetch feed list:', err));
+		},
+
+		expandTagsForSelectedFeeds() {
+			if (!Array.isArray(this.state.feedlist) || !this.state.feedlist.length) return;
+			const expandedTags = new Set();
+			for (const selected of this.state.feedlist) {
+				const feed = this.findFeedById(selected.id);
+				if (!feed) continue;
+				expandedTags.add(feed.tag || 'undefined');
+			}
+			for (const tag of expandedTags) {
+				this.collapsedTags[tag] = false;
+			}
 		},
 
 		/* ── CSV ─────────────────────────────────────────────────────────── */
@@ -571,7 +592,7 @@ const GraphLayoutApp = {
 
 				const PLOT_TYPES = {
 					lines:  () => { series.lines  = { show: !hidden, fill: fillVal, lineWidth: 2 }; },
-					bars:   () => { series.bars   = { show: !hidden, fill: fillVal, align: 'center', barWidth: p.intervalSeconds * 0.8 }; },
+					bars:   () => { series.bars   = { show: !hidden, fill: fillVal, align: 'center', barWidth: 0.8 }; },
 					points: () => { series.points = { show: !hidden, radius: 3 }; },
 					steps:  () => { series.lines  = { show: !hidden, fill: fillVal, steps: true }; },
 				};
@@ -639,7 +660,7 @@ const GraphLayoutApp = {
 			if (!placeholder) return;
 
 			Flot.plot(placeholder, [{ label, data: plotData, color: feed.color || undefined }], {
-				series: { bars: { show: true, barWidth: resolution * 0.8 } },
+				series: { bars: { show: true, barWidth: 0.8 } },
 				grid:   { hoverable: true },
 				xaxis:  { tickFormatter: v => v.toFixed(2) },
 				yaxis:  { tickFormatter: v => this.histogramType === 'kwhatpower'
@@ -739,6 +760,7 @@ const GraphLayoutApp = {
 
 			for (const id of leftIds)  this.addInitialFeed(this.findFeedById(id), 1);
 			for (const id of rightIds) this.addInitialFeed(this.findFeedById(id), 2);
+			this.expandTagsForSelectedFeeds();
 			this.fetchFeedData();
 		},
 
@@ -824,6 +846,7 @@ const GraphLayoutApp = {
 			this.applySavedGraphState(normalized);
 			this.hiddenFeedIds.clear();
 			this.state.feedlist.splice(0, Infinity, ...normalized.feedlist.map(GH.buildStateFeedFromSaved));
+			this.expandTagsForSelectedFeeds();
 			this.fetchFeedData();
 			if (this.state.showcsv) this.updateCsvText();
 		},

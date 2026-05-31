@@ -23,11 +23,18 @@ $min_feed_interval = 10;
 if (isset($settings['feed']['min_feed_interval'])) {
 	$min_feed_interval = (int) $settings['feed']['min_feed_interval'];
 }
+load_js("Lib/js/vue.global.prod-3.5.22.min.js");
+load_js("Lib/js/flot-5.1.0.js");
+load_js("Lib/js/clipboard.js");
+load_js("Lib/js/DateTimePicker.js");
 
-load_css("Modules/graph/style.css");
-load_js("Lib/flot-5.1.0.min.js");
-load_js("Lib/vue.global.min.js");
 ?>
+
+<style>
+body {
+	background: none;
+}
+</style>
 
 <div id="graph-view-app" class="graph-embed-view">
 	<div id="error" class="alert" :class="errorType==='info' ? 'alert-info' : 'alert-danger'" v-show="errorMessage">
