@@ -578,12 +578,12 @@ table#feeds.table .caret { border-top-color: currentColor !important; display: i
 					</a>
 				</h4>
 				<div v-if="!savedGraphsCollapsed">
-					<select id="graph-select" v-model="savedGraphSelected" style="width:100%; margin-bottom:8px">
+					<select id="graph-select" v-model="savedGraphSelected" style="margin-bottom:8px">
 						<option value="-1"><?php echo tr('Select graph'); ?> :</option>
 						<option v-for="(g, i) in savedGraphs" :key="g.id" :value="i">[#{{ g.id }}] {{ g.name }}</option>
 					</select>
 					<h5><?php echo tr('Graph Name'); ?>:</h5>
-					<input id="graphName" v-model="savedGraphName" type="text" placeholder="<?php echo tr('Graph Name'); ?>" style="width:100%; margin-bottom:8px" :disabled="!canWriteGraphs">
+					<input id="graphName" v-model="savedGraphName" type="text" placeholder="<?php echo tr('Graph Name'); ?>" style="margin-bottom:8px" :disabled="!canWriteGraphs">
 					<small class="help-block">
 						<span v-if="savedGraphSelected > -1"><?php echo tr('Selected graph id'); ?>: {{ savedGraphs[savedGraphSelected].id }}</span>
 						<span v-else><?php echo tr('None selected'); ?></span>
@@ -591,7 +591,7 @@ table#feeds.table .caret { border-top-color: currentColor !important; display: i
 					<small class="help-block" v-if="savedGraphSelected > -1">
 						{{ savedGraphChanged ? '<?php echo tr('Changed'); ?>' : '<?php echo tr('No changes'); ?>' }}
 					</small>
-					<button class="btn" @click="onDeleteSavedGraph" :disabled="!canWriteGraphs || savedGraphSelected < 0"><?php echo tr('Delete'); ?></button>
+					<button class="btn" @click="onDeleteSavedGraph" :disabled="!canWriteGraphs || savedGraphSelected < 0"><?php echo tr('Delete'); ?></button>&nbsp;
 					<button class="btn" @click="onSaveSavedGraph" :disabled="!canSaveSavedGraph"><?php echo tr('Save'); ?></button>
 					<small class="help-block" v-if="savedGraphStatus">{{ savedGraphStatus }}</small>
 				</div>
