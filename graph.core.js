@@ -601,7 +601,7 @@ const GraphLayoutApp = {
 				const navHeight = nav ? nav.offsetHeight : 0;
 				height = Math.max(200, window.innerHeight - navHeight - 8);
 			} else {
-				height = Math.max(300, width * 0.5);
+				height = Math.max(380, width * 0.5);
 			}
 			placeholder.style.cssText += `width:${width}px;height:${height}px;`;
 			bound.style.height = `${height}px`;

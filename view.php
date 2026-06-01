@@ -272,20 +272,16 @@ body { background-color: whitesmoke; }
 }
 
 #my_graphs h4 a { color: var(--l2-title); }
-
 #my_graphs h4 a:hover { text-decoration: underline; }
-
 #my_graphs h5 { color: var(--l2-title); }
-
 #my_graphs input { width: 12rem; }
-
 #my_graphs select { width: 13rem; }
 
 /* ==========================================================================
    11. SIDEBAR: FEED SELECTOR TABLE
    ========================================================================== */
 
-table#feeds.table thead th {
+#feed-selector thead th {
     border-top: 2px solid var(--bg-l2);
 	font-weight: normal !important;
 	color: var(--l2-title);
@@ -294,23 +290,23 @@ table#feeds.table thead th {
 	padding-left: 0;
 }
 
-table#feeds.table thead th:hover { color: var(--l2-text); text-decoration: underline; }
+#feed-selector thead th:hover { color: var(--l2-text); text-decoration: underline; }
 
-table#feeds.table input[type="checkbox"] { margin: 0; }
+#feed-selector input[type="checkbox"] { margin: 0; }
 
-table#feeds.table tbody tr > * { border-color: var(--bg-l2); }
+#feed-selector tbody tr > * { border-color: var(--bg-l2); }
 
-table#feeds.table tbody tr th {
+#feed-selector tbody tr th {
 	cursor: pointer;
 	transition: all .3s ease-in;
 	font-weight: normal;
 }
 
-table#feeds.table tbody tr th:hover { text-decoration: underline; }
+#feed-selector tbody tr th:hover { text-decoration: underline; }
 
-table#feeds.table tbody tr th.feed-title span { max-width: 9em; }
+#feed-selector tbody tr th.feed-title span { max-width: 9em; }
 
-table#feeds.table .caret {
+#feed-selector .caret {
 	border-top-color: currentColor !important;
 	display: inline-block;
 	vertical-align: middle;
@@ -668,7 +664,7 @@ table#feeds.table .caret {
 			<h3 class="l3-title mx-3"><?php echo tr('Graph'); ?></h3>
 
 			<!-- Feed selector -->
-			<table id="feeds" class="table table-condensed mx-3" style="width:90%">
+			<table id="feed-selector" class="table table-condensed mx-3" style="width:90%">
 				<colgroup>
 					<col style="width:70%">
 					<col style="width:15%">
