@@ -91,10 +91,21 @@ const graphLocale = (() => {
 	return toLocaleTag(userLocale) || toLocaleTag(docLocale) || 'en-GB';
 })();
 
-const isTouchDevice = () => {
+const isTouchPrimaryDevice = () => {
 	if (typeof window === 'undefined') return false;
-	if ('ontouchstart' in window || navigator.maxTouchPoints > 0) return true;
-	return !!window.matchMedia?.('(pointer: coarse)')?.matches;
+
+	const hasTouchPointer =
+		('ontouchstart' in window) ||
+		navigator.maxTouchPoints > 0 ||
+		!!window.matchMedia?.('(any-pointer: coarse)')?.matches;
+
+	const hasMouseLikePointer =
+		!!window.matchMedia?.('(any-hover: hover)')?.matches ||
+		!!window.matchMedia?.('(any-pointer: fine)')?.matches;
+
+	// Disable drag selection only on touch-primary environments.
+	// Hybrid devices (touch + mouse/trackpad) should keep mouse drag-select.
+	return hasTouchPointer && !hasMouseLikePointer;
 };
 
 const makeDateFormatter = options => {
@@ -365,7 +376,7 @@ const buildFlotOptions = (startMs, endMs, state) => {
 	const isLight = true; //document.documentElement.classList.contains('color-mode-light');
 	const labelColor = isLight ? '#333' : '#ddd';
 	const labelFont  = { color: labelColor, fill: labelColor };
-	const touchDevice = isTouchDevice();
+	const touchPrimary = isTouchPrimaryDevice();
 	const yaxes = [{ font: labelFont }, { alignTicksWithAxis: 1, position: 'right', font: labelFont }];
 	applyYAxisBounds(yaxes[0], state.yaxismin,  state.yaxismax);
 	applyYAxisBounds(yaxes[1], state.yaxismin2, state.yaxismax2);
@@ -382,12 +393,12 @@ const buildFlotOptions = (startMs, endMs, state) => {
 		yaxis:     { axisPan: false, plotPan: false, axisZoom: false, plotZoom: false },
 		yaxes,
 		grid:      { hoverable: true, clickable: true, borderWidth: 0, color: labelColor },
-		selection: { mode: touchDevice ? null : 'x', color: '#e8cfac', visualization: 'fill' },
+		selection: { mode: touchPrimary ? null : 'x', color: '#e8cfac', visualization: 'fill' },
 		legend:    { show: state.showlegend, position: 'nw' },
 		toggle:    { scale: 'visible' },
-		zoom:      { interactive: true, enableTouch: true, amount: 1.5 },
-		pan:       { interactive: true, enableTouch: true, touchMode: 'smartLock', frameRate: 60 },
-		recenter:  { interactive: true, enableTouch: true },
+		zoom:      { interactive: touchPrimary, enableTouch: true, amount: 1.5 },
+		pan:       { interactive: touchPrimary, enableTouch: true, touchMode: 'smartLock', frameRate: 60 },
+		recenter:  { interactive: touchPrimary, enableTouch: true },
 	};
 };
 
