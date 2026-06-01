@@ -115,6 +115,35 @@ body { background-color: whitesmoke; }
 .feed-options-show-options.hide,
 .feed-options-show-stats.hide { display: none !important; }
 
+.graph-section-switcher {
+	display: flex;
+	width: 100%;
+	justify-content: center;
+}
+
+.graph-section-switcher .btn-group {
+	display: inline-flex;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.graph-section-switcher .btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.45rem;
+	padding-inline: 1rem;
+}
+
+.graph-section-switcher .btn.active {
+	background: var(--accent);
+	border-color: var(--accent);
+	color: #fff;
+	box-shadow: none;
+}
+
+.graph-section-switcher .btn i {
+	margin-top: -1px;
+}
+
 #feed-options-table td input[type="checkbox"],
 #feed-stats-table td input[type="checkbox"] {
 	vertical-align: middle;
@@ -184,15 +213,28 @@ body { background-color: whitesmoke; }
    ========================================================================== */
 .interval-options-row { gap: 0.5rem; }
 
-.interval-toggle-grid { gap: 0.75rem; flex-wrap: wrap; }
+.interval-toggle-grid {
+	gap: 0.75rem;
+	align-items: center;
+	flex-wrap: nowrap;
+}
+
+
+.interval-toggle-item.interval-toggle-item-fill {
+	flex: 1 1 auto;
+	min-width: 0;
+}
 
 .interval-toggle-item {
-	flex: 1 1 220px;
+	flex: 0 0 auto;
 	justify-content: flex-start;
 	gap: 0.5rem;
 }
 
-.interval-toggle-item-end { justify-content: flex-end; }
+.interval-toggle-item-end {
+	margin-left: auto;
+	justify-content: flex-end;
+}
 
 .interval-toggle-item input[type="checkbox"] { margin: 0; }
 
@@ -231,20 +273,34 @@ body { background-color: whitesmoke; }
 	.interval-toggle-grid {
 		flex-direction: row;
 		align-items: center;
-		flex-wrap: wrap;
+		flex-wrap: nowrap;
 		gap: 0.5rem 1rem;
 	}
+
+	.interval-toggle-grid.is-expanded { flex-wrap: wrap; }
 
 	.interval-options-row { gap: 0.35rem; }
 
 	.interval-toggle-item {
-		flex: 0 1 auto;
+		flex: 0 0 auto;
 		justify-content: flex-start;
 		gap: 0.35rem;
-		flex-wrap: wrap;
+		flex-wrap: nowrap;
+	}
+
+	.interval-toggle-item.interval-toggle-item-fill { flex: 1 1 auto; }
+
+	.interval-toggle-grid.is-expanded .interval-toggle-item.interval-toggle-item-fill { flex-basis: 100%; }
+
+	.interval-toggle-check,
+	.interval-toggle-grid .ctrl-checkbox,
+	.interval-toggle-item-end {
+		white-space: nowrap;
 	}
 
 	.interval-toggle-item-end { justify-content: flex-start; }
+
+	.interval-toggle-item-end { margin-left: 0; }
 
 	.interval-max-fill { margin-left: 0; }
 }
@@ -343,9 +399,9 @@ body { background-color: whitesmoke; }
 				</select>
 			</div>
 
-			<button class="btn my-0 ml-2" title="<?php echo tr('Select time window'); ?>" @click="showTimeManual = true"><i class="icon-resize-horizontal"></i></button>
+			<button class="btn my-0 ml-1" title="<?php echo tr('Select time window'); ?>" @click="showTimeManual = true"><i class="icon-resize-horizontal"></i></button>
 
-			<div class="btn-group my-0 ml-2">
+			<div class="btn-group my-0 ml-1">
 				<button class="btn px-3" id="graph_zoomin" title="<?php echo tr('Zoom In'); ?>" @click="onZoomIn">+</button>
 				<button class="btn px-3" id="graph_zoomout" title="<?php echo tr('Zoom Out'); ?>" @click="onZoomOut">−</button>
 				<button class="btn px-3" id="graph_left" title="<?php echo tr('Earlier'); ?>" @click="onPan(-1)"><</button>
@@ -482,14 +538,14 @@ body { background-color: whitesmoke; }
 			</div>
 
 			<div class="controls-row interval-options-row d-flex flex-column" v-show="state.mode==='interval'">
-				<div class="interval-toggle-grid d-flex">
+				<div class="interval-toggle-grid d-flex" :class="{ 'is-expanded': state.removeNull }">
 					<!--
 					<label class="interval-toggle-item" for="request-limitinterval">
 						<input id="request-limitinterval" type="checkbox" v-model="state.limitinterval">
 						<span><?php echo tr('Limit to data interval'); ?></span>
 					</label>-->
 
-					<div class="interval-toggle-item d-flex align-items-center m-0">
+					<div class="interval-toggle-item interval-toggle-item-fill d-flex align-items-center m-0">
 						<label class="interval-toggle-check d-flex align-items-center m-0" for="request-removenull">
 							<input id="request-removenull" type="checkbox" class="remove-null" v-model="state.removeNull" @change="onRemoveNullChange">
 							<span><?php echo tr('Fill nulls with last value'); ?></span>
@@ -505,6 +561,11 @@ body { background-color: whitesmoke; }
 						<input type="checkbox" id="showmissing" v-model="state.showmissing">
 						<span><?php echo tr('Show gaps'); ?></span>
 					</label>
+
+					<label class="interval-toggle-item ctrl-checkbox d-flex align-items-center m-0" for="showtag">
+						<input type="checkbox" id="showtag" v-model="state.showtag">
+						<span><?php echo tr('Feed tag'); ?></span>
+					</label>
 				</div>
 
 
@@ -513,19 +574,23 @@ body { background-color: whitesmoke; }
 		</div><!-- .card-controls -->
 	</div>
 	<!-- ── Feeds options & stats ───────────────────────────────────────────── -->
+
+
+
+
 	<div class="card mt-3">
-
-		<div class="feed-options" :class="{hide: state.feedlist.length===0 || histogramMode}" v-show="!histogramMode">
-			<div class="card">
-				<div class="card-header feed-options-header">
-					<span class="card-accent"></span>
-					<span class="card-name feed-options-title"><?php echo tr('Feeds in view'); ?></span>
-					<label class="ctrl-checkbox d-flex align-items-center m-0"><input type="checkbox" id="showtag" v-model="state.showtag"> <?php echo tr('Feed tag'); ?></label>
-
-					<div class="feed-options-show-options btn btn-sm" :class="{hide: !state.showStats}" @click.stop.prevent="showOptions"><?php echo tr('Show options'); ?></div>
-					<div class="feed-options-show-stats btn btn-sm" :class="{hide: state.showStats}" @click.stop.prevent="showStats"><?php echo tr('Show stats'); ?></div>
+		<div class="card-header">
+			<div class="graph-section-switcher" v-show="!histogramMode">
+				<div class="btn-group">
+					<button class="btn" :class="{active: activeSection === 'config'}" @click="showOptions"><i class="icon-cog"></i> Feed Config</button>
+					<button class="btn" :class="{active: activeSection === 'stats'}" @click="showStats"><i class="icon-signal"></i> Feed Stats</button>
+					<button class="btn" :class="{active: activeSection === 'csv'}" @click="showCsvSection"><i class="icon-download-alt"></i> CSV Export</button>
 				</div>
+			</div>
+		</div>
 
+		<div class="feed-options" :class="{hide: state.feedlist.length===0 || histogramMode}" v-show="!histogramMode && !state.showcsv">
+			<div class="card">
 				<div id="tables">
 					<table id="feed-options-table" v-show="!state.showStats">
 						<colgroup>
@@ -623,18 +688,17 @@ body { background-color: whitesmoke; }
 			</div>
 		</div>
 
-		<div class="card-controls" style="border-top: 1px solid var(--border)">
+		<div class="card-controls" style="border-top: 1px solid var(--border)" v-show="!histogramMode && state.showcsv">
 			<div class="controls-row">
 				<div class="input-prepend">
-					<button class="btn" id="showcsv" @click="toggleCsv">{{ csvButtonLabel }}</button>
-					<span class="add-on csvoptions" v-show="state.showcsv"><?php echo tr('Time format'); ?>:</span>
-					<select id="csvtimeformat" class="csvoptions" v-show="state.showcsv" v-model="state.csvtimeformat">
+					<span class="add-on csvoptions"><?php echo tr('Time format'); ?>:</span>
+					<select id="csvtimeformat" class="csvoptions" v-model="state.csvtimeformat">
 						<option value="unix"><?php echo tr('Unix timestamp'); ?></option>
 						<option value="seconds"><?php echo tr('Seconds since start'); ?></option>
 						<option value="datestr"><?php echo tr('Date-time string'); ?></option>
 					</select>
 				</div>
-				<div class="input-prepend" v-show="state.showcsv">
+				<div class="input-prepend">
 					<span class="add-on csvoptions"><?php echo tr('Null values'); ?>:</span>
 					<select id="csvnullvalues" class="csvoptions" v-model="state.csvnullvalues">
 						<option value="show"><?php echo tr('Show'); ?></option>
@@ -642,7 +706,7 @@ body { background-color: whitesmoke; }
 						<option value="remove"><?php echo tr('Remove whole line'); ?></option>
 					</select>
 				</div>
-				<div class="input-prepend" v-show="state.showcsv">
+				<div class="input-prepend">
 					<span class="add-on csvoptions"><?php echo tr('Headers'); ?>:</span>
 					<select id="csvheaders" class="csvoptions" v-model="state.csvheaders">
 						<option value="showNameTag"><?php echo tr('Show name and tag'); ?></option>
@@ -650,74 +714,74 @@ body { background-color: whitesmoke; }
 						<option value="hide"><?php echo tr('Hide'); ?></option>
 					</select>
 				</div>
-				<div class="ctrl-actions" v-show="state.showcsv">
+				<div class="ctrl-actions">
 					<button id="download-csv" class="btn csvoptions" @click="onDownloadCsv"><?php echo tr('Download'); ?></button>
 					<button class="btn csvoptions" id="copy-csv" type="button" @click="onCopyCsv"><?php echo tr('Copy'); ?> <i class="icon-share-alt"></i></button>
 					<span id="copy-csv-feedback" class="csvoptions"></span>
 				</div>
 			</div>
-			<textarea id="csv" class="w-100" style="height:500px; box-sizing:border-box" v-show="state.showcsv" v-model="csvText"></textarea>
+			<textarea id="csv" class="w-100" style="height:500px; box-sizing:border-box" v-model="csvText"></textarea>
 		</div><!-- .card-controls (csv) -->
-
-		<Teleport to=".menu-l3">
-			<div class="htop"></div>
-			<h3 class="l3-title mx-3"><?php echo tr('Graph'); ?></h3>
-
-			<!-- Feed selector -->
-			<table id="feed-selector" class="table table-condensed mx-3" style="width:90%">
-				<colgroup>
-					<col style="width:70%">
-					<col style="width:15%">
-					<col style="width:15%">
-				</colgroup>
-				<template v-for="(tagFeeds, tag) in feedsByTag" :key="tag">
-					<thead>
-						<tr class="tagheading" tabindex="0" @click="toggleTag(tag)" @keyup.enter="toggleTag(tag)">
-							<th colspan="3"><span class="caret"></span>{{ tag }}</th>
-						</tr>
-					</thead>
-					<tbody v-show="!collapsedTags[tag]">
-						<tr v-for="feed in tagFeeds" :key="feed.id" style="color:#666">
-							<th class="feed-title" tabindex="0"
-								@click="toggleFeedLeft(feed.id)" @keyup.enter="toggleFeedLeft(feed.id)">
-								<span class="text-truncate d-inline-block">{{ feed.name.length > 20 ? feed.name.substr(0,20)+'..' : feed.name }}</span>
-							</th>
-							<td><input type="checkbox" :checked="leftChecked.has(feed.id)" @change="onYAxisChange(feed.id, 1, $event.target.checked)"></td>
-							<td><input type="checkbox" :checked="rightChecked.has(feed.id)" @change="onYAxisChange(feed.id, 2, $event.target.checked)"></td>
-						</tr>
-					</tbody>
-				</template>
-			</table>
-
-			<!-- My Graphs -->
-			<div id="my_graphs" class="px-3">
-				<h4>
-					<a href="#" class="d-block" @click.prevent="savedGraphsCollapsed = !savedGraphsCollapsed">
-						<?php echo tr('My Graphs'); ?>
-						<span class="arrow arrow-down pull-right"></span>
-					</a>
-				</h4>
-				<div v-if="!savedGraphsCollapsed">
-					<select id="graph-select" class="mb-2" v-model="savedGraphSelected">
-						<option value="-1"><?php echo tr('Select graph'); ?> :</option>
-						<option v-for="(g, i) in savedGraphs" :key="g.id" :value="i">[#{{ g.id }}] {{ g.name }}</option>
-					</select>
-					<h5><?php echo tr('Graph Name'); ?>:</h5>
-					<input id="graphName" class="mb-2" v-model="savedGraphName" type="text" placeholder="<?php echo tr('Graph Name'); ?>" :disabled="!canWriteGraphs">
-					<small class="help-block">
-						<span v-if="savedGraphSelected > -1"><?php echo tr('Selected graph id'); ?>: {{ savedGraphs[savedGraphSelected].id }}</span>
-						<span v-else><?php echo tr('None selected'); ?></span>
-					</small>
-					<small class="help-block" v-if="savedGraphSelected > -1">
-						{{ savedGraphChanged ? '<?php echo tr('Changed'); ?>' : '<?php echo tr('No changes'); ?>' }}
-					</small>
-					<button class="btn" @click="onDeleteSavedGraph" :disabled="!canWriteGraphs || savedGraphSelected < 0"><?php echo tr('Delete'); ?></button>&nbsp;
-					<button class="btn" @click="onSaveSavedGraph" :disabled="!canSaveSavedGraph"><?php echo tr('Save'); ?></button>
-					<small class="help-block" v-if="savedGraphStatus">{{ savedGraphStatus }}</small>
-				</div>
-			</div>
-		</Teleport>
 	</div>
+
+	<Teleport to=".menu-l3">
+		<div class="htop"></div>
+		<h3 class="l3-title mx-3"><?php echo tr('Graph'); ?></h3>
+
+		<!-- Feed selector -->
+		<table id="feed-selector" class="table table-condensed mx-3" style="width:90%">
+			<colgroup>
+				<col style="width:70%">
+				<col style="width:15%">
+				<col style="width:15%">
+			</colgroup>
+			<template v-for="(tagFeeds, tag) in feedsByTag" :key="tag">
+				<thead>
+					<tr class="tagheading" tabindex="0" @click="toggleTag(tag)" @keyup.enter="toggleTag(tag)">
+						<th colspan="3"><span class="caret"></span>{{ tag }}</th>
+					</tr>
+				</thead>
+				<tbody v-show="!collapsedTags[tag]">
+					<tr v-for="feed in tagFeeds" :key="feed.id" style="color:#666">
+						<th class="feed-title" tabindex="0"
+							@click="toggleFeedLeft(feed.id)" @keyup.enter="toggleFeedLeft(feed.id)">
+							<span class="text-truncate d-inline-block">{{ feed.name.length > 20 ? feed.name.substr(0,20)+'..' : feed.name }}</span>
+						</th>
+						<td><input type="checkbox" :checked="leftChecked.has(feed.id)" @change="onYAxisChange(feed.id, 1, $event.target.checked)"></td>
+						<td><input type="checkbox" :checked="rightChecked.has(feed.id)" @change="onYAxisChange(feed.id, 2, $event.target.checked)"></td>
+					</tr>
+				</tbody>
+			</template>
+		</table>
+
+		<!-- My Graphs -->
+		<div id="my_graphs" class="px-3">
+			<h4>
+				<a href="#" class="d-block" @click.prevent="savedGraphsCollapsed = !savedGraphsCollapsed">
+					<?php echo tr('My Graphs'); ?>
+					<span class="arrow arrow-down pull-right"></span>
+				</a>
+			</h4>
+			<div v-if="!savedGraphsCollapsed">
+				<select id="graph-select" class="mb-2" v-model="savedGraphSelected">
+					<option value="-1"><?php echo tr('Select graph'); ?> :</option>
+					<option v-for="(g, i) in savedGraphs" :key="g.id" :value="i">[#{{ g.id }}] {{ g.name }}</option>
+				</select>
+				<h5><?php echo tr('Graph Name'); ?>:</h5>
+				<input id="graphName" class="mb-2" v-model="savedGraphName" type="text" placeholder="<?php echo tr('Graph Name'); ?>" :disabled="!canWriteGraphs">
+				<small class="help-block">
+					<span v-if="savedGraphSelected > -1"><?php echo tr('Selected graph id'); ?>: {{ savedGraphs[savedGraphSelected].id }}</span>
+					<span v-else><?php echo tr('None selected'); ?></span>
+				</small>
+				<small class="help-block" v-if="savedGraphSelected > -1">
+					{{ savedGraphChanged ? '<?php echo tr('Changed'); ?>' : '<?php echo tr('No changes'); ?>' }}
+				</small>
+				<button class="btn" @click="onDeleteSavedGraph" :disabled="!canWriteGraphs || savedGraphSelected < 0"><?php echo tr('Delete'); ?></button>&nbsp;
+				<button class="btn" @click="onSaveSavedGraph" :disabled="!canSaveSavedGraph"><?php echo tr('Save'); ?></button>
+				<small class="help-block" v-if="savedGraphStatus">{{ savedGraphStatus }}</small>
+			</div>
+		</div>
+	</Teleport>
 </div>
 
 <script>
