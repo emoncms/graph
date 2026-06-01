@@ -30,12 +30,15 @@ load_css("Theme/css/datetimepicker.css");
 
 <style>
 
-body {
-	background-color: whitesmoke;
-}
-
+/* ==========================================================================
+   1. PAGE LAYOUT
+   ========================================================================== */
+body { background-color: whitesmoke; }
 .content-container { max-width: 1150px; }
 
+/* ==========================================================================
+   2. GRAPH ERROR STATE
+   ========================================================================== */
 #placeholder_bound.has-error {
 	display: flex;
 	align-items: center;
@@ -57,40 +60,35 @@ body {
 }
 
 #placeholder_bound .graph-window-error.is-error {
-	background: linear-gradient(180deg, #fff5f5 0%, #ffe9e9 100%);
-	color: #7a1d1d;
+	background: linear-gradient(180deg, #fff5f5 0%, #ffe9e9 100%); color: #7a1d1d;
 }
 
 #placeholder_bound .graph-window-error.is-info {
-	background-color: rgba(183, 213, 238, 0.3);
-	color: #1f4e75;
+	background-color: rgba(183, 213, 238, 0.3); color: #1f4e75;
 }
 
-#placeholder_bound .graph-window-error .graph-window-error-title {
-	font-size: 17px;
-	font-weight: 600;
-}
-
-#placeholder_bound .graph-window-error .graph-window-error-actions {
-	display: flex;
-	justify-content: center;
-}
-
-#placeholder_bound .graph-window-error .graph-window-error-actions .btn {
-	margin: 0;
-}
-
+#placeholder_bound .graph-window-error .graph-window-error-title { font-size: 17px; font-weight: 600; }
+#placeholder_bound .graph-window-error .graph-window-error-actions { display: flex; justify-content: center; }
+#placeholder_bound .graph-window-error .graph-window-error-actions .btn { margin: 0; }
 
 /* ==========================================================================
-   9. GRAPH MODULE & DATA VIEW
+   3. GRAPH VIEW SHELL
    ========================================================================== */
-
 #graph-view-app { padding-top: 1rem; }
+
+/* ==========================================================================
+   4. FEEDS OPTIONS & STATS TABLES
+   ========================================================================== */
 #tables { overflow-x: auto; overflow-y: visible; }
+
 #feed-options-table { table-layout: auto; min-width: 700px; }
+
 /* Allow the feeds card to scroll horizontally; .card's global overflow:hidden clips #tables otherwise */
 .feed-options .card { overflow-x: auto; }
-#feed-options-table input, #feed-options-table select { margin-bottom: 0; }
+
+#feed-options-table input,
+#feed-options-table select { margin-bottom: 0; }
+
 #feed-stats-table {
 	display: grid;
 	grid-template-columns: 1fr repeat(7, max-content);
@@ -98,24 +96,56 @@ body {
 	font-size: 13px;
 	color: var(--text-secondary);
 }
+
 #feed-stats-table thead,
 #feed-stats-table tbody,
 #feed-stats-table tr { display: contents; }
-#feed-stats-table th, #feed-stats-table td { white-space: nowrap; padding: 4px clamp(6px, 1.2vw, 25px); }
-#feed-stats-table td:first-child, #feed-stats-table th:first-child { white-space: normal; }
-#placeholder { width: 100%; height: 100%; }
+
+#feed-stats-table th,
+#feed-stats-table td { white-space: nowrap; padding: 4px clamp(6px, 1.2vw, 25px); }
+
+#feed-stats-table td:first-child,
+#feed-stats-table th:first-child { white-space: normal; }
+
 .feed-options { overflow-x: auto; }
-.feed-options-show-options, .feed-options-show-stats { margin-left: auto; flex-shrink: 0; }
-.feed-options-show-options.hide, .feed-options-show-stats.hide { display: none !important; }
-#feed-options-table td input[type="checkbox"], #feed-stats-table td input[type="checkbox"] { vertical-align: middle; margin: 0; position: relative; top: -1px; }
+
+.feed-options-show-options,
+.feed-options-show-stats { margin-left: auto; flex-shrink: 0; }
+
+.feed-options-show-options.hide,
+.feed-options-show-stats.hide { display: none !important; }
+
+#feed-options-table td input[type="checkbox"],
+#feed-stats-table td input[type="checkbox"] {
+	vertical-align: middle;
+	margin: 0;
+	position: relative;
+	top: -1px;
+}
+
+/* ==========================================================================
+   5. GRAPH LEGEND, TOOLTIP & NAV BUTTONS
+   ========================================================================== */
 #tooltip { z-index: 1001; }
 
-#legend { width: 100%; float: right; position: relative; z-index: 2; font-size: 12px; }
+#legend {
+	width: 100%;
+	float: right;
+	position: relative;
+	z-index: 2;
+	font-size: 12px;
+}
+
 #legend .col { position: absolute; top: 0; }
+
 #legend .right { right: 0.8em; }
+
 #legend .left { left: 0; }
+
 .legendLayer rect.background { fill: rgba(255, 255, 255, 0.6); }
+
 .legend { font-size: 14px; }
+
 #graph_zoomin,
 #graph_zoomout,
 #graph_left,
@@ -123,20 +153,22 @@ body {
 	font-weight: 700;
 }
 
-#showcontrols { display: inline-flex; align-items: center; gap: 0.75rem; margin-left: auto; }
-.ctrl-checkbox { display: inline-flex; align-items: center; gap: 0.35rem; margin: 0; }
+/* ==========================================================================
+   6. TOP CONTROLS LAYOUT
+   ========================================================================== */
+#showcontrols { gap: 0.75rem; margin-left: auto; }
 
-.controls-row-top {
-	display: flex;
-	justify-content: space-between;
-	align-items: flex-start;
+.ctrl-checkbox { gap: 0.35rem; }
+
+.ctrl-checkbox input[type="checkbox"] {
+	margin: 0;
+	position: relative;
+	top: -1px;
 }
 
-.controls-row-top .interval-controls {
-	flex: 1 1 0;
-	display: flex;
-	justify-content: flex-start;
-}
+.controls-row-top { align-items: flex-start; }
+
+.controls-row-top .interval-controls { flex: 1 1 0; }
 
 .controls-row-top .axes-controls {
 	flex: 1 1 0;
@@ -147,41 +179,24 @@ body {
 	flex-wrap: wrap;
 }
 
-.interval-options-row {
-	display: flex;
-	flex-direction: column;
-	gap: 0.5rem;
-}
+/* ==========================================================================
+   7. INTERVAL MODE OPTIONS
+   ========================================================================== */
+.interval-options-row { gap: 0.5rem; }
 
-.interval-toggle-grid {
-	display: flex;
-	gap: 0.75rem;
-	flex-wrap: wrap;
-}
+.interval-toggle-grid { gap: 0.75rem; flex-wrap: wrap; }
 
 .interval-toggle-item {
 	flex: 1 1 220px;
-	display: flex;
-	align-items: center;
 	justify-content: flex-start;
 	gap: 0.5rem;
-	margin: 0;
 }
 
-.interval-toggle-item-end {
-	justify-content: flex-end;
-}
+.interval-toggle-item-end { justify-content: flex-end; }
 
-.interval-toggle-item input[type="checkbox"] {
-	margin: 0;
-}
+.interval-toggle-item input[type="checkbox"] { margin: 0; }
 
-.interval-toggle-check {
-	display: inline-flex;
-	align-items: center;
-	gap: 0.5rem;
-	margin: 0;
-}
+.interval-toggle-check { gap: 0.5rem; }
 
 .interval-max-fill {
 	display: inline-flex;
@@ -189,33 +204,28 @@ body {
 	margin-left: 0.5rem;
 }
 
+.interval-input-auto {
+	cursor: pointer;
+	background-color: #e9ecef;
+	color: #555;
+}
+
+/* ==========================================================================
+   8. MOBILE ADJUSTMENTS
+   ========================================================================== */
+
 @media (max-width: 768px) {
-	/* Tighten top nav card-header on mobile */
-	.card-header {
-		padding: 0.35rem 0.6rem;
-		gap: 0.3rem;
-	}
+	#graph-view-app { padding-top: 0.2rem; }
 
 	/* Keep interval + axes on same row, wrap if needed */
-	.controls-row-top {
-		flex-wrap: wrap;
-		align-items: center;
-	}
+	.controls-row-top { flex-wrap: wrap; align-items: center; }
 
-	.controls-row-top .interval-controls {
-		flex: 1 1 auto;
-		justify-content: flex-start;
-	}
+	.controls-row-top .interval-controls { flex: 1 1 auto; justify-content: flex-start; }
 
-	.controls-row-top .axes-controls {
-		flex: 0 1 auto;
-		justify-content: flex-start;
-	}
+	.controls-row-top .axes-controls { flex: 0 1 auto; justify-content: flex-start; }
 
 	/* card-controls slightly tighter on mobile */
-	.card-controls {
-		padding: 0.5rem 0.6rem;
-	}
+	.card-controls { padding: 0.5rem 0.6rem; }
 
 	/* Fill nulls + show gaps on same line */
 	.interval-toggle-grid {
@@ -225,9 +235,7 @@ body {
 		gap: 0.5rem 1rem;
 	}
 
-	.interval-options-row {
-		gap: 0.35rem;
-	}
+	.interval-options-row { gap: 0.35rem; }
 
 	.interval-toggle-item {
 		flex: 0 1 auto;
@@ -236,46 +244,78 @@ body {
 		flex-wrap: wrap;
 	}
 
-	.interval-toggle-item-end {
-		justify-content: flex-start;
-	}
+	.interval-toggle-item-end { justify-content: flex-start; }
 
-	.interval-max-fill {
-		margin-left: 0;
-	}
+	.interval-max-fill { margin-left: 0; }
 }
 
-/* -- Info panel & Sidebar -- */
-#yaxis-left { width: 110px; }
-#yaxis-right { width: 110px; }
-.yaxis-minmax-label { width: 30px; }
+/* ==========================================================================
+   9. AXIS, WINDOW INFO & CSV CONTROLS
+   ========================================================================== */
 .yaxis-minmax { width: 50px !important; }
-.csvoptions { width: auto; }
-.window-info { font-size: var(--font-sm); color: var(--text-secondary); margin: 0.2rem 0 0; }
 
-#my_graphs { width: 13rem; overflow: hidden; position: relative; }
-#my_graphs h4 a { color: var(--l2-title); display: block; }
+.csvoptions { width: auto; }
+
+.window-info {
+	font-size: var(--font-sm);
+	color: var(--text-secondary);
+	margin: 0.2rem 0 0;
+}
+
+/* ==========================================================================
+   10. SIDEBAR: SAVED GRAPHS PANEL
+   ========================================================================== */
+#my_graphs {
+	width: 13rem;
+	overflow: hidden;
+	position: relative;
+}
+
+#my_graphs h4 a { color: var(--l2-title); }
+
 #my_graphs h4 a:hover { text-decoration: underline; }
+
 #my_graphs h5 { color: var(--l2-title); }
+
 #my_graphs input { width: 12rem; }
+
 #my_graphs select { width: 13rem; }
 
+/* ==========================================================================
+   11. SIDEBAR: FEED SELECTOR TABLE
+   ========================================================================== */
+
 table#feeds.table thead th {
-    border-top: 2px solid var(--bg-l2); font-weight: normal !important;
-    color: var(--l2-title); cursor: pointer; transition: all .3s ease-in; padding-left: 0;
+    border-top: 2px solid var(--bg-l2);
+	font-weight: normal !important;
+	color: var(--l2-title);
+	cursor: pointer;
+	transition: all .3s ease-in;
+	padding-left: 0;
 }
+
 table#feeds.table thead th:hover { color: var(--l2-text); text-decoration: underline; }
+
 table#feeds.table input[type="checkbox"] { margin: 0; }
+
 table#feeds.table tbody tr > * { border-color: var(--bg-l2); }
-table#feeds.table tbody tr th { cursor: pointer; transition: all .3s ease-in; font-weight: normal; }
+
+table#feeds.table tbody tr th {
+	cursor: pointer;
+	transition: all .3s ease-in;
+	font-weight: normal;
+}
+
 table#feeds.table tbody tr th:hover { text-decoration: underline; }
+
 table#feeds.table tbody tr th.feed-title span { max-width: 9em; }
-table#feeds.table .caret { border-top-color: currentColor !important; display: inline-block; vertical-align: middle; margin-right: .4em; }
 
-.feed-header { background: var(--bg-card-header); font-weight: bold; border-bottom: 1px solid var(--border); }
-.feed-select { accent-color: var(--accent); cursor: pointer; }
-
-.interval-input-auto { cursor: pointer; background-color: #e9ecef; color: #555; }
+table#feeds.table .caret {
+	border-top-color: currentColor !important;
+	display: inline-block;
+	vertical-align: middle;
+	margin-right: .4em;
+}
 
 </style>
 
@@ -307,18 +347,17 @@ table#feeds.table .caret { border-top-color: currentColor !important; display: i
 				</select>
 			</div>
 
-			<button class="btn my-0" style="margin-left:8px;" title="<?php echo tr('Select time window'); ?>" @click="showTimeManual = true"><i class="icon-resize-horizontal"></i></button>
+			<button class="btn my-0 ml-2" title="<?php echo tr('Select time window'); ?>" @click="showTimeManual = true"><i class="icon-resize-horizontal"></i></button>
 
-			<div class="btn-group my-0" style="margin-left:8px;">
+			<div class="btn-group my-0 ml-2">
 				<button class="btn px-3" id="graph_zoomin" title="<?php echo tr('Zoom In'); ?>" @click="onZoomIn">+</button>
 				<button class="btn px-3" id="graph_zoomout" title="<?php echo tr('Zoom Out'); ?>" @click="onZoomOut">−</button>
 				<button class="btn px-3" id="graph_left" title="<?php echo tr('Earlier'); ?>" @click="onPan(-1)"><</button>
 				<button class="btn px-3" id="graph_right" title="<?php echo tr('Later'); ?>" @click="onPan(1)">></button>
 			</div>
 
-			<div id="showcontrols">
-				<label class="ctrl-checkbox"><input type="checkbox" id="showlegend" v-model="state.showlegend"> <?php echo tr('Legend'); ?></label>
-				<label class="ctrl-checkbox"><input type="checkbox" id="showtag" v-model="state.showtag"> <?php echo tr('Feed tag'); ?></label>
+			<div id="showcontrols" class="d-flex align-items-center">
+				<label class="ctrl-checkbox d-flex align-items-center m-0"><input type="checkbox" id="showlegend" v-model="state.showlegend"> <?php echo tr('Legend'); ?></label>
 			</div>
 		</div>
 
@@ -354,7 +393,7 @@ table#feeds.table .caret { border-top-color: currentColor !important; display: i
 		<div class="card-body">
 			<div id="legend" v-show="!errorMessage"></div>
 			<div id="placeholder_bound" :class="{'has-error': !!errorMessage}" style="width:100%; height:400px;">
-				<div id="placeholder" v-show="!errorMessage"></div>
+				<div id="placeholder" class="w-100 h-100" v-show="!errorMessage"></div>
 				<div id="error" class="graph-window-error" :class="errorType==='info' ? 'is-info' : 'is-error'" v-show="errorMessage">
 					<div class="graph-window-error-title">{{ errorMessage }}</div>
 					<div class="graph-window-error-actions" v-if="errorBadFeedIds.length">
@@ -374,8 +413,8 @@ table#feeds.table .caret { border-top-color: currentColor !important; display: i
 
 		<div class="card-controls" style="border-top: 1px solid var(--border); background-color: #eee;" v-show="!histogramMode">
 
-			<div class="controls-row controls-row-top">
-				<div class="input-prepend input-append interval-controls">
+			<div class="controls-row controls-row-top d-flex justify-content-between">
+				<div class="input-prepend input-append interval-controls d-flex justify-content-start">
 					<span class="add-on"><?php echo tr('Type'); ?></span>
 					<select id="request-type" v-model="state.mode" @change="onReload" style="width:auto">
 						<option value="interval"><?php echo tr('Fixed Interval'); ?></option>
@@ -446,16 +485,16 @@ table#feeds.table .caret { border-top-color: currentColor !important; display: i
 				</div>
 			</div>
 
-			<div class="controls-row interval-options-row" v-show="state.mode==='interval'">
-				<div class="interval-toggle-grid">
+			<div class="controls-row interval-options-row d-flex flex-column" v-show="state.mode==='interval'">
+				<div class="interval-toggle-grid d-flex">
 					<!--
 					<label class="interval-toggle-item" for="request-limitinterval">
 						<input id="request-limitinterval" type="checkbox" v-model="state.limitinterval">
 						<span><?php echo tr('Limit to data interval'); ?></span>
 					</label>-->
 
-					<div class="interval-toggle-item">
-						<label class="interval-toggle-check" for="request-removenull">
+					<div class="interval-toggle-item d-flex align-items-center m-0">
+						<label class="interval-toggle-check d-flex align-items-center m-0" for="request-removenull">
 							<input id="request-removenull" type="checkbox" class="remove-null" v-model="state.removeNull" @change="onRemoveNullChange">
 							<span><?php echo tr('Fill nulls with last value'); ?></span>
 						</label>
@@ -466,7 +505,7 @@ table#feeds.table .caret { border-top-color: currentColor !important; display: i
 						</span>
 					</div>
 
-					<label class="interval-toggle-item interval-toggle-item-end" for="showmissing">
+					<label class="interval-toggle-item interval-toggle-item-end d-flex align-items-center m-0" for="showmissing">
 						<input type="checkbox" id="showmissing" v-model="state.showmissing">
 						<span><?php echo tr('Show gaps'); ?></span>
 					</label>
@@ -485,6 +524,7 @@ table#feeds.table .caret { border-top-color: currentColor !important; display: i
 				<div class="card-header feed-options-header">
 					<span class="card-accent"></span>
 					<span class="card-name feed-options-title"><?php echo tr('Feeds in view'); ?></span>
+					<label class="ctrl-checkbox d-flex align-items-center m-0"><input type="checkbox" id="showtag" v-model="state.showtag"> <?php echo tr('Feed tag'); ?></label>
 
 					<div class="feed-options-show-options btn btn-sm" :class="{hide: !state.showStats}" @click.stop.prevent="showOptions"><?php echo tr('Show options'); ?></div>
 					<div class="feed-options-show-stats btn btn-sm" :class="{hide: state.showStats}" @click.stop.prevent="showStats"><?php echo tr('Show stats'); ?></div>
@@ -620,7 +660,7 @@ table#feeds.table .caret { border-top-color: currentColor !important; display: i
 					<span id="copy-csv-feedback" class="csvoptions"></span>
 				</div>
 			</div>
-			<textarea id="csv" style="width:100%; height:500px; box-sizing:border-box" v-show="state.showcsv" v-model="csvText"></textarea>
+			<textarea id="csv" class="w-100" style="height:500px; box-sizing:border-box" v-show="state.showcsv" v-model="csvText"></textarea>
 		</div><!-- .card-controls (csv) -->
 
 		<Teleport to=".menu-l3">
@@ -656,18 +696,18 @@ table#feeds.table .caret { border-top-color: currentColor !important; display: i
 			<!-- My Graphs -->
 			<div id="my_graphs" class="px-3">
 				<h4>
-					<a href="#" @click.prevent="savedGraphsCollapsed = !savedGraphsCollapsed">
+					<a href="#" class="d-block" @click.prevent="savedGraphsCollapsed = !savedGraphsCollapsed">
 						<?php echo tr('My Graphs'); ?>
 						<span class="arrow arrow-down pull-right"></span>
 					</a>
 				</h4>
 				<div v-if="!savedGraphsCollapsed">
-					<select id="graph-select" v-model="savedGraphSelected" style="margin-bottom:8px">
+					<select id="graph-select" class="mb-2" v-model="savedGraphSelected">
 						<option value="-1"><?php echo tr('Select graph'); ?> :</option>
 						<option v-for="(g, i) in savedGraphs" :key="g.id" :value="i">[#{{ g.id }}] {{ g.name }}</option>
 					</select>
 					<h5><?php echo tr('Graph Name'); ?>:</h5>
-					<input id="graphName" v-model="savedGraphName" type="text" placeholder="<?php echo tr('Graph Name'); ?>" style="margin-bottom:8px" :disabled="!canWriteGraphs">
+					<input id="graphName" class="mb-2" v-model="savedGraphName" type="text" placeholder="<?php echo tr('Graph Name'); ?>" :disabled="!canWriteGraphs">
 					<small class="help-block">
 						<span v-if="savedGraphSelected > -1"><?php echo tr('Selected graph id'); ?>: {{ savedGraphs[savedGraphSelected].id }}</span>
 						<span v-else><?php echo tr('None selected'); ?></span>
