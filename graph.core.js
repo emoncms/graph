@@ -90,8 +90,6 @@ const GraphLayoutApp = {
 			return 'config';
 		},
 
-		csvButtonLabel() { return GH.tr(this.state.showcsv ? 'Hide CSV Output' : 'Show CSV Output'); },
-
 		feedsByTag() {
 			return this.feeds.reduce((acc, feed) => {
 				const tag = feed.tag || 'undefined';
@@ -473,14 +471,6 @@ const GraphLayoutApp = {
 			if (this.state.showcsv) this.csvText = this.buildCsvText();
 		},
 
-		toggleCsv() {
-			if (this.state.showcsv) {
-				this.showOptions();
-				return;
-			}
-			this.showCsvSection();
-		},
-
 		onDownloadCsv() {
 			if (!this.state.showcsv) return;
 			const csv = this.buildCsvText();
@@ -783,20 +773,24 @@ const GraphLayoutApp = {
 		toggleFeedLeft(feedid)            { this.onYAxisChange(feedid, 1, !this.leftChecked.has(this.normalizeFeedId(feedid))); },
 		toggleTag(tag)                    { this.collapsedTags[tag] = !this.collapsedTags[tag]; },
 
+		setSection(section) {
+			const nextSection = (section === 'stats' || section === 'csv') ? section : 'config';
+			const showCsv = nextSection === 'csv';
+			this.state.showStats = nextSection === 'stats';
+			if (showCsv && !this.state.showcsv) this.csvText = this.buildCsvText();
+			this.state.showcsv = showCsv;
+		},
+
 		showOptions() {
-			this.state.showStats = false;
-			this.state.showcsv = false;
+			this.setSection('config');
 		},
 
 		showStats() {
-			this.state.showStats = true;
-			this.state.showcsv = false;
+			this.setSection('stats');
 		},
 
 		showCsvSection() {
-			this.state.showStats = false;
-			if (!this.state.showcsv) this.csvText = this.buildCsvText();
-			this.state.showcsv = true;
+			this.setSection('csv');
 		},
 
 		onYAxisChange(feedid, yaxis, checked) {

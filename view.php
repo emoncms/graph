@@ -109,12 +109,6 @@ body { background-color: whitesmoke; }
 
 .feed-options { overflow-x: auto; }
 
-.feed-options-show-options,
-.feed-options-show-stats { margin-left: auto; flex-shrink: 0; }
-
-.feed-options-show-options.hide,
-.feed-options-show-stats.hide { display: none !important; }
-
 .graph-section-switcher {
 	display: flex;
 	width: 100%;
@@ -794,8 +788,6 @@ const feedidsRH = <?php echo json_encode($feedidsRH); ?>;
 const load_savegraphs = <?php echo json_encode($load_saved); ?>;
 var session_write = <?php echo isset($session['write']) ? (int) $session['write'] : 0; ?>;
 var graphTranslations = {
-	'Hide CSV Output': "<?php echo tr('Hide CSV Output'); ?>",
-	'Show CSV Output': "<?php echo tr('Show CSV Output'); ?>",
 	'Copied': "<?php echo tr('Copied'); ?>",
 	'Copy not supported': "<?php echo tr('Copy not supported'); ?>",
 	'Request error': "<?php echo tr('Request error'); ?>",
