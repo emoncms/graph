@@ -169,6 +169,14 @@ body { background-color: whitesmoke; }
 
 .legend { font-size: 14px; }
 
+/* Keep touch gestures inside the plot so pan/pinch feels stable on mobile. */
+@media (pointer: coarse) {
+	#placeholder {
+		touch-action: none;
+		overscroll-behavior: contain;
+	}
+}
+
 #graph_zoomin,
 #graph_zoomout,
 #graph_left,
@@ -180,6 +188,21 @@ body { background-color: whitesmoke; }
    6. TOP CONTROLS LAYOUT
    ========================================================================== */
 #showcontrols { gap: 0.75rem; margin-left: auto; }
+
+.time-manual-controls .input-prepend.input-append,
+.time-manual-controls date-time-picker,
+.time-manual-controls .dtp-wrap,
+.time-manual-controls .dtp-input-wrap {
+	flex: 0 0 auto;
+	width: auto;
+	max-width: none;
+}
+
+.time-manual-controls .dtp-input {
+	width: 155px;
+	min-width: 155px;
+	max-width: 155px;
+}
 
 .ctrl-checkbox { gap: 0.35rem; }
 
@@ -262,6 +285,17 @@ body { background-color: whitesmoke; }
 
 	/* card-controls slightly tighter on mobile */
 	.card-controls { padding: 0.5rem 0.6rem; }
+
+	/* Keep manual date range pickers from stretching unexpectedly on small screens */
+	.time-manual-controls {
+		flex-wrap: wrap;
+		gap: 0.4rem;
+	}
+
+	.time-manual-controls .dtp-input {
+		-webkit-text-size-adjust: 100%;
+		text-size-adjust: 100%;
+	}
 
 	/* Fill nulls + show gaps on same line */
 	.interval-toggle-grid {
@@ -408,7 +442,7 @@ body { background-color: whitesmoke; }
 		</div>
 
 		<!-- Date-time picker controls -->
-		<div class="card-header" v-show="!histogramMode && showTimeManual" style="background-color: #eee;">
+		<div class="card-header time-manual-controls" v-show="!histogramMode && showTimeManual" style="background-color: #eee;">
 			<div class="input-prepend input-append my-0">
 				<span class="add-on"><?php echo tr('Start'); ?></span>
 				<date-time-picker v-model="startLocal" @change="onReload"></date-time-picker>

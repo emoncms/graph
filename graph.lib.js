@@ -91,6 +91,12 @@ const graphLocale = (() => {
 	return toLocaleTag(userLocale) || toLocaleTag(docLocale) || 'en-GB';
 })();
 
+const isTouchDevice = () => {
+	if (typeof window === 'undefined') return false;
+	if ('ontouchstart' in window || navigator.maxTouchPoints > 0) return true;
+	return !!window.matchMedia?.('(pointer: coarse)')?.matches;
+};
+
 const makeDateFormatter = options => {
 	try {
 		return new Intl.DateTimeFormat(graphLocale, options);
@@ -359,6 +365,7 @@ const buildFlotOptions = (startMs, endMs, state) => {
 	const isLight = true; //document.documentElement.classList.contains('color-mode-light');
 	const labelColor = isLight ? '#333' : '#ddd';
 	const labelFont  = { color: labelColor, fill: labelColor };
+	const touchDevice = isTouchDevice();
 	const yaxes = [{ font: labelFont }, { alignTicksWithAxis: 1, position: 'right', font: labelFont }];
 	applyYAxisBounds(yaxes[0], state.yaxismin,  state.yaxismax);
 	applyYAxisBounds(yaxes[1], state.yaxismin2, state.yaxismax2);
@@ -367,13 +374,20 @@ const buildFlotOptions = (startMs, endMs, state) => {
 		xaxis:     { mode: 'time', timezone: 'browser', min: startMs, max: endMs,
 		             monthNames: monthNamesShort,
 		             dayNames:   dayNamesShort,
+		             axisPan: true,
+		             plotPan: true,
+		             axisZoom: true,
+		             plotZoom: true,
 		             font: labelFont },
+		yaxis:     { axisPan: false, plotPan: false, axisZoom: false, plotZoom: false },
 		yaxes,
 		grid:      { hoverable: true, clickable: true, borderWidth: 0, color: labelColor },
-		selection: { mode: 'x', color: '#e8cfac', visualization: 'fill' },
+		selection: { mode: touchDevice ? null : 'x', color: '#e8cfac', visualization: 'fill' },
 		legend:    { show: state.showlegend, position: 'nw' },
 		toggle:    { scale: 'visible' },
-		touch:     { pan: 'x', scale: 'x' },
+		zoom:      { interactive: true, enableTouch: true, amount: 1.5 },
+		pan:       { interactive: true, enableTouch: true, touchMode: 'smartLock', frameRate: 60 },
+		recenter:  { interactive: true, enableTouch: true },
 	};
 };
 

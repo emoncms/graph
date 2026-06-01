@@ -4,6 +4,10 @@
 
 const GH = window.GraphHelpers;
 const isEmbedGraph = typeof graph_embed !== 'undefined' && !!graph_embed;
+const hasTouchInput = (
+	typeof window !== 'undefined' &&
+	(('ontouchstart' in window) || navigator.maxTouchPoints > 0 || !!window.matchMedia?.('(pointer: coarse)')?.matches)
+);
 
 /* ── Tiny fetch helpers ──────────────────────────────────────────────────── */
 
@@ -532,6 +536,8 @@ const GraphLayoutApp = {
 			};
 
 			this._onPlotHover = ({ detail }) => {
+				if (hasTouchInput) return;
+
 				const item = detail?.[1];
 				if (!item?.datapoint) { this.removeTooltip(); this._previousHoverPoint = null; return; }
 
