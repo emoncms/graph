@@ -805,7 +805,7 @@ const GraphLayoutApp = {
 			if (checked) {
 				if (idx === -1) {
 					const feed = this.feeds.find(f => this.normalizeFeedId(f.id) === normalizedFeedId);
-					if (feed) this.state.feedlist.push(Object.assign(GH.defaultFeedProps(), { yaxis }, feed));
+					if (feed) this.state.feedlist.push(Object.assign(GH.defaultFeedProps(), { yaxis, average: GH.defaultAverageForUnit(feed.unit) }, feed));
 				} else {
 					this.state.feedlist[idx].yaxis = yaxis;
 				}
@@ -844,7 +844,7 @@ const GraphLayoutApp = {
 			if (!feedMeta) return;
 			const existing = this.state.feedlist.find(f => String(f.id) === String(feedMeta.id));
 			if (existing) { existing.yaxis = yaxis; return; }
-			this.state.feedlist.push(Object.assign(GH.defaultFeedProps(), { yaxis }, feedMeta));
+			this.state.feedlist.push(Object.assign(GH.defaultFeedProps(), { yaxis, average: GH.defaultAverageForUnit(feedMeta.unit) }, feedMeta));
 		},
 
 		applyUrlFeedSelection() {

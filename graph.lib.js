@@ -320,6 +320,12 @@ const defaultFeedProps = () => ({
 	stats: {}, data: [], autoColor: '',
 });
 
+// Cumulative energy units (Wh, kWh, MWh) where averaging makes less sense,
+// so default it off. Case insensitive.
+const CUMULATIVE_ENERGY_UNITS = ['wh', 'kwh', 'mwh'];
+const defaultAverageForUnit = unit =>
+	CUMULATIVE_ENERGY_UNITS.includes(String(unit || '').trim().toLowerCase()) ? 0 : 1;
+
 /* ── Histogram ───────────────────────────────────────────────────────────── */
 
 const calculateHistogramBuckets = (data, type, resolution) => {
@@ -479,6 +485,7 @@ window.GraphHelpers = {
 	normalizeSavedFeed,
 	parseFeedIds,
 	defaultFeedProps,
+	defaultAverageForUnit,
 	calculateHistogramBuckets,
 	normalizeColor,
 	buildFeedLabel,
