@@ -846,10 +846,19 @@ const GraphLayoutApp = {
 			}
 		},
 
+		// Editing is disabled when a display scale or offset is applied, since
+		// the plotted values no longer match what is stored in the feed.
+		feedHasScaleOffset(feed) {
+			const scale  = isFinite(parseFloat(feed.scale))  ? parseFloat(feed.scale)  : 1;
+			const offset = isFinite(parseFloat(feed.offset)) ? parseFloat(feed.offset) : 0;
+			return scale !== 1 || offset !== 0;
+		},
+
 		// Individual datapoint editing is enabled once the request interval has
 		// been zoomed in to (or below) the feed's native storage interval.
 		isPointEditEnabled(feed) {
 			if (!feed || this.state.mode !== 'interval') return false;
+			if (this.feedHasScaleOffset(feed)) return false;
 			const meta = this.feedMeta[String(feed.id)];
 			const feedInterval = meta && isFinite(Number(meta.interval)) ? Number(meta.interval) : 0;
 			if (feedInterval <= 0) return false;
@@ -865,6 +874,10 @@ const GraphLayoutApp = {
 
 		onMultiplySubmit(feed) {
 			const id = String(feed.id);
+			if (this.feedHasScaleOffset(feed)) {
+				this.multiplyStatus = { ...this.multiplyStatus, [id]: GH.tr('Remove the scale and offset to edit this feed') };
+				return;
+			}
 			const raw = String(this.multiplyValues[id] ?? '').trim();
 			if (!raw) { this.multiplyStatus = { ...this.multiplyStatus, [id]: GH.tr('Enter a value') }; return; }
 			if (!this.isValidMultiplyValue(raw)) {
@@ -914,6 +927,12 @@ const GraphLayoutApp = {
 			if (!this.editorMode || !item || !item.datapoint) return;
 			const feed = this.state.feedlist[item.seriesIndex];
 			if (!feed) return;
+
+			if (this.feedHasScaleOffset(feed)) {
+				this.editPoint = null;
+				this.editStatus = GH.tr('Remove the scale and offset to edit this feed');
+				return;
+			}
 
 			if (!this.isPointEditEnabled(feed)) {
 				this.editPoint = null;

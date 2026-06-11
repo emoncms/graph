@@ -437,6 +437,9 @@ body { background-color: whitesmoke; }
 
 .editor-section .editor-table .btn { margin-bottom: 0; }
 
+.editor-section .editor-point-row { gap: 0.75rem; flex-wrap: wrap; }
+.editor-section .editor-point-row .editor-status { margin: 0; }
+
 </style>
 
 <div id="graph-view-app">
@@ -793,24 +796,26 @@ body { background-color: whitesmoke; }
 		</div><!-- .card-controls (csv) -->
 
 		<div class="card-controls editor-section" style="border-top: 1px solid var(--border)" v-show="!histogramMode && editorMode">
-			<p class="editor-note">
-				<?php echo tr('Edit data within the current graph window. Changes are written directly to the feed and cannot be undone.'); ?>
+			<p class="alert alert-warning">
+				<?php echo tr('Changes are written directly to the feed and cannot be undone.'); ?>
 			</p>
 
 			<!-- Individual datapoint editing -->
 			<div class="editor-block">
 				<h5 class="editor-heading"><?php echo tr('Edit individual datapoint'); ?></h5>
-				<div v-if="editPoint" class="input-prepend input-append my-0">
-					<span class="add-on">{{ editPoint.name }}</span>
-					<span class="add-on"><?php echo tr('Time'); ?></span>
-					<input type="text" v-model="editPoint.time" style="width:110px">
-					<span class="add-on"><?php echo tr('Value'); ?></span>
-					<input type="text" v-model="editPoint.value" style="width:90px">
-					<button class="btn btn-info" @click="onPointSave"><?php echo tr('Save'); ?></button>
-					<button class="btn" @click="editPoint = null" title="<?php echo tr('Cancel'); ?>">&#x2715;</button>
+				<div v-if="editPoint" class="editor-point-row d-flex align-items-center">
+					<div class="input-prepend input-append my-0">
+						<span class="add-on">{{ editPoint.name }}</span>
+						<span class="add-on"><?php echo tr('Time'); ?></span>
+						<input type="text" v-model="editPoint.time" style="width:110px">
+						<span class="add-on"><?php echo tr('Value'); ?></span>
+						<input type="text" v-model="editPoint.value" style="width:90px">
+						<button class="btn btn-info" @click="onPointSave"><?php echo tr('Save'); ?></button>
+						<button class="btn" @click="editPoint = null" title="<?php echo tr('Cancel'); ?>">&#x2715;</button>
+					</div>
+					<span class="editor-status" v-if="editStatus">{{ editStatus }}</span>
 				</div>
 				<p v-else class="editor-hint">{{ pointEditHint }}</p>
-				<p class="editor-status" v-if="editStatus">{{ editStatus }}</p>
 			</div>
 
 			<!-- Per-feed window multiply -->
@@ -823,9 +828,9 @@ body { background-color: whitesmoke; }
 					<tbody>
 						<tr v-for="feed in state.feedlist" :key="'edit-'+feed.id">
 							<td class="editor-feed-name">{{ feedName(feed) }}</td>
-							<td><input type="text" class="editor-multiply-input" v-model="multiplyValues[feed.id]" placeholder="2, 1/2, -1, NAN, abs(x)"></td>
-							<td><button class="btn btn-info" @click="onMultiplySubmit(feed)"><?php echo tr('Save'); ?></button></td>
-							<td class="editor-status">{{ multiplyStatus[feed.id] }}</td>
+							<td><input type="text" class="editor-multiply-input" v-model="multiplyValues[feed.id]" placeholder="2, 1/2, -1, NAN, abs(x)" :disabled="feedHasScaleOffset(feed)"></td>
+							<td><button class="btn btn-info" @click="onMultiplySubmit(feed)" :disabled="feedHasScaleOffset(feed)"><?php echo tr('Save'); ?></button></td>
+							<td class="editor-status">{{ feedHasScaleOffset(feed) ? '<?php echo tr('Remove the scale and offset to edit this feed'); ?>' : multiplyStatus[feed.id] }}</td>
 						</tr>
 					</tbody>
 				</table>
@@ -921,7 +926,8 @@ var graphTranslations = {
 	'Editing not available for this datapoint at the current zoom level': "<?php echo tr('Editing not available for this datapoint at the current zoom level'); ?>",
 	'Multiply the data shown in the current window? This writes to the feed and cannot be undone.': "<?php echo tr('Multiply the data shown in the current window? This writes to the feed and cannot be undone.'); ?>",
 	'Invalid value. Use a float, a fraction (1/2), NAN or abs(x).': "<?php echo tr('Invalid value. Use a float, a fraction (1/2), NAN or abs(x).'); ?>",
-	'Enter a value': "<?php echo tr('Enter a value'); ?>"
+	'Enter a value': "<?php echo tr('Enter a value'); ?>",
+	'Remove the scale and offset to edit this feed': "<?php echo tr('Remove the scale and offset to edit this feed'); ?>"
 };
 </script>
 
