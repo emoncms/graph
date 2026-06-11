@@ -401,41 +401,74 @@ body { background-color: whitesmoke; }
    12. EDITOR SECTION
    ========================================================================== */
 .editor-section .editor-note {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	margin: 0 0 1.5rem;
+	padding: 0.5rem 0.8rem;
 	font-size: var(--font-sm);
 	color: var(--text-secondary);
-	margin: 0 0 0.75rem;
+	background: rgba(240, 173, 78, 0.08);
+	border-left: 3px solid #f0ad4e;
+	border-radius: 4px;
 }
 
-.editor-section .editor-block { margin-bottom: 1rem; }
+.editor-section .editor-note i { color: #f0ad4e; }
+
+.editor-section .editor-block { margin-bottom: 1.5rem; }
 .editor-section .editor-block:last-child { margin-bottom: 0; }
 
+.editor-section .editor-block + .editor-block {
+	border-top: 1px solid var(--border);
+	padding-top: 1.5rem;
+}
+
 .editor-section .editor-heading {
-	margin: 0 0 0.5rem;
 	display: flex;
 	align-items: center;
 	gap: 0.4rem;
+	margin: 0 0 0.85rem;
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	color: var(--text-secondary);
+}
+
+.editor-section .editor-heading .icon-question-sign {
+	font-size: 13px;
+	opacity: 0.65;
 }
 
 .editor-section .editor-hint,
 .editor-section .editor-status {
 	font-size: var(--font-sm);
 	color: var(--text-secondary);
-	margin: 0.35rem 0 0;
+	margin: 0.4rem 0 0;
 }
 
-.editor-section .editor-table { width: auto; }
+.editor-section .editor-table { width: auto; border-collapse: separate; border-spacing: 0 5px; }
 
 .editor-section .editor-table td {
-	padding: 3px 10px 3px 0;
+	padding: 3px 14px 3px 0;
 	vertical-align: middle;
 	border: none;
 }
 
-.editor-section .editor-feed-name { font-weight: 600; }
+.editor-section .editor-table td:first-child { padding-left: 0.25rem; }
 
-.editor-section .editor-multiply-input { width: 200px; margin-bottom: 0; }
+.editor-section .editor-feed-name { font-weight: 600; white-space: nowrap; }
+
+.editor-section .editor-point-row input,
+.editor-section .editor-multiply-input { font-family: var(--font-mono); margin-bottom: 0; }
+
+.editor-section .editor-multiply-input { width: 210px; }
+
+.editor-section .editor-multiply-input:disabled { cursor: not-allowed; opacity: 0.6; }
 
 .editor-section .editor-table .btn { margin-bottom: 0; }
+
+.editor-section .editor-table .editor-status { margin: 0; font-style: italic; }
 
 .editor-section .editor-point-row { gap: 0.75rem; flex-wrap: wrap; }
 .editor-section .editor-point-row .editor-status { margin: 0; }
@@ -796,8 +829,9 @@ body { background-color: whitesmoke; }
 		</div><!-- .card-controls (csv) -->
 
 		<div class="card-controls editor-section" style="border-top: 1px solid var(--border)" v-show="!histogramMode && editorMode">
-			<p class="alert alert-warning">
-				<?php echo tr('Changes are written directly to the feed and cannot be undone.'); ?>
+			<p class="editor-note">
+				<i class="icon-warning-sign"></i>
+				<span><?php echo tr('Changes are written directly to the feed and cannot be undone.'); ?></span>
 			</p>
 
 			<!-- Individual datapoint editing -->
