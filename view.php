@@ -397,6 +397,46 @@ body { background-color: whitesmoke; }
 	margin-right: .4em;
 }
 
+/* ==========================================================================
+   12. EDITOR SECTION
+   ========================================================================== */
+.editor-section .editor-note {
+	font-size: var(--font-sm);
+	color: var(--text-secondary);
+	margin: 0 0 0.75rem;
+}
+
+.editor-section .editor-block { margin-bottom: 1rem; }
+.editor-section .editor-block:last-child { margin-bottom: 0; }
+
+.editor-section .editor-heading {
+	margin: 0 0 0.5rem;
+	display: flex;
+	align-items: center;
+	gap: 0.4rem;
+}
+
+.editor-section .editor-hint,
+.editor-section .editor-status {
+	font-size: var(--font-sm);
+	color: var(--text-secondary);
+	margin: 0.35rem 0 0;
+}
+
+.editor-section .editor-table { width: auto; }
+
+.editor-section .editor-table td {
+	padding: 3px 10px 3px 0;
+	vertical-align: middle;
+	border: none;
+}
+
+.editor-section .editor-feed-name { font-weight: 600; }
+
+.editor-section .editor-multiply-input { width: 200px; margin-bottom: 0; }
+
+.editor-section .editor-table .btn { margin-bottom: 0; }
+
 </style>
 
 <div id="graph-view-app">
@@ -613,11 +653,12 @@ body { background-color: whitesmoke; }
 					<button class="btn" :class="{active: activeSection === 'config'}" @click="showOptions"><i class="icon-cog"></i> Feed Config</button>
 					<button class="btn" :class="{active: activeSection === 'stats'}" @click="showStats"><i class="icon-signal"></i> Feed Stats</button>
 					<button class="btn" :class="{active: activeSection === 'csv'}" @click="showCsvSection"><i class="icon-download-alt"></i> CSV Export</button>
+					<button v-if="canEdit" class="btn" :class="{active: activeSection === 'editor'}" @click="showEditorSection"><i class="icon-pencil"></i> <?php echo tr('Editor'); ?></button>
 				</div>
 			</div>
 		</div>
 
-		<div class="feed-options" :class="{hide: state.feedlist.length===0 || histogramMode}" v-show="!histogramMode && !state.showcsv">
+		<div class="feed-options" :class="{hide: state.feedlist.length===0 || histogramMode}" v-show="!histogramMode && !state.showcsv && !editorMode">
 			<div class="card">
 				<div id="tables">
 					<table id="feed-options-table" v-show="!state.showStats">
@@ -750,6 +791,47 @@ body { background-color: whitesmoke; }
 			</div>
 			<textarea id="csv" class="w-100" style="height:500px; box-sizing:border-box" v-model="csvText"></textarea>
 		</div><!-- .card-controls (csv) -->
+
+		<div class="card-controls editor-section" style="border-top: 1px solid var(--border)" v-show="!histogramMode && editorMode">
+			<p class="editor-note">
+				<?php echo tr('Edit data within the current graph window. Changes are written directly to the feed and cannot be undone.'); ?>
+			</p>
+
+			<!-- Individual datapoint editing -->
+			<div class="editor-block">
+				<h5 class="editor-heading"><?php echo tr('Edit individual datapoint'); ?></h5>
+				<div v-if="editPoint" class="input-prepend input-append my-0">
+					<span class="add-on">{{ editPoint.name }}</span>
+					<span class="add-on"><?php echo tr('Time'); ?></span>
+					<input type="text" v-model="editPoint.time" style="width:110px">
+					<span class="add-on"><?php echo tr('Value'); ?></span>
+					<input type="text" v-model="editPoint.value" style="width:90px">
+					<button class="btn btn-info" @click="onPointSave"><?php echo tr('Save'); ?></button>
+					<button class="btn" @click="editPoint = null" title="<?php echo tr('Cancel'); ?>">&#x2715;</button>
+				</div>
+				<p v-else class="editor-hint">{{ pointEditHint }}</p>
+				<p class="editor-status" v-if="editStatus">{{ editStatus }}</p>
+			</div>
+
+			<!-- Per-feed window multiply -->
+			<div class="editor-block">
+				<h5 class="editor-heading">
+					<?php echo tr('Multiply data in window'); ?>
+					<i class="icon icon-question-sign" style="cursor:pointer" title="<?php echo tr('Enter a float (e.g. 2), a fraction (e.g. 1/2), NAN to erase the window to null, or abs(x) to convert to absolute values.'); ?>"></i>
+				</h5>
+				<table class="editor-table" v-if="state.feedlist.length">
+					<tbody>
+						<tr v-for="feed in state.feedlist" :key="'edit-'+feed.id">
+							<td class="editor-feed-name">{{ feedName(feed) }}</td>
+							<td><input type="text" class="editor-multiply-input" v-model="multiplyValues[feed.id]" placeholder="2, 1/2, -1, NAN, abs(x)"></td>
+							<td><button class="btn btn-info" @click="onMultiplySubmit(feed)"><?php echo tr('Save'); ?></button></td>
+							<td class="editor-status">{{ multiplyStatus[feed.id] }}</td>
+						</tr>
+					</tbody>
+				</table>
+				<p v-else class="editor-hint"><?php echo tr('Select one or more feeds to edit.'); ?></p>
+			</div>
+		</div><!-- .card-controls (editor) -->
 	</div>
 
 	<Teleport to=".menu-l3">
@@ -832,7 +914,14 @@ var graphTranslations = {
 	'Graph not found': "<?php echo tr('Graph not found'); ?>",
 	'Graph Name required': "<?php echo tr('Graph Name required'); ?>",
 	'Saved': "<?php echo tr('Saved'); ?>",
-	'Deleted': "<?php echo tr('Deleted'); ?>"
+	'Deleted': "<?php echo tr('Deleted'); ?>",
+	'Click a datapoint on the chart to edit it': "<?php echo tr('Click a datapoint on the chart to edit it'); ?>",
+	'Zoom in to the feed interval to edit individual datapoints': "<?php echo tr('Zoom in to the feed interval to edit individual datapoints'); ?>",
+	'Switch to Fixed Interval mode to edit individual datapoints': "<?php echo tr('Switch to Fixed Interval mode to edit individual datapoints'); ?>",
+	'Editing not available for this datapoint at the current zoom level': "<?php echo tr('Editing not available for this datapoint at the current zoom level'); ?>",
+	'Multiply the data shown in the current window? This writes to the feed and cannot be undone.': "<?php echo tr('Multiply the data shown in the current window? This writes to the feed and cannot be undone.'); ?>",
+	'Invalid value. Use a float, a fraction (1/2), NAN or abs(x).': "<?php echo tr('Invalid value. Use a float, a fraction (1/2), NAN or abs(x).'); ?>",
+	'Enter a value': "<?php echo tr('Enter a value'); ?>"
 };
 </script>
 

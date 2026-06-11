@@ -46,11 +46,20 @@ const GraphLayoutApp = {
 		histogramType: 'timeatvalue',
 		histogramResolution: 1,
 		showTimeManual: false,
+
+		// Editor section
+		editorMode: false,
+		editPoint: null,
+		editStatus: '',
+		multiplyValues: {},
+		multiplyStatus: {},
+		feedMeta: {},
 	}),
 
 	/* ── Computed ──────────────────────────────────────────────────────────── */
 	computed: {
 		canWriteGraphs: () => !isEmbedGraph && !!session_write,
+		canEdit: () => !isEmbedGraph && (!!session_write || !!apikey),
 
 		windowInfo() {
 			if (isEmbedGraph) return null;
@@ -89,9 +98,20 @@ const GraphLayoutApp = {
 		},
 
 		activeSection() {
+			if (this.editorMode) return 'editor';
 			if (this.state.showcsv) return 'csv';
 			if (this.state.showStats) return 'stats';
 			return 'config';
+		},
+
+		// Hint shown in the editor when no datapoint is currently selected.
+		pointEditHint() {
+			if (this.state.mode !== 'interval')
+				return GH.tr('Switch to Fixed Interval mode to edit individual datapoints');
+			const anyEnabled = this.state.feedlist.some(f => this.isPointEditEnabled(f));
+			return anyEnabled
+				? GH.tr('Click a datapoint on the chart to edit it')
+				: GH.tr('Zoom in to the feed interval to edit individual datapoints');
 		},
 
 		feedsByTag() {
@@ -399,6 +419,7 @@ const GraphLayoutApp = {
 			}
 
 			this.clearInlineError();
+			if (this.editorMode) this.fetchEditorMeta();
 
 			const { startMs, endMs } = this.getWindowRange();
 			const params = GH.buildFeedDataParams(this.state.feedlist, startMs, endMs, this.state);
@@ -567,10 +588,13 @@ const GraphLayoutApp = {
 					'#fff');
 			};
 
+			this._onPlotClick = ({ detail }) => this.onEditorPlotClick(detail?.[1]);
+
 			placeholder.addEventListener('plotselected', this._onPlotSelected);
 			placeholder.addEventListener('plotpan',      this._onPlotPanOrZoom);
 			placeholder.addEventListener('plotzoom',     this._onPlotPanOrZoom);
 			placeholder.addEventListener('plothover',    this._onPlotHover);
+			placeholder.addEventListener('plotclick',    this._onPlotClick);
 		},
 
 		unbindPlotEvents() {
@@ -580,6 +604,7 @@ const GraphLayoutApp = {
 				placeholder.removeEventListener('plotpan',      this._onPlotPanOrZoom);
 				placeholder.removeEventListener('plotzoom',     this._onPlotPanOrZoom);
 				placeholder.removeEventListener('plothover',    this._onPlotHover);
+				placeholder.removeEventListener('plotclick',    this._onPlotClick);
 			}
 			clearTimeout(this._panZoomTimeout);
 			this.removeTooltip();
@@ -780,9 +805,11 @@ const GraphLayoutApp = {
 		toggleTag(tag)                    { this.collapsedTags[tag] = !this.collapsedTags[tag]; },
 
 		setSection(section) {
-			const nextSection = (section === 'stats' || section === 'csv') ? section : 'config';
+			const valid = ['config', 'stats', 'csv', 'editor'];
+			const nextSection = valid.includes(section) ? section : 'config';
 			const showCsv = nextSection === 'csv';
 			this.state.showStats = nextSection === 'stats';
+			this.editorMode = nextSection === 'editor';
 			if (showCsv && !this.state.showcsv) this.csvText = this.buildCsvText();
 			this.state.showcsv = showCsv;
 		},
@@ -797,6 +824,114 @@ const GraphLayoutApp = {
 
 		showCsvSection() {
 			this.setSection('csv');
+		},
+
+		showEditorSection() {
+			this.setSection('editor');
+			this.fetchEditorMeta();
+		},
+
+		/* ── Editor ─────────────────────────────────────────── */
+		// Fetch native interval/engine metadata for the selected feeds so we
+		// can decide when individual datapoint editing should be enabled.
+		fetchEditorMeta() {
+			for (const feed of this.state.feedlist) {
+				const id = String(feed.id);
+				if (this.feedMeta[id]) continue;
+				getJson(`${path}feed/getmeta.json?id=${encodeURIComponent(id)}${apikeystr}`)
+					.then(meta => {
+						if (meta && typeof meta === 'object') this.feedMeta = { ...this.feedMeta, [id]: meta };
+					})
+					.catch(err => console.error('Failed to fetch feed meta:', err));
+			}
+		},
+
+		// Individual datapoint editing is enabled once the request interval has
+		// been zoomed in to (or below) the feed's native storage interval.
+		isPointEditEnabled(feed) {
+			if (!feed || this.state.mode !== 'interval') return false;
+			const meta = this.feedMeta[String(feed.id)];
+			const feedInterval = meta && isFinite(Number(meta.interval)) ? Number(meta.interval) : 0;
+			if (feedInterval <= 0) return false;
+			const reqInterval = parseInt(this.state.interval, 10) || 0;
+			return reqInterval > 0 && reqInterval <= feedInterval;
+		},
+
+		// Validate against the same patterns the scalerange backend accepts:
+		// NAN, abs(x), a signed float, or a (signed) unit fraction like 1/2.
+		isValidMultiplyValue(value) {
+			return /^(NAN|abs\(x\)|(1\/|-1\/|-)?[0-9]+([.,][0-9]+)?)$/i.test(value);
+		},
+
+		onMultiplySubmit(feed) {
+			const id = String(feed.id);
+			const raw = String(this.multiplyValues[id] ?? '').trim();
+			if (!raw) { this.multiplyStatus = { ...this.multiplyStatus, [id]: GH.tr('Enter a value') }; return; }
+			if (!this.isValidMultiplyValue(raw)) {
+				this.multiplyStatus = { ...this.multiplyStatus, [id]: GH.tr('Invalid value. Use a float, a fraction (1/2), NAN or abs(x).') };
+				return;
+			}
+			if (!window.confirm(GH.tr('Multiply the data shown in the current window? This writes to the feed and cannot be undone.'))) return;
+
+			const { startMs, endMs } = this.getWindowRange();
+			const start = Math.round(startMs / 1000);
+			const end   = Math.round(endMs / 1000);
+			const url = `${path}feed/scalerange.json?id=${encodeURIComponent(id)}&start=${start}&end=${end}&value=${encodeURIComponent(raw)}${apikeystr}`;
+
+			getJson(url)
+				.then(res => {
+					// scalerange returns the number of bytes written on success,
+					// false on failure, or a string for unsupported engines.
+					const ok = typeof res === 'number' && res > 0;
+					this.multiplyStatus = { ...this.multiplyStatus, [id]: ok
+						? GH.tr('Saved')
+						: (typeof res === 'string' ? res : (res?.message || `${GH.tr('Request error')}`)) };
+					if (ok) this.multiplyValues = { ...this.multiplyValues, [id]: '' };
+					this.fetchFeedData();
+				})
+				.catch(err => {
+					this.multiplyStatus = { ...this.multiplyStatus, [id]: `${GH.tr('Request error')}: ${err?.message || String(err)}` };
+				});
+		},
+
+		onPointSave() {
+			if (!this.editPoint) return;
+			const { feedid, time, value } = this.editPoint;
+			const t = parseInt(time, 10);
+			if (!isFinite(t)) { this.editStatus = GH.tr('Enter a value'); return; }
+			if (String(value).trim() === '') { this.editStatus = GH.tr('Enter a value'); return; }
+
+			const url = `${path}feed/post.json?id=${encodeURIComponent(feedid)}&time=${t}&value=${encodeURIComponent(value)}&skipbuffer=1${apikeystr}`;
+			getJson(url)
+				.then(() => { this.editStatus = GH.tr('Saved'); this.fetchFeedData(); })
+				.catch(err => { this.editStatus = `${GH.tr('Request error')}: ${err?.message || String(err)}`; });
+		},
+
+		// Click handler for the chart while the editor section is open: selects
+		// the clicked datapoint into the edit box, reversing any display
+		// scale/offset to recover the stored feed value.
+		onEditorPlotClick(item) {
+			if (!this.editorMode || !item || !item.datapoint) return;
+			const feed = this.state.feedlist[item.seriesIndex];
+			if (!feed) return;
+
+			if (!this.isPointEditEnabled(feed)) {
+				this.editPoint = null;
+				this.editStatus = GH.tr('Editing not available for this datapoint at the current zoom level');
+				return;
+			}
+
+			const dp = item.datapoint;
+			const seconds = dp[0] > 1e12 ? Math.round(dp[0] / 1000) : Math.round(dp[0]);
+
+			const scale  = isFinite(parseFloat(feed.scale))  ? parseFloat(feed.scale)  : 1;
+			const offset = isFinite(parseFloat(feed.offset)) ? parseFloat(feed.offset) : 0;
+			const plotted = dp[2] !== undefined ? dp[1] - dp[2] : dp[1];
+			const raw = scale !== 0 ? (plotted - offset) / scale : plotted;
+			const value = Number.isInteger(raw) ? raw : parseFloat(raw.toFixed(3));
+
+			this.editStatus = '';
+			this.editPoint = { feedid: feed.id, name: this.feedName(feed), time: seconds, value };
 		},
 
 		onYAxisChange(feedid, yaxis, checked) {
