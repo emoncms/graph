@@ -4,9 +4,13 @@
 
 const GH = window.GraphHelpers;
 const isEmbedGraph = typeof graph_embed !== 'undefined' && !!graph_embed;
+// True only when the device has NO hover-capable pointer (e.g. phones/tablets).
+// Hybrid laptops with a touchscreen still report touch points, so we must not
+// key off maxTouchPoints/ontouchstart — those would wrongly disable tooltips
+// for a mouse user. `any-hover: hover` is true if *any* input can hover.
 const hasTouchInput = (
 	typeof window !== 'undefined' &&
-	(('ontouchstart' in window) || navigator.maxTouchPoints > 0 || !!window.matchMedia?.('(pointer: coarse)')?.matches)
+	!!window.matchMedia?.('(any-hover: none)')?.matches
 );
 
 /* ── Tiny fetch helpers ──────────────────────────────────────────────────── */
@@ -232,6 +236,37 @@ const GraphLayoutApp = {
 		/* ── Tooltip ─────────────────────────────────────────────────────── */
 		removeTooltip() {
 			document.getElementById('tooltip')?.remove();
+		},
+
+		// Build and show the datapoint tooltip from a Flot hover/click item.
+		// Shared by plothover (mouse) and plotclick (touch).
+		showPointTooltip(item) {
+			if (!item?.datapoint) { this.removeTooltip(); this._previousHoverPoint = null; return; }
+
+			const { datapoint } = item;
+			const key = datapoint.join(':');
+			if (key === this._previousHoverPoint) return;
+			this._previousHoverPoint = key;
+
+			const feed    = this.state.feedlist[item.seriesIndex] ?? null;
+			const dp      = isFinite(Number(feed?.dp)) ? Number(feed.dp) : 0;
+			const isStack = datapoint[2] !== undefined;
+			const raw     = isStack ? datapoint[1] - datapoint[2] : datapoint[1];
+
+			if (!isFinite(raw)) { this.removeTooltip(); return; }
+
+			const value = `${raw.toFixed(dp)} ${this.getFeedUnit(feed?.id)}`;
+			const date  = typeof GH.formatGraphTooltipTime === 'function'
+				? GH.formatGraphTooltipTime(datapoint[0])
+				: new Date(datapoint[0]*1000).toString();
+			const ts = datapoint[0];
+
+			this.showTooltip(item.pageX, item.pageY,
+				`<span style="font-size:11px">${item.series.label}</span><br>` +
+				`${value}<br>` +
+				`<span style="font-size:11px">${date}</span><br>` +
+				`<span style="font-size:11px">(${ts})</span>`,
+				'#fff');
 		},
 
 		showTooltip(x, y, contents, bgColor) {
@@ -561,37 +596,16 @@ const GraphLayoutApp = {
 
 			this._onPlotHover = ({ detail }) => {
 				if (hasTouchInput) return;
-
-				const item = detail?.[1];
-				if (!item?.datapoint) { this.removeTooltip(); this._previousHoverPoint = null; return; }
-
-				const { datapoint } = item;
-				const key = datapoint.join(':');
-				if (key === this._previousHoverPoint) return;
-				this._previousHoverPoint = key;
-
-				const feed    = this.state.feedlist[item.seriesIndex] ?? null;
-				const dp      = isFinite(Number(feed?.dp)) ? Number(feed.dp) : 0;
-				const isStack = datapoint[2] !== undefined;
-				const raw     = isStack ? datapoint[1] - datapoint[2] : datapoint[1];
-
-				if (!isFinite(raw)) { this.removeTooltip(); return; }
-
-				const value = `${raw.toFixed(dp)} ${this.getFeedUnit(feed?.id)}`;
-				const date  = typeof GH.formatGraphTooltipTime === 'function'
-					? GH.formatGraphTooltipTime(datapoint[0])
-					: new Date(datapoint[0]*1000).toString();
-				const ts = datapoint[0];
-
-				this.showTooltip(item.pageX, item.pageY,
-					`<span style="font-size:11px">${item.series.label}</span><br>` +
-					`${value}<br>` +
-					`<span style="font-size:11px">${date}</span><br>` +
-					`<span style="font-size:11px">(${ts})</span>`,
-					'#fff');
+				this.showPointTooltip(detail?.[1]);
 			};
 
-			this._onPlotClick = ({ detail }) => this.onEditorPlotClick(detail?.[1]);
+			// Touch devices don't fire plothover, but a tap fires plotclick — so on
+			// touch we surface the same tooltip on tap (in addition to editor edits).
+			this._onPlotClick = ({ detail }) => {
+				const item = detail?.[1];
+				this.onEditorPlotClick(item);
+				if (hasTouchInput) this.showPointTooltip(item);
+			};
 
 			placeholder.addEventListener('plotselected', this._onPlotSelected);
 			placeholder.addEventListener('plotpan',      this._onPlotPanOrZoom);
