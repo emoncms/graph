@@ -388,7 +388,11 @@ const buildFlotOptions = (startMs, endMs, state) => {
 	applyYAxisBounds(yaxes[1], state.yaxismin2, state.yaxismax2);
 	return {
 		lines:     { fill: false, lineWidth: 2 },
-		xaxis:     { mode: 'time', timezone: 'browser', min: startMs, max: endMs,
+		xaxis:     { mode: 'time', timezone: 'browser', min: startMs*0.001, max: endMs*0.001,
+		             // Honour the requested view window regardless of where data
+		             // exists; without this Flot 5's default autoScale ("exact")
+		             // snaps the axis to the data extents instead.
+		             autoScale: 'none',
 		             monthNames: monthNamesShort,
 		             dayNames:   dayNamesShort,
 		             axisPan: true,

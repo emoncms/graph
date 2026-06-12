@@ -76,7 +76,7 @@ const GraphLayoutApp = {
 					? GH.formatGraphWindowTime(ms)
 					: new Date(ms).toLocaleString();
 
-			return { start: formatTs(startMs), end: formatTs(endMs), length: `${hours}h${mins} (${windowSecs} seconds)` };
+			return { start: formatTs(startMs), end: formatTs(endMs), length: `${hours}h${mins} (${windowSecs} seconds)`, floating: !!this.state.floatingtime };
 		},
 
 		selectedSavedGraph() {
@@ -134,7 +134,9 @@ const GraphLayoutApp = {
 	watch: {
 		savedGraphSelected(v) { this.onSavedGraphSelectedChange(v); },
 		'state.showlegend':    'renderChart',
-		'state.showmissing':   'renderChart',
+		// showmissing maps to the skipmissing fetch param, so it must re-fetch
+		// (a re-render alone can't restore data the server already skipped).
+		'state.showmissing':   'fetchFeedData',
 		'state.showtag':       'renderChart',
 		'state.csvtimeformat': 'updateCsvText',
 		'state.csvnullvalues': 'updateCsvText',
@@ -1089,6 +1091,14 @@ const GraphLayoutApp = {
 			const { startMs, endMs } = this.getWindowRange();
 			let { start: s, end: e } = normalized;
 			if (!isFinite(s) || !isFinite(e) || s >= e) { s = startMs; e = endMs; }
+			// A floating-time graph stores a relative window: re-anchor it to "now"
+			// on load, keeping the saved duration, so it always shows recent data.
+			else if (normalized.floatingtime) {
+				const now = Math.round(Date.now() / 1000) * 1000;
+				this.graphTimeHours = String(Math.round((e - s) / 3600_000));
+				s = now - (e - s);
+				e = now;
+			}
 
 			this.syncWindowInputs(s, e);
 			this.applySavedGraphState(normalized);

@@ -562,6 +562,7 @@ body { background-color: whitesmoke; }
 			<div id="window-info" class="window-info" v-if="windowInfo">
 				<b><?php echo tr('Window'); ?>:</b> {{ windowInfo.start }} <b>&#x2192;</b> {{ windowInfo.end }}
 				&nbsp;&middot;&nbsp; <b><?php echo tr('Length'); ?>:</b> {{ windowInfo.length }}
+				<span v-if="windowInfo.floating">&nbsp;&middot;&nbsp; <b><?php echo tr('Floating time on'); ?></b></span>
 			</div>
 
 		</div>
