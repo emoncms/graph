@@ -128,6 +128,7 @@ const GraphLayoutApp = {
 		rightCount()     { return this.state.feedlist.filter(f => f.yaxis === 2).length; },
 		leftAxisIsAuto()  { return this.state.yaxismin  === 'auto' && this.state.yaxismax  === 'auto'; },
 		rightAxisIsAuto() { return this.state.yaxismin2 === 'auto' && this.state.yaxismax2 === 'auto'; },
+		anyDeltaEnabled() { return this.state.feedlist.some(f => Number(f.delta)); },
 	},
 
 	/* ── Watchers ──────────────────────────────────────────────────────────── */
@@ -798,7 +799,13 @@ const GraphLayoutApp = {
 		setStack(feed, e)  { this._setFeedPropRender(feed, 'stack',   e.target.checked ? 1 : 0); },
 		setScale(feed, e)  { this._setFeedPropRender(feed, 'scale',   e.target.value); },
 		setOffset(feed, e) { this._setFeedPropRender(feed, 'offset',  e.target.value); },
-		setDelta(feed, e)  { this._setFeedPropFetch(feed,  'delta',   e.target.checked ? 1 : 0); },
+		setDelta(feed, e)  {
+			feed.delta = e.target.checked ? 1 : 0;
+			// Delta sums values across each window (day/month/year); dropping missing
+			// points discards the current incomplete period, so force gaps on.
+			if (feed.delta && !this.state.showmissing) { this.state.showmissing = true; return; }
+			this.fetchFeedData();
+		},
 		setAverage(feed, e){ this._setFeedPropFetch(feed,  'average', e.target.checked ? 1 : 0); },
 		setDp(feed, e)     { this._setFeedPropRender(feed, 'dp',      Number(e.target.value)); },
 
@@ -1104,6 +1111,8 @@ const GraphLayoutApp = {
 			this.applySavedGraphState(normalized);
 			this.hiddenFeedIds.clear();
 			this.state.feedlist.splice(0, Infinity, ...normalized.feedlist.map(GH.buildStateFeedFromSaved));
+			// Delta requires gaps on (see setDelta) — enforce on load too.
+			if (this.anyDeltaEnabled) this.state.showmissing = true;
 			this.expandTagsForSelectedFeeds();
 			this.fetchFeedData();
 			if (this.state.showcsv) this.updateCsvText();

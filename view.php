@@ -500,6 +500,7 @@ body { background-color: whitesmoke; }
 					<option value="336"><?php echo tr('2 Weeks'); ?></option>
 					<option value="720"><?php echo tr('Month'); ?></option>
 					<option value="8760"><?php echo tr('Year'); ?></option>
+					<option value="43800"><?php echo tr('5 Years'); ?></option>
 				</select>
 			</div>
 
@@ -662,8 +663,9 @@ body { background-color: whitesmoke; }
 						</span>
 					</div>
 
-					<label class="interval-toggle-item interval-toggle-item-end d-flex align-items-center m-0" for="showmissing">
-						<input type="checkbox" id="showmissing" v-model="state.showmissing">
+					<label class="interval-toggle-item interval-toggle-item-end d-flex align-items-center m-0" for="showmissing"
+						:title="anyDeltaEnabled ? '<?php echo tr('Required while delta is enabled'); ?>' : ''">
+						<input type="checkbox" id="showmissing" v-model="state.showmissing" :disabled="anyDeltaEnabled">
 						<span><?php echo tr('Show gaps'); ?></span>
 					</label>
 
