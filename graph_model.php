@@ -16,10 +16,12 @@ defined('EMONCMS_EXEC') or die('Restricted access');
 class Graph
 {
     private $mysqli;
+    private $feed;
 
-    public function __construct($mysqli) 
+    public function __construct($mysqli, $feed = null) 
     {
         $this->mysqli = $mysqli;
+        $this->feed = $feed;
     }
         
     public function create($userid,$data)
@@ -69,14 +71,22 @@ class Graph
             $data = json_decode($row['data']);
             // Check for valid decode
             if ($data==null) $data = array();
-            // Check for public access
-            /* Option could be used for further access control (feeds are already protected)
-            if ($row['userid']!=$userid) {
-                if (!isset($data->public)) 
+
+            // Access control: the owner may always read the config. Otherwise
+            // the config is only returned if every feed it references is public.
+            // The feed data itself is separately access-controlled per feed; this
+            // stops a non-owner learning the feed ids/names/layout of a private graph.
+            if ($userid < 1 || (int) $row['userid'] !== $userid) {
+                $feedids = array();
+                if (isset($data->feedlist) && is_array($data->feedlist)) {
+                    foreach ($data->feedlist as $f) {
+                        if (isset($f->id)) $feedids[] = $f->id;
+                    }
+                }
+                if (!$this->feed || !$this->feed->all_feeds_public($feedids)) {
                     return array("success"=>false, "message"=>"this graph is not public");
-                if (!$data->public) 
-                    return array("success"=>false, "message"=>"this graph is not public");
-            }*/
+                }
+            }
             return $data;
         }
         return array("success"=>false, "message"=>"graph does not exist");

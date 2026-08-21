@@ -5,10 +5,13 @@ defined('EMONCMS_EXEC') or die('Restricted access');
 
 function graph_controller()
 {
-    global $session,$route,$mysqli,$redis, $path;
+    global $session,$route,$mysqli,$redis, $path, $settings;
+
+    require_once "Modules/feed/feed_model.php";
+    $feed = new Feed($mysqli,$redis,$settings["feed"]);
 
     require_once "Modules/graph/graph_model.php";
-    $graph = new Graph($mysqli);
+    $graph = new Graph($mysqli,$feed);
 
     $result = "";
     
