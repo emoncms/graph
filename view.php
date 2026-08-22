@@ -91,7 +91,7 @@ body { background-color: whitesmoke; }
 
 #feed-stats-table {
 	display: grid;
-	grid-template-columns: 1fr repeat(7, max-content);
+	grid-template-columns: max-content 1fr repeat(7, max-content);
 	font-family: var(--font-mono);
 	font-size: 13px;
 	color: var(--text-secondary);
@@ -104,8 +104,8 @@ body { background-color: whitesmoke; }
 #feed-stats-table th,
 #feed-stats-table td { white-space: nowrap; padding: 4px clamp(6px, 1.2vw, 25px); }
 
-#feed-stats-table td:first-child,
-#feed-stats-table th:first-child { white-space: normal; }
+#feed-stats-table td:nth-child(2),
+#feed-stats-table th:nth-child(2) { white-space: normal; }
 
 .feed-options { overflow-x: auto; }
 
@@ -703,6 +703,7 @@ body { background-color: whitesmoke; }
 					<table id="feed-options-table" v-show="!state.showStats">
 						<colgroup>
 							<col style="width:40px">
+							<col style="width:50px">
 							<col>
 							<col style="width:100px">
 							<col style="width:65px">
@@ -718,6 +719,7 @@ body { background-color: whitesmoke; }
 						<thead>
 							<tr>
 								<th></th>
+								<th><?php echo tr('Id'); ?></th>
 								<th><?php echo tr('Feed'); ?></th>
 								<th><?php echo tr('Type'); ?></th>
 								<th><?php echo tr('Color'); ?></th>
@@ -737,6 +739,7 @@ body { background-color: whitesmoke; }
 									<a v-if="z > 0" @click="moveFeed(z, -1)" title="<?php echo tr('Move up'); ?>" style="cursor:pointer"><i class="icon-arrow-up"></i></a>
 									<a v-if="z < state.feedlist.length - 1" @click="moveFeed(z, 1)" title="<?php echo tr('Move down'); ?>" style="cursor:pointer"><i class="icon-arrow-down"></i></a>
 								</td>
+								<td>{{ feed.id }}</td>
 								<td class="col-primary">{{ feedName(feed) }}</td>
 								<td>
 									<select style="width:80px" :value="feed.plottype" @change="setPlottype(feed, $event)">
@@ -769,6 +772,7 @@ body { background-color: whitesmoke; }
 					<table v-show="state.showStats" id="feed-stats-table">
 						<thead>
 							<tr>
+								<th><?php echo tr('Id'); ?></th>
 								<th><?php echo tr('Feed'); ?></th>
 								<th><?php echo tr('Quality'); ?></th>
 								<th><?php echo tr('Min'); ?></th>
@@ -781,6 +785,7 @@ body { background-color: whitesmoke; }
 						</thead>
 						<tbody>
 							<tr v-for="feed in state.feedlist" :key="'stats-'+feed.id">
+								<td>{{ feed.id }}</td>
 								<td>{{ feedName(feed) }}</td>
 								<td>{{ feed.stats.quality }}% ({{ feed.stats.good }}/{{ feed.stats.total }})</td>
 								<td>{{ Number(feed.stats.min).toFixed(feed.dp) }}</td>
