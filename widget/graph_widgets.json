@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "source": "Modules/graph/widget/graph_render.js",
+  "widgets": {
+    "graph": {
+      "options": {
+        "graphid": {
+          "type": "dropbox",
+          "dynamic": true
+        }
+      }
+    }
+  }
+}
