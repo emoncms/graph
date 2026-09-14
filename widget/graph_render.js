@@ -55,14 +55,20 @@ function graph_draw(){
         for (var i=0; i<l; i++){
           var attr = target.attributes[i].name;
           if (attr!="id" && attr!="class" && attr!="style"){
-            attrstring += "&"+attr+"="+target.attributes[i].value;
+            // Both halves are encoded. An option value is free text an
+            // author types, and an unencoded & or # here would add or cut off
+            // query parameters of the embed url.
+            attrstring += "&"+encodeURIComponent(attr)+"="+encodeURIComponent(target.attributes[i].value);
           }
         }
         pathfix=path.substr(path.indexOf('://')+3); // remove protocol
         pathfix=pathfix.substr(pathfix.indexOf('/')); // remove hostname
         
-        $(this).html('<iframe frameborder="0" scrolling="no" marginheight="0" marginwidth="0" src="'+pathfix+'graph/embed'+attrstring+apikey_string+'"></iframe>');
-        console.log('--> new relative url for iframe of '+ $(this).attr("class") + ': '+pathfix+'graph/embed'+attrstring+apikey_string);
+        // Built through the dom rather than as an html string, so the url
+        // never passes through an html parser.
+        var src = pathfix+'graph/embed'+attrstring+apikey_string;
+        $(this).empty().append(graph_embed_iframe(src));
+        console.log('--> new relative url for iframe of '+ $(this).attr("class") + ': '+src);
     }
 
     var iframe = $(this).children('iframe');
@@ -77,3 +83,15 @@ function graph_draw(){
 function graph_slowupdate() {}
 
 function graph_fastupdate() {}
+
+// The embed iframe, built as an element. The url carries option values an
+// author types, so it is set as a property and never parsed as html.
+function graph_embed_iframe(src) {
+    var iframe = document.createElement('iframe');
+    iframe.setAttribute('frameborder', '0');
+    iframe.setAttribute('scrolling', 'no');
+    iframe.setAttribute('marginheight', '0');
+    iframe.setAttribute('marginwidth', '0');
+    iframe.src = src;
+    return iframe;
+}
