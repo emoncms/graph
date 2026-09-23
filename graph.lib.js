@@ -457,13 +457,19 @@ const suggestHistogramResolution = diff =>
 
 /* ── Series Construction ─────────────────────────────────────────── */
 
+// Flot default palette. Flot 5 starts it at an offset equal to the number of
+// series with a set colour, Flot 0.8 started at the first entry. Colours are
+// assigned here in the 0.8 order so saved graphs keep their colours.
+const AUTO_COLORS = ['#edc240', '#afd8f8', '#cb4b4b', '#4da74d', '#9440ed'];
+
 // One flot series from one feed, given data that is already processed.
-const buildPlotSeries = (feed, data, state, hidden) => {
+const buildPlotSeries = (feed, data, state, hidden, autoColor) => {
 	const stacked = !!feed.stack;
 	const fillVal = feed.fill ? (stacked ? 1.0 : 0.5) : 0;
 
 	const series = { label: buildFeedLabel(feed, state.showtag), data, yaxis: feed.yaxis || 1, stack: stacked, id: feed.id };
 	if (feed.color) series.color = feed.color;
+	else if (autoColor) series.color = autoColor;
 
 	const PLOT_TYPES = {
 		lines:  () => { series.lines  = { show: !hidden, fill: fillVal, lineWidth: 2 }; },
@@ -482,6 +488,7 @@ const buildPlotData = (feedlist, state, startMs, endMs, hiddenIds) => {
 	const p = deriveProcessingParams(state);
 	const timeInWindowSeconds = (endMs - startMs) / 1000;
 	const hidden = hiddenIds || new Set();
+	let autoIndex = 0;
 
 	return feedlist.map(feed => {
 		let data = Array.isArray(feed.data) ? feed.data.map(pt => [pt[0], pt[1]]) : [];
@@ -503,7 +510,8 @@ const buildPlotData = (feedlist, state, startMs, endMs, hiddenIds) => {
 		if (!state.showmissing)
 			data = data.filter(pt => pt[1] !== null);
 
-		return buildPlotSeries(feed, data, state, hidden.has(feed.id));
+		const autoColor = feed.color ? '' : AUTO_COLORS[autoIndex++ % AUTO_COLORS.length];
+		return buildPlotSeries(feed, data, state, hidden.has(feed.id), autoColor);
 	});
 };
 
