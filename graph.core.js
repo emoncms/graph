@@ -259,7 +259,9 @@ const GraphLayoutApp = {
 			const isStack = datapoint[2] !== undefined;
 			const raw     = isStack ? datapoint[1] - datapoint[2] : datapoint[1];
 
-			if (!isFinite(raw)) { this.removeTooltip(); return; }
+			// isFinite says a null is a finite number, and a gap in a feed is a
+			// null reading, so it is asked what it is rather than how big.
+			if (typeof raw !== 'number' || !isFinite(raw)) { this.removeTooltip(); return; }
 
 			const value = `${raw.toFixed(dp)} ${this.getFeedUnit(feed?.id)}`;
 			const date  = typeof GH.formatGraphTooltipTime === 'function'
@@ -655,8 +657,6 @@ const GraphLayoutApp = {
 			this.renderChart();
 		},
 
-		getProcessingParams() { return GH.deriveProcessingParams(this.state); },
-
 		/* ── Chart Rendering ─────────────────────────────────────────────── */
 		graphResize() {
 			const bound       = document.getElementById('placeholder_bound');
@@ -682,48 +682,8 @@ const GraphLayoutApp = {
 		},
 
 		buildPlotData() {
-			const p = this.getProcessingParams();
 			const { startMs, endMs } = this.getWindowRange();
-			const timeInWindowSeconds = (endMs - startMs) / 1000;
-
-			return this.state.feedlist.map(feed => {
-				let data = Array.isArray(feed.data) ? feed.data.map(pt => [pt[0], pt[1]]) : [];
-
-				const scale  = isFinite(parseFloat(feed.scale))  ? parseFloat(feed.scale)  : 1;
-				const offset = isFinite(parseFloat(feed.offset)) ? parseFloat(feed.offset) : 0;
-
-				// 1. Fill null gaps with last value if enabled.
-				if (p.removeNull && data.length > 1)
-					data = GH.fillShortNullGaps(data, p.intervalSeconds, p.maxDuration);
-
-				// 2. Apply scale/offset to the data for plotting.
-				data = GH.applyScaleOffset(data, scale, offset);
-
-				// 3. Stats use the full processed data so nulls count toward quality
-				feed.stats = GH.calculateFeedStats(data, timeInWindowSeconds);
-
-				// 4. Removes remaining nulls if this option is disabled.
-				if (!this.state.showmissing)
-					data = data.filter(pt => pt[1] !== null);
-
-				const label   = GH.buildFeedLabel(feed, this.state.showtag);
-				const stacked = !!feed.stack;
-				const fillVal = feed.fill ? (stacked ? 1.0 : 0.5) : 0;
-				const hidden  = this.hiddenFeedIds.has(feed.id);
-
-				const series = { label, data, yaxis: feed.yaxis || 1, stack: stacked, id: feed.id };
-				if (feed.color) series.color = feed.color;
-
-				const PLOT_TYPES = {
-					lines:  () => { series.lines  = { show: !hidden, fill: fillVal, lineWidth: 2 }; },
-					bars:   () => { series.bars   = { show: !hidden, fill: fillVal, align: 'center', barWidth: 0.8 }; },
-					points: () => { series.points = { show: !hidden, radius: 3 }; },
-					steps:  () => { series.lines  = { show: !hidden, fill: fillVal, steps: true }; },
-				};
-				(PLOT_TYPES[feed.plottype] ?? PLOT_TYPES.lines)();
-
-				return series;
-			});
+			return GH.buildPlotData(this.state.feedlist, this.state, startMs, endMs, this.hiddenFeedIds);
 		},
 
 		renderChart() {

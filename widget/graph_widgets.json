@@ -4,9 +4,132 @@
   "widgets": {
     "graph": {
       "options": {
+        "toolbar": {
+          "type": "boolean"
+        },
+        "colourbg": {
+          "type": "colour_picker"
+        },
+        "colouraxis": {
+          "type": "colour_picker"
+        }
+      },
+      "legacy": {
         "graphid": {
-          "type": "dropbox",
-          "dynamic": true
+          "type": "value"
+        }
+      },
+      "config": {
+        "feedlist": {
+          "average": {
+            "type": "boolean"
+          },
+          "color": {
+            "type": "colour_picker"
+          },
+          "delta": {
+            "type": "boolean"
+          },
+          "dp": {
+            "type": "value"
+          },
+          "fill": {
+            "type": "boolean"
+          },
+          "id": {
+            "type": "feedid"
+          },
+          "name": {
+            "type": "value"
+          },
+          "offset": {
+            "type": "value"
+          },
+          "plottype": {
+            "type": "dropbox",
+            "values": [
+              "lines",
+              "bars",
+              "points",
+              "steps"
+            ]
+          },
+          "scale": {
+            "type": "value"
+          },
+          "stack": {
+            "type": "boolean"
+          },
+          "tag": {
+            "type": "value"
+          },
+          "unit": {
+            "type": "value"
+          },
+          "yaxis": {
+            "type": "dropbox",
+            "values": [
+              "1",
+              "2"
+            ]
+          }
+        },
+        "state": {
+          "end": {
+            "type": "value"
+          },
+          "fixinterval": {
+            "type": "boolean"
+          },
+          "floatingtime": {
+            "type": "boolean"
+          },
+          "interval": {
+            "type": "value"
+          },
+          "limitinterval": {
+            "type": "boolean"
+          },
+          "mode": {
+            "type": "dropbox",
+            "values": [
+              "interval",
+              "daily",
+              "weekly",
+              "monthly",
+              "annual"
+            ]
+          },
+          "removeNull": {
+            "type": "boolean"
+          },
+          "removeNullMaxDuration": {
+            "type": "value"
+          },
+          "showlegend": {
+            "type": "boolean"
+          },
+          "showmissing": {
+            "type": "boolean"
+          },
+          "showtag": {
+            "type": "boolean"
+          },
+          "start": {
+            "type": "value"
+          },
+          "yaxismax": {
+            "type": "value"
+          },
+          "yaxismax2": {
+            "type": "value"
+          },
+          "yaxismin": {
+            "type": "value"
+          },
+          "yaxismin2": {
+            "type": "value"
+          }
         }
       }
     }
