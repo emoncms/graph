@@ -979,10 +979,16 @@ function graph_config_feed(feeds, index, write, redraw){
     row.append(cell(plottype));
 
     // A blank colour is left blank until the picker is used, so a feed the
-    // engine colours itself keeps that colour. Setting one moves the automatic
-    // colours of the feeds after it, so the rows are drawn again.
+    // engine colours itself keeps that colour. Setting one fixes the automatic
+    // colours of the other feeds first, so only this feed changes colour.
     var colour = $('<input type="color">').val(graph_config_feed_colour(feeds, index));
-    colour.change(function(){ feed.color = $(this).val(); write(); redraw(); });
+    colour.change(function(){
+        var shown = feeds.map(function(f, i){ return graph_config_feed_colour(feeds, i); });
+        for (var i = 0; i < feeds.length; i++) feeds[i].color = shown[i];
+        feed.color = $(this).val();
+        write();
+        redraw();
+    });
     row.append(cell(colour));
 
     row.append(check("fill"));

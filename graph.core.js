@@ -789,7 +789,15 @@ const GraphLayoutApp = {
 		_setFeedPropFetch(feed, prop, value)  { feed[prop] = value; this.fetchFeedData(); },
 
 		setPlottype(feed, e)   { this._setFeedPropRender(feed, 'plottype', e.target.value); },
-		setColor(feed, e)  { feed.color = feed.autoColor = e.target.value; this.renderChart(); },
+		// Fix the automatic colours of the other feeds first, so only this feed
+		// changes colour.
+		setColor(feed, e) {
+			for (const f of this.state.feedlist) {
+				if (!f.color && f.autoColor) f.color = f.autoColor;
+			}
+			feed.color = feed.autoColor = e.target.value;
+			this.renderChart();
+		},
 		setFill(feed, e)   { this._setFeedPropRender(feed, 'fill',    e.target.checked ? 1 : 0); },
 		setStack(feed, e)  { this._setFeedPropRender(feed, 'stack',   e.target.checked ? 1 : 0); },
 		setScale(feed, e)  { this._setFeedPropRender(feed, 'scale',   e.target.value); },
