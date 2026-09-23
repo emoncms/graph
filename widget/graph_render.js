@@ -266,7 +266,7 @@ function graph_toolbar(element, chart){
     var place = function(){
         var offset = chart.plotOffset();
         if (!offset) return;
-        var compact = $(element).hasClass("graph-widget-compact");
+        var compact = element.hasAttribute("data-compact");
         if (!compact) full_width = bar.outerWidth();
         // Plot position in the box, inset by padding in full screen.
         var plot = chart.element;
@@ -275,7 +275,9 @@ function graph_toolbar(element, chart){
         var width = plot ? plot.offsetWidth : element.clientWidth;
         var room = width - offset.left - offset.right - 2 * GRAPH_BAR_INSET;
         compact = full_width > room;
-        $(element).toggleClass("graph-widget-compact", compact);
+        // An attribute, not a class. The dashboard designer reads the class
+        // of a box as its widget type.
+        element.toggleAttribute("data-compact", compact);
         if (compact) {
             window_row.get(0).hidden = true;
             buttons.get(0).hidden = false;
