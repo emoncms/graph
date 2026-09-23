@@ -225,7 +225,7 @@ function graph_toolbar(element, chart){
 
     var expand = button(controls, '<i class="icon-resize-full"></i>', _Tr("Expand"), function(){
         graph_fullscreen(element);
-    });
+    }).addClass("graph-widget-expand");
 
     // The button says what it will do next, so it follows the box in and out of
     // full screen however that happened, including by the escape key.
@@ -260,9 +260,21 @@ function graph_toolbar(element, chart){
     // it keeps off the border and the axis labels. Where the plot area starts is
     // only known once the chart has been drawn, and it moves when the labels
     // change width, so it is read again after each draw.
+    // A plot area narrower than the full bar shows only the expand button,
+    // always visible. Full width is measured while the bar is not compact.
+    var full_width = 0;
     var place = function(){
         var offset = chart.plotOffset();
         if (!offset) return;
+        var compact = $(element).hasClass("graph-widget-compact");
+        if (!compact) full_width = bar.outerWidth();
+        var room = element.clientWidth - offset.left - offset.right - 2 * GRAPH_BAR_INSET;
+        compact = full_width > room;
+        $(element).toggleClass("graph-widget-compact", compact);
+        if (compact) {
+            window_row.get(0).hidden = true;
+            buttons.get(0).hidden = false;
+        }
         bar.css({
             top:   (offset.top + GRAPH_BAR_INSET) + "px",
             right: (offset.right + GRAPH_BAR_INSET) + "px"

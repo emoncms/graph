@@ -121,10 +121,16 @@ var min_feed_interval = <?php echo $min_feed_interval; ?>;
 .graph .graph-widget-bar:focus-within,
 .graph-config-preview:hover .graph-widget-bar,
 .graph-config-preview .graph-widget-bar:focus-within { opacity: 0.85; pointer-events: auto; }
-/* A touch screen has no pointer to hover with, so the bar stays out. */
+/* A touch screen has no pointer to hover with, so the bar is always shown. */
 @media (hover: none) {
     .graph .graph-widget-bar { opacity: 0.85; pointer-events: auto; }
 }
+/* Plot area too narrow for the bar: expand button only, always shown. See
+   graph_toolbar. */
+.graph.graph-widget-compact .graph-widget-bar,
+.graph-config-preview.graph-widget-compact .graph-widget-bar { opacity: 0.85; pointer-events: auto; }
+.graph-widget-compact .graph-widget-buttons .btn-group > :not(.graph-widget-expand) { display: none; }
+.graph-widget-compact .graph-widget-buttons .graph-widget-expand { border-radius: 4px; }
 
 .graph .graph-widget-buttons, .graph .graph-widget-window,
 .graph-config-preview .graph-widget-buttons, .graph-config-preview .graph-widget-window {
