@@ -441,12 +441,21 @@
 				padding: '2px', backgroundColor: '#fff', opacity: '0.9',
 			});
 
-			document.body.appendChild(box);
+			// Full screen draws only the full screen element, so the tooltip
+			// goes inside it, placed against the screen.
+			const full = document.fullscreenElement;
+			let x = item.pageX, y = item.pageY;
+			if (full) {
+				box.style.position = 'fixed';
+				x -= window.scrollX;
+				y -= window.scrollY;
+			}
+			(full || document.body).appendChild(box);
 			tooltip = box;
 
 			const offset = 15;
-			box.style.top = `${Math.max(0, item.pageY - box.offsetHeight - offset)}px`;
-			box.style.left = `${Math.max(0, item.pageX - box.offsetWidth - offset)}px`;
+			box.style.top = `${Math.max(0, y - box.offsetHeight - offset)}px`;
+			box.style.left = `${Math.max(0, x - box.offsetWidth - offset)}px`;
 			box.style.visibility = 'visible';
 		}
 
