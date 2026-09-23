@@ -268,7 +268,12 @@ function graph_toolbar(element, chart){
         if (!offset) return;
         var compact = $(element).hasClass("graph-widget-compact");
         if (!compact) full_width = bar.outerWidth();
-        var room = element.clientWidth - offset.left - offset.right - 2 * GRAPH_BAR_INSET;
+        // Plot position in the box, inset by padding in full screen.
+        var plot = chart.element;
+        var top = plot ? plot.offsetTop : 0;
+        var right = plot ? element.clientWidth - plot.offsetLeft - plot.offsetWidth : 0;
+        var width = plot ? plot.offsetWidth : element.clientWidth;
+        var room = width - offset.left - offset.right - 2 * GRAPH_BAR_INSET;
         compact = full_width > room;
         $(element).toggleClass("graph-widget-compact", compact);
         if (compact) {
@@ -276,8 +281,8 @@ function graph_toolbar(element, chart){
             buttons.get(0).hidden = false;
         }
         bar.css({
-            top:   (offset.top + GRAPH_BAR_INSET) + "px",
-            right: (offset.right + GRAPH_BAR_INSET) + "px"
+            top:   (top + offset.top + GRAPH_BAR_INSET) + "px",
+            right: (right + offset.right + GRAPH_BAR_INSET) + "px"
         });
     };
     chart.onDraw = place;

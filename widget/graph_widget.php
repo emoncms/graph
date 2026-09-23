@@ -156,6 +156,8 @@ var min_feed_interval = <?php echo $min_feed_interval; ?>;
 /* Full screen paints the element over a black page, so the box carries its own
    background while it is there. */
 .graph:fullscreen, .graph-config-preview:fullscreen { background: #fff; width: 100% !important; height: 100% !important; }
+.graph:fullscreen .graph-widget-plot,
+.graph-config-preview:fullscreen .graph-config-preview-plot { top: 20px; left: 20px; right: 20px; bottom: 20px; }
 
 /* Flot draws the legend over the plot and fills the panel behind it from the
    background of the page, which on a dashboard is whatever colour the author
