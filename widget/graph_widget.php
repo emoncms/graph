@@ -61,7 +61,7 @@ var min_feed_interval = <?php echo $min_feed_interval; ?>;
 #widget-config-editor input[type=text] { line-height: 18px; padding: 3px 6px; }
 .graph-config-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
 .graph-config-source select { width: 200px; margin: 0; font-size: 12px; }
-.graph-config-preview { position: relative; height: 240px; margin-bottom: 10px; border: 1px solid #ddd; background: #fff; }
+.graph-config-preview { box-sizing: content-box; position: relative; height: 240px; margin-bottom: 10px; border: 1px solid #ddd; background: #fff; }
 .graph-config-preview-plot { position: absolute; top: 0; left: 0; right: 0; bottom: 0; }
 .graph-config-preview-message { position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; color: #777; font-size: 13px; }
 .graph-config-preview-message:empty { display: none; }
@@ -72,9 +72,9 @@ var min_feed_interval = <?php echo $min_feed_interval; ?>;
 .graph-config-lead { display: flex; gap: 8px; flex-wrap: wrap; }
 .graph-config-axes { display: flex; gap: 8px; flex-wrap: wrap; }
 .graph-config-group { display: inline-flex; align-items: center; margin: 0; white-space: nowrap; }
-.graph-config-group .add-on { font-size: 12px; height: 18px; line-height: 18px; padding: 3px 6px; }
+.graph-config-group .input-group-text { box-sizing: content-box; font-size: 12px; height: 18px; line-height: 18px; padding: 3px 6px; }
 /* A button is sized border box, so it takes the full height of the row. */
-.graph-config-group .btn.add-on { font-size: 12px; box-sizing: border-box; height: 26px; line-height: 18px; padding: 3px 6px; }
+.graph-config-group .btn.input-group-text { font-size: 12px; box-sizing: border-box; height: 26px; line-height: 18px; padding: 3px 6px; }
 .graph-config-group select { width: auto; margin: 0; font-size: 12px; }
 .graph-config-group input { margin: 0; font-size: 12px; text-align: center; }
 .graph-config-group input.graph-config-interval { width: 70px; }
@@ -101,7 +101,7 @@ var min_feed_interval = <?php echo $min_feed_interval; ?>;
 .graph-config-feeds select.graph-config-dp { width: 48px; }
 /* The designer sizes every colour input for Firefox from a script, which is
    an inline style, so the width here has to win over one. */
-.graph-config-feeds input[type=color] { width: 32px !important; height: 26px !important; padding: 1px; }
+.graph-config-feeds input[type=color] { box-sizing: content-box; width: 32px !important; height: 26px !important; padding: 1px; }
 .graph-config-feeds input[type=checkbox] { height: auto; line-height: normal; }
 .graph-config-remove { font-size: 16px; color: #999; text-decoration: none; }
 .graph-config-remove:hover { color: #b94a48; text-decoration: none; }

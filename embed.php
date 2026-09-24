@@ -54,15 +54,15 @@ body {
 </style>
 
 <div id="graph-view-app" class="graph-embed-view">
-	<div id="error" class="alert" :class="errorType==='info' ? 'alert-info' : 'alert-danger'" v-show="errorMessage">
+	<div id="error" class="alert alert-warning" :class="errorType==='info' ? 'alert-info' : 'alert-danger'" v-show="errorMessage">
 		{{ errorMessage }}
-		<button type="button" class="btn" style="margin-left:8px" v-if="errorBadFeedIds.length" @click="onRemoveMissingFeeds"><?php echo tr('Remove missing'); ?></button>
+		<button type="button" class="btn btn-default" style="margin-left:8px" v-if="errorBadFeedIds.length" @click="onRemoveMissingFeeds"><?php echo tr('Remove missing'); ?></button>
 	</div>
 
 	<div id="navigation" style="padding-bottom:4px;" v-show="!histogramMode && !showTimeManual">
-		<div class="input-prepend input-append" style="margin-bottom:0 !important; margin-left:2px;">
-			<button class="btn graph_time_refresh" title="<?php echo tr('Refresh'); ?>" @click="onGraphTimeRefresh"><i class="icon-repeat"></i></button>
-			<select class="btn graph_time" style="width:95px; padding-left:5px" v-model="graphTimeHours" @change="onGraphTimeRefresh">
+		<div class="input-group" style="margin-bottom:0 !important; margin-left:2px;">
+			<button class="btn btn-default graph_time_refresh" title="<?php echo tr('Refresh'); ?>" @click="onGraphTimeRefresh"><i class="icon-repeat"></i></button>
+			<select class="btn btn-default graph_time" style="width:95px; padding-left:5px" v-model="graphTimeHours" @change="onGraphTimeRefresh">
 				<option value="1"><?php echo tr('1 hour'); ?></option>
 				<option value="6"><?php echo tr('6 hours'); ?></option>
 				<option value="12"><?php echo tr('12 hours'); ?></option>
@@ -74,22 +74,22 @@ body {
 			</select>
 		</div>
 		<div style="margin-bottom:0 !important; margin-left:4px; display:inline-block;">&nbsp;
-			<button class="btn navigation-timewindow" title="<?php echo tr('Select time window'); ?>" @click="showTimeManual = true"><i class="icon-resize-horizontal"></i></button>&nbsp;
-			<button id="graph_zoomin" class="btn" style="min-width:40px" title="<?php echo tr('Zoom In'); ?>" @click="onZoomIn">+</button>&nbsp;
-			<button id="graph_zoomout" class="btn" style="min-width:40px" title="<?php echo tr('Zoom Out'); ?>" @click="onZoomOut">-</button>&nbsp;
-			<button id="graph_left" class="btn" style="min-width:40px" title="<?php echo tr('Earlier'); ?>" @click="onPan(-1)"><</button>&nbsp;
-			<button id="graph_right" class="btn" style="min-width:40px" title="<?php echo tr('Later'); ?>" @click="onPan(1)">></button>
+			<button class="btn btn-default navigation-timewindow" title="<?php echo tr('Select time window'); ?>" @click="showTimeManual = true"><i class="icon-resize-horizontal"></i></button>&nbsp;
+			<button id="graph_zoomin" class="btn btn-default" style="min-width:40px" title="<?php echo tr('Zoom In'); ?>" @click="onZoomIn">+</button>&nbsp;
+			<button id="graph_zoomout" class="btn btn-default" style="min-width:40px" title="<?php echo tr('Zoom Out'); ?>" @click="onZoomOut">-</button>&nbsp;
+			<button id="graph_left" class="btn btn-default" style="min-width:40px" title="<?php echo tr('Earlier'); ?>" @click="onPan(-1)"><</button>&nbsp;
+			<button id="graph_right" class="btn btn-default" style="min-width:40px" title="<?php echo tr('Later'); ?>" @click="onPan(1)">></button>
 		</div>
 	</div>
 
 	<div v-show="!histogramMode && showTimeManual" style="margin-bottom:4px; margin-left:2px">
-		<div class="input-prepend input-append">
-			<span class="add-on"><?php echo tr('Select time window'); ?></span>
-			<span class="add-on"><?php echo tr('Start'); ?></span>
+		<div class="input-group">
+			<span class="input-group-text"><?php echo tr('Select time window'); ?></span>
+			<span class="input-group-text"><?php echo tr('Start'); ?></span>
 			<date-time-picker v-model="startLocal" @change="onReload"></date-time-picker>
-			<span class="add-on"><?php echo tr('End'); ?></span>
+			<span class="input-group-text"><?php echo tr('End'); ?></span>
 			<date-time-picker v-model="endLocal" @change="onReload"></date-time-picker>
-			<button class="btn navigation-timewindow-set" title="<?php echo tr('Done'); ?>" @click="showTimeManual = false"><i class="icon-ok"></i></button>
+			<button class="btn btn-default navigation-timewindow-set" title="<?php echo tr('Done'); ?>" @click="showTimeManual = false"><i class="icon-ok"></i></button>
 		</div>
 	</div>
 

@@ -83,8 +83,8 @@ body { background-color: whitesmoke; }
 
 #feed-options-table { table-layout: auto; min-width: 700px; }
 
-/* Allow the feeds card to scroll horizontally; .card's global overflow:hidden clips #tables otherwise */
-.feed-options .card { overflow-x: auto; }
+/* Allow the feeds panel to scroll horizontally; .panel's global overflow:hidden clips #tables otherwise */
+.feed-options .panel { overflow-x: auto; }
 
 #feed-options-table input,
 #feed-options-table select { margin-bottom: 0; }
@@ -189,7 +189,7 @@ body { background-color: whitesmoke; }
    ========================================================================== */
 #showcontrols { gap: 0.75rem; margin-left: auto; }
 
-.time-manual-controls .input-prepend.input-append,
+.time-manual-controls .input-group,
 .time-manual-controls date-time-picker,
 .time-manual-controls .dtp-wrap,
 .time-manual-controls .dtp-input-wrap {
@@ -283,8 +283,8 @@ body { background-color: whitesmoke; }
 
 	.controls-row-top .axes-controls { flex: 0 1 auto; justify-content: flex-start; }
 
-	/* card-controls slightly tighter on mobile */
-	.card-controls { padding: 0.5rem 0.6rem; }
+	/* panel-controls slightly tighter on mobile */
+	.panel-controls { padding: 0.5rem 0.6rem; }
 
 	/* Keep manual date range pickers from stretching unexpectedly on small screens */
 	.time-manual-controls {
@@ -350,6 +350,7 @@ body { background-color: whitesmoke; }
    10. SIDEBAR: SAVED GRAPHS PANEL
    ========================================================================== */
 #my_graphs {
+	box-sizing: content-box;
 	width: 13rem;
 	overflow: hidden;
 	position: relative;
@@ -477,21 +478,21 @@ body { background-color: whitesmoke; }
 
 <div id="graph-view-app">
 	<!-- ── Graph card ─────────────────────────────────────────────── -->
-	<div class="card mt-2">
+	<div class="panel mt-2">
 
-		<nav class="card-header">
-			<div class="card-name">
+		<nav class="panel-header">
+			<div class="panel-name">
 				<span class="svg-icon-show_chart_bold text-accent" style="color: var(--accent)"></span>&nbsp;
 				<?php echo tr('Data viewer'); ?>
 			</div>
-			<button class="btn" v-if="histogramMode" @click="onHistogramBackClick"><?php echo tr('Back to main view'); ?></button>
+			<button class="btn btn-default" v-if="histogramMode" @click="onHistogramBackClick"><?php echo tr('Back to main view'); ?></button>
 		</nav>
 
 		<!-- Normal navigation controls -->
-		<div class="card-header" v-show="!histogramMode && !showTimeManual" style="background-color: #eee;">
-			<div class="input-prepend input-append my-0">
-				<button class="btn graph_time_refresh" title="<?php echo tr('Refresh'); ?>" @click="onGraphTimeRefresh"><i class="icon-repeat"></i></button>
-				<select class="btn graph_time my-0" v-model="graphTimeHours" @change="onGraphTimeRefresh" style="width:auto;">
+		<div class="panel-header" v-show="!histogramMode && !showTimeManual" style="background-color: #eee;">
+			<div class="input-group my-0">
+				<button class="btn btn-default graph_time_refresh" title="<?php echo tr('Refresh'); ?>" @click="onGraphTimeRefresh"><i class="icon-repeat"></i></button>
+				<select class="btn btn-default graph_time my-0" v-model="graphTimeHours" @change="onGraphTimeRefresh" style="width:auto;">
 					<option value="1"><?php echo tr('1 hour'); ?></option>
 					<option value="6"><?php echo tr('6 hours'); ?></option>
 					<option value="12"><?php echo tr('12 hours'); ?></option>
@@ -504,13 +505,13 @@ body { background-color: whitesmoke; }
 				</select>
 			</div>
 
-			<button class="btn my-0 ml-1" title="<?php echo tr('Select time window'); ?>" @click="showTimeManual = true"><i class="icon-resize-horizontal"></i></button>
+			<button class="btn btn-default my-0 ms-1" title="<?php echo tr('Select time window'); ?>" @click="showTimeManual = true"><i class="icon-resize-horizontal"></i></button>
 
-			<div class="btn-group my-0 ml-1">
-				<button class="btn px-3" id="graph_zoomin" title="<?php echo tr('Zoom In'); ?>" @click="onZoomIn">+</button>
-				<button class="btn px-3" id="graph_zoomout" title="<?php echo tr('Zoom Out'); ?>" @click="onZoomOut">−</button>
-				<button class="btn px-3" id="graph_left" title="<?php echo tr('Earlier'); ?>" @click="onPan(-1)"><</button>
-				<button class="btn px-3" id="graph_right" title="<?php echo tr('Later'); ?>" @click="onPan(1)">></button>
+			<div class="btn-group my-0 ms-1">
+				<button class="btn btn-default px-3" id="graph_zoomin" title="<?php echo tr('Zoom In'); ?>" @click="onZoomIn">+</button>
+				<button class="btn btn-default px-3" id="graph_zoomout" title="<?php echo tr('Zoom Out'); ?>" @click="onZoomOut">−</button>
+				<button class="btn btn-default px-3" id="graph_left" title="<?php echo tr('Earlier'); ?>" @click="onPan(-1)"><</button>
+				<button class="btn btn-default px-3" id="graph_right" title="<?php echo tr('Later'); ?>" @click="onPan(1)">></button>
 			</div>
 
 			<div id="showcontrols" class="d-flex align-items-center">
@@ -519,47 +520,47 @@ body { background-color: whitesmoke; }
 		</div>
 
 		<!-- Date-time picker controls -->
-		<div class="card-header time-manual-controls" v-show="!histogramMode && showTimeManual" style="background-color: #eee;">
-			<div class="input-prepend input-append my-0">
-				<span class="add-on"><?php echo tr('Start'); ?></span>
+		<div class="panel-header time-manual-controls" v-show="!histogramMode && showTimeManual" style="background-color: #eee;">
+			<div class="input-group my-0">
+				<span class="input-group-text"><?php echo tr('Start'); ?></span>
 				<date-time-picker v-model="startLocal" @change="onWindowInputChange"></date-time-picker>
 			</div>
 
-			<div class="input-prepend input-append my-0">
-				<span class="add-on"><?php echo tr('End'); ?></span>
+			<div class="input-group my-0">
+				<span class="input-group-text"><?php echo tr('End'); ?></span>
 				<date-time-picker v-model="endLocal" @change="onWindowInputChange"></date-time-picker>
 			</div>
 
-			<button class="btn my-0" title="<?php echo tr('Done'); ?>" @click="showTimeManual = false"><i class="icon-ok"></i></button>
+			<button class="btn btn-default my-0" title="<?php echo tr('Done'); ?>" @click="showTimeManual = false"><i class="icon-ok"></i></button>
 		</div>
 
 		<!-- Histogram controls -->
-		<div class="card-header" v-show="histogramMode">
-			<div class="input-prepend input-append">
-				<span class="add-on"><?php echo tr('Type'); ?></span>
+		<div class="panel-header" v-show="histogramMode">
+			<div class="input-group">
+				<span class="input-group-text"><?php echo tr('Type'); ?></span>
 				<select v-model="histogramType" @change="drawHistogram">
 					<option value="timeatvalue"><?php echo tr('Time at value'); ?></option>
 					<option value="kwhatpower"><?php echo tr('kWh at Power'); ?></option>
 				</select>
-				<span class="add-on"><?php echo tr('Resolution'); ?></span>
+				<span class="input-group-text"><?php echo tr('Resolution'); ?></span>
 				<input type="text" v-model="histogramResolution" @change="drawHistogram">
 			</div>
 		</div>
 
 		<!-- Graph area -->
-		<div class="card-body">
+		<div class="panel-body">
 			<div id="legend" v-show="!errorMessage"></div>
 			<div id="placeholder_bound" :class="{'has-error': !!errorMessage}" style="width:100%; height:400px;">
 				<div id="placeholder" class="w-100 h-100" v-show="!errorMessage"></div>
 				<div id="error" class="graph-window-error" :class="errorType==='info' ? 'is-info' : 'is-error'" v-show="errorMessage">
 					<div class="graph-window-error-title">{{ errorMessage }}</div>
 					<div class="graph-window-error-actions" v-if="errorBadFeedIds.length">
-						<button type="button" class="btn" @click="onRemoveMissingFeeds"><?php echo tr('Remove missing'); ?></button>
+						<button type="button" class="btn btn-default" @click="onRemoveMissingFeeds"><?php echo tr('Remove missing'); ?></button>
 					</div>
 				</div>
 			</div>
 		</div>
-		<div class="card-body" style="border-top: 1px solid var(--border)" v-show="!histogramMode">
+		<div class="panel-body" style="border-top: 1px solid var(--border)" v-show="!histogramMode">
 			<div id="window-info" class="window-info" v-if="windowInfo">
 				<b><?php echo tr('Window'); ?>:</b> {{ windowInfo.start }} <b>&#x2192;</b> {{ windowInfo.end }}
 				&nbsp;&middot;&nbsp; <b><?php echo tr('Length'); ?>:</b> {{ windowInfo.length }}
@@ -569,11 +570,11 @@ body { background-color: whitesmoke; }
 		</div>
 	<!-- ── Options card ───────────────────────────────────────────── -->
 
-		<div class="card-controls" style="border-top: 1px solid var(--border); background-color: #eee;" v-show="!histogramMode">
+		<div class="panel-controls" style="border-top: 1px solid var(--border); background-color: #eee;" v-show="!histogramMode">
 
 			<div class="controls-row controls-row-top d-flex justify-content-between">
-				<div class="input-prepend input-append interval-controls d-flex justify-content-start">
-					<span class="add-on"><?php echo tr('Type'); ?></span>
+				<div class="input-group interval-controls d-flex justify-content-start">
+					<span class="input-group-text"><?php echo tr('Type'); ?></span>
 					<select id="request-type" v-model="state.mode" @change="onReload" style="width:auto">
 						<option value="interval"><?php echo tr('Fixed Interval'); ?></option>
 						<option value="daily"><?php echo tr('Daily'); ?></option>
@@ -591,12 +592,12 @@ body { background-color: whitesmoke; }
 						@keydown="onIntegerKeydown"
 						@change="onIntervalInputChange"
 						style="width:90px; text-align:center">
-					<button v-show="state.mode==='interval' && state.fixinterval" class="btn add-on" @click="onIntervalResetAuto" title="<?php echo tr('Return to auto interval'); ?>">&#x2715;</button>
+					<button v-show="state.mode==='interval' && state.fixinterval" class="btn btn-default input-group-text" @click="onIntervalResetAuto" title="<?php echo tr('Return to auto interval'); ?>">&#x2715;</button>
 				</div>
 
 				<div class="axes-controls">
-					<div id="yaxis_left" class="input-prepend input-append mr-2" v-show="leftCount > 0">
-						<span class="add-on px-2">L</span>
+					<div id="yaxis_left" class="input-group me-2" v-show="leftCount > 0">
+						<span class="input-group-text px-2">L</span>
 						<!-- Left Y-axis min -->
 						<input class="yaxis-minmax" id="yaxis-min" type="text"
 							:value="state.yaxismin === 'auto' ? 'auto' : state.yaxismin"
@@ -615,11 +616,11 @@ body { background-color: whitesmoke; }
 							@click="onYAxisInputClick('left', 'max', $event)"
 							@keydown="onDecimalKeydown"
 							@change="onYAxisMinMaxChange('left', 'max', $event)">
-						<button class="btn add-on" v-show="!leftAxisIsAuto" @click="resetYAxis('left')">&#x2715;</button>
+						<button class="btn btn-default input-group-text" v-show="!leftAxisIsAuto" @click="resetYAxis('left')">&#x2715;</button>
 					</div>
 
-					<div id="yaxis_right" class="input-prepend input-append" v-show="rightCount > 0">
-						<span class="add-on px-2">R</span>
+					<div id="yaxis_right" class="input-group" v-show="rightCount > 0">
+						<span class="input-group-text px-2">R</span>
 						<!-- Right Y-axis min -->
 						<input class="yaxis-minmax" id="yaxis-min2" type="text"
 							:value="state.yaxismin2 === 'auto' ? 'auto' : state.yaxismin2"
@@ -638,7 +639,7 @@ body { background-color: whitesmoke; }
 							@click="onYAxisInputClick('right', 'max', $event)"
 							@keydown="onDecimalKeydown"
 							@change="onYAxisMinMaxChange('right', 'max', $event)">
-						<button class="btn add-on" v-show="!rightAxisIsAuto" @click="resetYAxis('right')">&#x2715;</button>
+						<button class="btn btn-default input-group-text" v-show="!rightAxisIsAuto" @click="resetYAxis('right')">&#x2715;</button>
 					</div>
 				</div>
 			</div>
@@ -656,10 +657,10 @@ body { background-color: whitesmoke; }
 							<input id="request-removenull" type="checkbox" class="remove-null" v-model="state.removeNull" @change="onRemoveNullChange">
 							<span><?php echo tr('Fill nulls with last value'); ?></span>
 						</label>
-						<span class="input-prepend input-append interval-max-fill my-0" v-if="state.removeNull">
-							<span class="add-on"><?php echo tr('Max fill'); ?></span>
+						<span class="input-group interval-max-fill my-0" v-if="state.removeNull">
+							<span class="input-group-text"><?php echo tr('Max fill'); ?></span>
 							<input type="text" class="remove-null-max-duration" v-model="state.removeNullMaxDuration" @change="onRemoveNullChange" style="width:50px; text-align:center">
-							<span class="add-on"><?php echo tr('seconds'); ?></span>
+							<span class="input-group-text"><?php echo tr('seconds'); ?></span>
 						</span>
 					</div>
 
@@ -678,27 +679,27 @@ body { background-color: whitesmoke; }
 
 			</div>
 
-		</div><!-- .card-controls -->
+		</div><!-- .panel-controls -->
 	</div>
 	<!-- ── Feeds options & stats ───────────────────────────────────────────── -->
 
 
 
 
-	<div class="card mt-3">
-		<div class="card-header">
+	<div class="panel mt-3">
+		<div class="panel-header">
 			<div class="graph-section-switcher" v-show="!histogramMode">
 				<div class="btn-group">
-					<button class="btn" :class="{active: activeSection === 'config'}" @click="showOptions"><i class="icon-cog"></i> Feed Config</button>
-					<button class="btn" :class="{active: activeSection === 'stats'}" @click="showStats"><i class="icon-signal"></i> Feed Stats</button>
-					<button class="btn" :class="{active: activeSection === 'csv'}" @click="showCsvSection"><i class="icon-download-alt"></i> CSV Export</button>
-					<button v-if="canEdit" class="btn" :class="{active: activeSection === 'editor'}" @click="showEditorSection"><i class="icon-pencil"></i> <?php echo tr('Editor'); ?></button>
+					<button class="btn btn-default" :class="{active: activeSection === 'config'}" @click="showOptions"><i class="icon-cog"></i> Feed Config</button>
+					<button class="btn btn-default" :class="{active: activeSection === 'stats'}" @click="showStats"><i class="icon-signal"></i> Feed Stats</button>
+					<button class="btn btn-default" :class="{active: activeSection === 'csv'}" @click="showCsvSection"><i class="icon-download-alt"></i> CSV Export</button>
+					<button v-if="canEdit" class="btn btn-default" :class="{active: activeSection === 'editor'}" @click="showEditorSection"><i class="icon-pencil"></i> <?php echo tr('Editor'); ?></button>
 				</div>
 			</div>
 		</div>
 
 		<div class="feed-options" :class="{hide: state.feedlist.length===0 || histogramMode}" v-show="!histogramMode && !state.showcsv && !editorMode">
-			<div class="card">
+			<div class="panel">
 				<div id="tables">
 					<table id="feed-options-table" v-show="!state.showStats">
 						<colgroup>
@@ -764,7 +765,7 @@ body { background-color: whitesmoke; }
 										<option>3</option>
 									</select>
 								</td>
-								<td style="text-align:center"><button class="histogram btn" @click="onHistogramClick(feed.id)"><?php echo tr('Histogram'); ?></button></td>
+								<td style="text-align:center"><button class="histogram btn btn-default" @click="onHistogramClick(feed.id)"><?php echo tr('Histogram'); ?></button></td>
 							</tr>
 						</tbody>
 					</table>
@@ -801,26 +802,26 @@ body { background-color: whitesmoke; }
 			</div>
 		</div>
 
-		<div class="card-controls" style="border-top: 1px solid var(--border)" v-show="!histogramMode && state.showcsv">
+		<div class="panel-controls" style="border-top: 1px solid var(--border)" v-show="!histogramMode && state.showcsv">
 			<div class="controls-row">
-				<div class="input-prepend">
-					<span class="add-on csvoptions"><?php echo tr('Time format'); ?>:</span>
+				<div class="input-group">
+					<span class="input-group-text csvoptions"><?php echo tr('Time format'); ?>:</span>
 					<select id="csvtimeformat" class="csvoptions" v-model="state.csvtimeformat">
 						<option value="unix"><?php echo tr('Unix timestamp'); ?></option>
 						<option value="seconds"><?php echo tr('Seconds since start'); ?></option>
 						<option value="datestr"><?php echo tr('Date-time string'); ?></option>
 					</select>
 				</div>
-				<div class="input-prepend">
-					<span class="add-on csvoptions"><?php echo tr('Null values'); ?>:</span>
+				<div class="input-group">
+					<span class="input-group-text csvoptions"><?php echo tr('Null values'); ?>:</span>
 					<select id="csvnullvalues" class="csvoptions" v-model="state.csvnullvalues">
 						<option value="show"><?php echo tr('Show'); ?></option>
 						<option value="lastvalue"><?php echo tr('Replace with last value'); ?></option>
 						<option value="remove"><?php echo tr('Remove whole line'); ?></option>
 					</select>
 				</div>
-				<div class="input-prepend">
-					<span class="add-on csvoptions"><?php echo tr('Headers'); ?>:</span>
+				<div class="input-group">
+					<span class="input-group-text csvoptions"><?php echo tr('Headers'); ?>:</span>
 					<select id="csvheaders" class="csvoptions" v-model="state.csvheaders">
 						<option value="showNameTag"><?php echo tr('Show name and tag'); ?></option>
 						<option value="showName"><?php echo tr('Show name'); ?></option>
@@ -828,15 +829,15 @@ body { background-color: whitesmoke; }
 					</select>
 				</div>
 				<div class="ctrl-actions">
-					<button id="download-csv" class="btn csvoptions" @click="onDownloadCsv"><?php echo tr('Download'); ?></button>
-					<button class="btn csvoptions" id="copy-csv" type="button" @click="onCopyCsv"><?php echo tr('Copy'); ?> <i class="icon-share-alt"></i></button>
+					<button id="download-csv" class="btn btn-default csvoptions" @click="onDownloadCsv"><?php echo tr('Download'); ?></button>
+					<button class="btn btn-default csvoptions" id="copy-csv" type="button" @click="onCopyCsv"><?php echo tr('Copy'); ?> <i class="icon-share-alt"></i></button>
 					<span id="copy-csv-feedback" class="csvoptions"></span>
 				</div>
 			</div>
 			<textarea id="csv" class="w-100" style="height:500px; box-sizing:border-box" v-model="csvText"></textarea>
-		</div><!-- .card-controls (csv) -->
+		</div><!-- .panel-controls (csv) -->
 
-		<div class="card-controls editor-section" style="border-top: 1px solid var(--border)" v-show="!histogramMode && editorMode">
+		<div class="panel-controls editor-section" style="border-top: 1px solid var(--border)" v-show="!histogramMode && editorMode">
 			<p class="editor-note">
 				<i class="icon-warning-sign"></i>
 				<span><?php echo tr('Changes are written directly to the feed and cannot be undone.'); ?></span>
@@ -846,14 +847,14 @@ body { background-color: whitesmoke; }
 			<div class="editor-block">
 				<h5 class="editor-heading"><?php echo tr('Edit individual datapoint'); ?></h5>
 				<div v-if="editPoint" class="editor-point-row d-flex align-items-center">
-					<div class="input-prepend input-append my-0">
-						<span class="add-on">{{ editPoint.name }}</span>
-						<span class="add-on"><?php echo tr('Time'); ?></span>
+					<div class="input-group my-0">
+						<span class="input-group-text">{{ editPoint.name }}</span>
+						<span class="input-group-text"><?php echo tr('Time'); ?></span>
 						<input type="text" v-model="editPoint.time" style="width:110px">
-						<span class="add-on"><?php echo tr('Value'); ?></span>
+						<span class="input-group-text"><?php echo tr('Value'); ?></span>
 						<input type="text" v-model="editPoint.value" style="width:90px">
 						<button class="btn btn-info" @click="onPointSave"><?php echo tr('Save'); ?></button>
-						<button class="btn" @click="editPoint = null" title="<?php echo tr('Cancel'); ?>">&#x2715;</button>
+						<button class="btn btn-default" @click="editPoint = null" title="<?php echo tr('Cancel'); ?>">&#x2715;</button>
 					</div>
 					<span class="editor-status" v-if="editStatus">{{ editStatus }}</span>
 				</div>
@@ -878,7 +879,7 @@ body { background-color: whitesmoke; }
 				</table>
 				<p v-else class="editor-hint"><?php echo tr('Select one or more feeds to edit.'); ?></p>
 			</div>
-		</div><!-- .card-controls (editor) -->
+		</div><!-- .panel-controls (editor) -->
 	</div>
 
 	<Teleport to=".menu-l3">
@@ -886,7 +887,7 @@ body { background-color: whitesmoke; }
 		<h3 class="l3-title mx-3"><?php echo tr('Graph'); ?></h3>
 
 		<!-- Feed selector -->
-		<table id="feed-selector" class="table table-condensed mx-3" style="width:90%">
+		<table id="feed-selector" class="table table-sm mx-3" style="width:90%">
 			<colgroup>
 				<col style="width:70%">
 				<col style="width:15%">
@@ -916,7 +917,7 @@ body { background-color: whitesmoke; }
 			<h4>
 				<a href="#" class="d-block" @click.prevent="savedGraphsCollapsed = !savedGraphsCollapsed">
 					<?php echo tr('My Graphs'); ?>
-					<span class="arrow arrow-down pull-right"></span>
+					<span class="arrow arrow-down float-end"></span>
 				</a>
 			</h4>
 			<div v-if="!savedGraphsCollapsed">
@@ -933,8 +934,8 @@ body { background-color: whitesmoke; }
 				<small class="help-block" v-if="savedGraphSelected > -1">
 					{{ savedGraphChanged ? '<?php echo tr('Changed'); ?>' : '<?php echo tr('No changes'); ?>' }}
 				</small>
-				<button class="btn" @click="onDeleteSavedGraph" :disabled="!canWriteGraphs || savedGraphSelected < 0"><?php echo tr('Delete'); ?></button>&nbsp;
-				<button class="btn" @click="onSaveSavedGraph" :disabled="!canSaveSavedGraph"><?php echo tr('Save'); ?></button>
+				<button class="btn btn-default" @click="onDeleteSavedGraph" :disabled="!canWriteGraphs || savedGraphSelected < 0"><?php echo tr('Delete'); ?></button>&nbsp;
+				<button class="btn btn-default" @click="onSaveSavedGraph" :disabled="!canSaveSavedGraph"><?php echo tr('Save'); ?></button>
 				<small class="help-block" v-if="savedGraphStatus">{{ savedGraphStatus }}</small>
 			</div>
 		</div>

@@ -177,7 +177,7 @@ function graph_toolbar(element, chart){
     buttons.append(controls);
 
     var button = function(row, label, title, handler){
-        var el = $('<button type="button" class="btn btn-small"></button>').attr("title", title).html(label);
+        var el = $('<button type="button" class="btn btn-default btn-sm"></button>').attr("title", title).html(label);
         el.click(handler);
         row.append(el);
         return el;
@@ -185,7 +185,7 @@ function graph_toolbar(element, chart){
 
     button(controls, '<i class="icon-repeat"></i>', _Tr("Refresh"), function(){ chart.refresh(); });
 
-    var hours = $('<select class="btn btn-small graph-widget-range"></select>').attr("title", _Tr("Time range"));
+    var hours = $('<select class="btn btn-default btn-sm graph-widget-range"></select>').attr("title", _Tr("Time range"));
     for (var i = 0; i < graph_time_ranges.length; i++){
         hours.append($("<option></option>")
             .attr("value", graph_time_ranges[i][0])
@@ -659,8 +659,8 @@ function graph_config_form(config, write, load){
         }
         changed();
     });
-    var window_group = $('<div class="input-prepend graph-config-group"></div>');
-    window_group.append($('<span class="add-on"></span>').text(_Tr("Window"))).append(zoom);
+    var window_group = $('<div class="input-group graph-config-group"></div>');
+    window_group.append($('<span class="input-group-text"></span>').text(_Tr("Window"))).append(zoom);
     lead.append(window_group);
 
     var legend = graph_config_flag(state.showlegend, "1");
@@ -675,8 +675,8 @@ function graph_config_form(config, write, load){
         form.append(legend_row);
     }
 
-    var interval_group = $('<div class="input-prepend input-append graph-config-group"></div>');
-    interval_group.append($('<span class="add-on"></span>').text(_Tr("Type")));
+    var interval_group = $('<div class="input-group graph-config-group"></div>');
+    interval_group.append($('<span class="input-group-text"></span>').text(_Tr("Type")));
     var mode = graph_config_select([
         ["interval", _Tr("Fixed Interval")], ["daily", _Tr("Daily")], ["weekly", _Tr("Weekly")],
         ["monthly", _Tr("Monthly")], ["annual", _Tr("Annual")]
@@ -700,7 +700,7 @@ function graph_config_form(config, write, load){
         changed();
     });
     interval_group.append(interval);
-    var interval_reset = $('<button type="button" class="btn add-on">&#x2715;</button>')
+    var interval_reset = $('<button type="button" class="btn btn-default input-group-text">&#x2715;</button>')
         .attr("title", _Tr("Return to auto interval"));
     interval_reset.click(function(){ state.fixinterval = "0"; changed(); });
     interval_group.append(interval_reset);
@@ -721,8 +721,8 @@ function graph_config_form(config, write, load){
     var fill_nulls = graph_config_check(state.removeNull);
     fill_nulls.change(function(){ state.removeNull = this.checked ? "1" : "0"; changed(); });
     fill_item.append(graph_config_label(fill_nulls, _Tr("Fill nulls with last value")));
-    var max_fill = $('<span class="input-prepend input-append graph-config-group graph-config-maxfill"></span>');
-    max_fill.append($('<span class="add-on"></span>').text(_Tr("Max fill")));
+    var max_fill = $('<span class="input-group graph-config-group graph-config-maxfill"></span>');
+    max_fill.append($('<span class="input-group-text"></span>').text(_Tr("Max fill")));
     var max_fill_input = $('<input type="text" class="graph-config-maxfill-input">')
         .val(state.removeNullMaxDuration !== undefined && state.removeNullMaxDuration !== "" ? state.removeNullMaxDuration : "900");
     max_fill_input.keydown(graph_config_integer_keys);
@@ -733,7 +733,7 @@ function graph_config_form(config, write, load){
         $(this).val(String(val));
         changed();
     });
-    max_fill.append(max_fill_input).append($('<span class="add-on"></span>').text(_Tr("seconds")));
+    max_fill.append(max_fill_input).append($('<span class="input-group-text"></span>').text(_Tr("seconds")));
     fill_item.append(max_fill);
     toggles.append(fill_item);
 
@@ -775,7 +775,7 @@ function graph_config_form(config, write, load){
     };
     form.append(table);
 
-    var add = $('<button type="button" class="btn btn-small"></button>').text(_Tr("Add feed"));
+    var add = $('<button type="button" class="btn btn-default btn-sm"></button>').text(_Tr("Add feed"));
     add.click(function(){
         feeds.push({ id: "", name: "", tag: "", unit: "", yaxis: "1", plottype: "lines",
             color: "", fill: "0", stack: "0", delta: "0", average: "0", scale: "1", offset: "0", dp: "1" });
@@ -796,8 +796,8 @@ function graph_config_form(config, write, load){
         select.prop("disabled", true);
         load(id).then(function(){ select.prop("disabled", false).val(""); });
     });
-    var source = $('<div class="input-prepend graph-config-group graph-config-source"></div>');
-    source.append($('<span class="add-on"></span>').text(_Tr("Saved graph"))).append(select);
+    var source = $('<div class="input-group graph-config-group graph-config-source"></div>');
+    source.append($('<span class="input-group-text"></span>').text(_Tr("Saved graph"))).append(select);
 
     form.append($('<div class="graph-config-actions"></div>').append(add).append(source));
 
@@ -838,8 +838,8 @@ function graph_config_form(config, write, load){
 // Min and max of one axis, as the graph page draws them: auto until clicked,
 // then typed in, with a reset once either is set.
 function graph_config_axis(state, label, min_key, max_key, changed){
-    var group = $('<div class="input-prepend input-append graph-config-group"></div>');
-    group.append($('<span class="add-on"></span>').text(label));
+    var group = $('<div class="input-group graph-config-group"></div>');
+    group.append($('<span class="input-group-text"></span>').text(label));
 
     var bound = function(key, hint){
         var input = $('<input type="text" class="graph-config-bound">');
@@ -866,7 +866,7 @@ function graph_config_axis(state, label, min_key, max_key, changed){
     var max = bound(max_key, _Tr("Click to set max"));
     group.append(min).append(max);
 
-    var reset = $('<button type="button" class="btn add-on">&#x2715;</button>');
+    var reset = $('<button type="button" class="btn btn-default input-group-text">&#x2715;</button>');
     reset.click(function(){ state[min_key] = "auto"; state[max_key] = "auto"; changed(); });
     group.append(reset);
 
@@ -1036,11 +1036,11 @@ function graph_config_feed(feeds, index, write, redraw){
 
 // One row in the style of the options table of the designer.
 function graph_config_row(label, control, hint){
-    var row = $('<div class="control-group"><div class="controls"><div class="input-prepend" style="margin-bottom:0px;"></div></div></div>');
+    var row = $('<div class="control-group"><div class="controls"><div class="input-group" style="margin-bottom:0px;"></div></div></div>');
     row.find(".input-prepend")
-        .append($('<span class="add-on"></span>').text(label))
+        .append($('<span class="input-group-text"></span>').text(label))
         .append(control);
-    if (hint) row.find(".controls").append($('<span class="help-inline"><small class="muted"></small></span>').find("small").text(hint).end());
+    if (hint) row.find(".controls").append($('<span class="help-inline"><small class="text-muted"></small></span>').find("small").text(hint).end());
     return row;
 }
 
