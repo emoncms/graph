@@ -851,7 +851,7 @@ function graph_config_axis(state, label, min_key, max_key, changed){
         });
         input.keydown(graph_config_decimal_keys);
         input.change(function(){
-            var val = $.trim($(this).val());
+            var val = $(this).val().trim();
             state[key] = (val === "" || val.toLowerCase() === "auto") ? "auto" : val;
             changed();
         });
