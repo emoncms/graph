@@ -125,6 +125,14 @@ var min_feed_interval = <?php echo $min_feed_interval; ?>;
 @media (hover: none) {
     .graph .graph-widget-bar { opacity: 0.85; pointer-events: auto; }
 }
+/* Keep touch gestures inside the plot so pan and pinch do not scroll the page,
+   as on the graph page. */
+@media (pointer: coarse) {
+    .graph .graph-widget-plot, .graph-config-preview-plot {
+        touch-action: none;
+        overscroll-behavior: contain;
+    }
+}
 /* Plot area too narrow for the bar: expand button only, always shown. See
    graph_toolbar. */
 .graph[data-compact] .graph-widget-bar,
