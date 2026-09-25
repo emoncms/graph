@@ -189,19 +189,10 @@ body { background-color: whitesmoke; }
    ========================================================================== */
 #showcontrols { gap: 0.75rem; margin-left: auto; }
 
-.time-manual-controls .input-group,
-.time-manual-controls date-time-picker,
-.time-manual-controls .dtp-wrap,
-.time-manual-controls .dtp-input-wrap {
+.time-manual-controls .input-group {
 	flex: 0 0 auto;
 	width: auto;
 	max-width: none;
-}
-
-.time-manual-controls .dtp-input {
-	width: 155px;
-	min-width: 155px;
-	max-width: 155px;
 }
 
 .ctrl-checkbox { gap: 0.35rem; }
