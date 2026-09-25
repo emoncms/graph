@@ -201,8 +201,8 @@ function graph_toolbar(element, chart){
     });
     controls.append(hours);
 
-    var start = $('<input type="datetime-local" class="graph-widget-time">');
-    var end = $('<input type="datetime-local" class="graph-widget-time">');
+    var start = $('<input type="datetime-local" class="form-control graph-widget-time">');
+    var end = $('<input type="datetime-local" class="form-control graph-widget-time">');
 
     button(controls, '<i class="icon-resize-horizontal"></i>', _Tr("Select time window"), function(){
         var window = chart.getWindow();
@@ -669,7 +669,7 @@ function graph_config_form(config, write, load){
     var options = $("#widget-config-options");
     if (options.length) {
     // Drawn as the designer draws an option row.
-        legend_row.find(".add-on").css({ width: "100px", "text-align": "right", "font-size": "12px" });
+        legend_row.find(".input-group-text").addClass("justify-content-end").css({ width: "100px", "box-sizing": "content-box", "font-size": "12px" });
         options.empty().append(legend_row);
     } else {
         form.append(legend_row);
@@ -685,7 +685,7 @@ function graph_config_form(config, write, load){
     interval_group.append(mode);
 
     // Auto until clicked, then the number of seconds is typed in and fixed.
-    var interval = $('<input type="text" class="graph-config-interval">');
+    var interval = $('<input type="text" class="form-control graph-config-interval">');
     interval.click(function(){
         if (Number(state.fixinterval)) return;
         state.fixinterval = "1";
@@ -723,7 +723,7 @@ function graph_config_form(config, write, load){
     fill_item.append(graph_config_label(fill_nulls, _Tr("Fill nulls with last value")));
     var max_fill = $('<span class="input-group graph-config-group graph-config-maxfill"></span>');
     max_fill.append($('<span class="input-group-text"></span>').text(_Tr("Max fill")));
-    var max_fill_input = $('<input type="text" class="graph-config-maxfill-input">')
+    var max_fill_input = $('<input type="text" class="form-control graph-config-maxfill-input">')
         .val(state.removeNullMaxDuration !== undefined && state.removeNullMaxDuration !== "" ? state.removeNullMaxDuration : "900");
     max_fill_input.keydown(graph_config_integer_keys);
     max_fill_input.change(function(){
@@ -784,7 +784,7 @@ function graph_config_form(config, write, load){
     });
 
     // Saved graph to load into the form, beside the add button
-    var select = $("<select></select>").attr("title", _Tr("Copies the chart of a saved graph into the form"));
+    var select = $('<select class="form-select"></select>').attr("title", _Tr("Copies the chart of a saved graph into the form"));
     select.append($('<option value=""></option>').text(_Tr("Load...")));
     var list = (typeof savedgraphsnamelist !== "undefined" && Array.isArray(savedgraphsnamelist)) ? savedgraphsnamelist : [];
     for (var i = 0; i < list.length; i++) {
@@ -842,7 +842,7 @@ function graph_config_axis(state, label, min_key, max_key, changed){
     group.append($('<span class="input-group-text"></span>').text(label));
 
     var bound = function(key, hint){
-        var input = $('<input type="text" class="graph-config-bound">');
+        var input = $('<input type="text" class="form-control graph-config-bound">');
         input.click(function(){
             if (graph_config_axis_auto(state[key]) === false) return;
             state[key] = "";
@@ -940,7 +940,7 @@ function graph_config_feed(feeds, index, write, redraw){
         return cell(box).addClass("center");
     };
     var number = function(key, fallback){
-        var input = $('<input type="text" class="graph-config-short">').val(feed[key] !== undefined ? feed[key] : fallback);
+        var input = $('<input type="text" class="form-control d-inline-block graph-config-short">').val(feed[key] !== undefined ? feed[key] : fallback);
         input.on("input", function(){ feed[key] = $(this).val(); write(); });
         return cell(input).addClass("center");
     };
@@ -1000,7 +1000,7 @@ function graph_config_feed(feeds, index, write, redraw){
     // A blank colour is left blank until the picker is used, so a feed the
     // engine colours itself keeps that colour. Setting one fixes the automatic
     // colours of the other feeds first, so only this feed changes colour.
-    var colour = $('<input type="color">').val(graph_config_feed_colour(feeds, index));
+    var colour = $('<input type="color" class="form-control form-control-color">').val(graph_config_feed_colour(feeds, index));
     colour.change(function(){
         var shown = feeds.map(function(f, i){ return graph_config_feed_colour(feeds, i); });
         for (var i = 0; i < feeds.length; i++) feeds[i].color = shown[i];
@@ -1036,16 +1036,16 @@ function graph_config_feed(feeds, index, write, redraw){
 
 // One row in the style of the options table of the designer.
 function graph_config_row(label, control, hint){
-    var row = $('<div class="control-group"><div class="controls"><div class="input-group" style="margin-bottom:0px;"></div></div></div>');
-    row.find(".input-prepend")
+    var row = $('<div class="option-row mb-2"><div class="input-group"></div></div>');
+    row.find(".input-group")
         .append($('<span class="input-group-text"></span>').text(label))
-        .append(control);
-    if (hint) row.find(".controls").append($('<span class="help-inline"><small class="text-muted"></small></span>').find("small").text(hint).end());
+        .append(control.addClass("input-220"));
+    if (hint) row.append($('<span class="option-hint form-text d-inline-block align-middle ms-1 mt-0"></span>').text(hint));
     return row;
 }
 
 function graph_config_select(pairs, value){
-    var select = $("<select></select>");
+    var select = $('<select class="form-select"></select>');
     for (var i = 0; i < pairs.length; i++) {
         select.append($("<option></option>").attr("value", pairs[i][0]).text(pairs[i][1]));
     }
@@ -1074,7 +1074,7 @@ function graph_config_feed_select(current){
         if (!groups[tag]) groups[tag] = [];
         groups[tag].push(feeds[i]);
     }
-    var select = $('<select class="graph-config-feed"></select>');
+    var select = $('<select class="form-select graph-config-feed"></select>');
     select.append($('<option value=""></option>').text(_Tr("Select feed")));
     for (var g in groups) {
         var optgroup = $("<optgroup></optgroup>").attr("label", g);

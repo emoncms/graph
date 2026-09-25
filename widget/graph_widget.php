@@ -59,8 +59,9 @@ var min_feed_interval = <?php echo $min_feed_interval; ?>;
 /* Controls are 26px tall, the height of a small button and of the feed table rows. */
 #widget-config-editor select, #widget-config-editor input[type=text] { height: 26px; line-height: 26px; box-sizing: border-box; }
 #widget-config-editor input[type=text] { line-height: 18px; padding: 3px 6px; }
+#widget-config-editor select { line-height: 18px; padding-top: 3px; padding-bottom: 3px; }
 .graph-config-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
-.graph-config-source select { width: 200px; margin: 0; font-size: 12px; }
+.graph-config-source select.form-select { width: 200px; margin: 0; font-size: 12px; }
 .graph-config-preview { box-sizing: content-box; position: relative; height: 240px; margin-bottom: 10px; border: 1px solid #ddd; background: #fff; }
 .graph-config-preview-plot { position: absolute; top: 0; left: 0; right: 0; bottom: 0; }
 .graph-config-preview-message { position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; color: #777; font-size: 13px; }
@@ -75,7 +76,7 @@ var min_feed_interval = <?php echo $min_feed_interval; ?>;
 .graph-config-group .input-group-text { box-sizing: content-box; font-size: 12px; height: 18px; line-height: 18px; padding: 3px 6px; }
 /* A button is sized border box, so it takes the full height of the row. */
 .graph-config-group .btn.input-group-text { font-size: 12px; box-sizing: border-box; height: 26px; line-height: 18px; padding: 3px 6px; }
-.graph-config-group select { width: auto; margin: 0; font-size: 12px; }
+.graph-config-group select.form-select { width: auto; margin: 0; font-size: 12px; }
 .graph-config-group input { margin: 0; font-size: 12px; text-align: center; }
 .graph-config-group input.graph-config-interval { width: 70px; }
 .graph-config-group input.graph-config-bound { width: 44px; }
@@ -157,7 +158,7 @@ var min_feed_interval = <?php echo $min_feed_interval; ?>;
     height: 20px; line-height: 20px; font-size: 11.9px;
 }
 .graph .graph-widget-label, .graph-config-preview .graph-widget-label { font-size: 12px; }
-.graph .graph-widget-time, .graph-config-preview .graph-widget-time { width: 165px; margin: 0; font-size: 12px; }
+.graph .graph-widget-time, .graph-config-preview .graph-widget-time { width: 179px; margin: 0; font-size: 12px; }
 .graph [hidden], .graph-config-preview [hidden] { display: none !important; }
 .graph-widget-message { padding: 0.5em; font-size: 13px; }
 

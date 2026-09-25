@@ -336,7 +336,7 @@ body { background-color: whitesmoke; }
 /* ==========================================================================
    9. AXIS, WINDOW INFO & CSV CONTROLS
    ========================================================================== */
-.yaxis-minmax { width: 50px !important; }
+.yaxis-minmax { width: 64px !important; }
 
 .csvoptions { width: auto; }
 
@@ -359,7 +359,7 @@ body { background-color: whitesmoke; }
 #my_graphs h4 a { color: var(--l2-title); }
 #my_graphs h4 a:hover { text-decoration: underline; }
 #my_graphs h5 { color: var(--l2-title); }
-#my_graphs input { width: 12rem; }
+#my_graphs input { width: calc(12rem + 14px); }
 #my_graphs select { width: 13rem; }
 
 /* ==========================================================================
@@ -391,11 +391,15 @@ body { background-color: whitesmoke; }
 
 #feed-selector tbody tr th.feed-title span { max-width: 9em; }
 
-#feed-selector .caret {
-	border-top-color: currentColor !important;
+#feed-selector .tag-caret {
 	display: inline-block;
-	vertical-align: middle;
+	width: 0;
+	height: 0;
 	margin-right: .4em;
+	vertical-align: middle;
+	border-top: 4px solid currentColor;
+	border-right: 4px solid transparent;
+	border-left: 4px solid transparent;
 }
 
 /* ==========================================================================
@@ -463,7 +467,7 @@ body { background-color: whitesmoke; }
 .editor-section .editor-point-row input,
 .editor-section .editor-multiply-input { font-family: var(--font-mono); margin-bottom: 0; }
 
-.editor-section .editor-multiply-input { width: 210px; }
+.editor-section .editor-multiply-input { width: 224px; }
 
 .editor-section .editor-multiply-input:disabled { cursor: not-allowed; opacity: 0.6; }
 
@@ -538,12 +542,12 @@ body { background-color: whitesmoke; }
 		<div class="panel-header" v-show="histogramMode">
 			<div class="input-group">
 				<span class="input-group-text"><?php echo tr('Type'); ?></span>
-				<select v-model="histogramType" @change="drawHistogram">
+				<select class="form-select input-220" v-model="histogramType" @change="drawHistogram">
 					<option value="timeatvalue"><?php echo tr('Time at value'); ?></option>
 					<option value="kwhatpower"><?php echo tr('kWh at Power'); ?></option>
 				</select>
 				<span class="input-group-text"><?php echo tr('Resolution'); ?></span>
-				<input type="text" v-model="histogramResolution" @change="drawHistogram">
+				<input type="text" class="form-control input-220" v-model="histogramResolution" @change="drawHistogram">
 			</div>
 		</div>
 
@@ -575,7 +579,7 @@ body { background-color: whitesmoke; }
 			<div class="controls-row controls-row-top d-flex justify-content-between">
 				<div class="input-group interval-controls d-flex justify-content-start">
 					<span class="input-group-text"><?php echo tr('Type'); ?></span>
-					<select id="request-type" v-model="state.mode" @change="onReload" style="width:auto">
+					<select id="request-type" class="form-select input-auto flex-grow-0" v-model="state.mode" @change="onReload">
 						<option value="interval"><?php echo tr('Fixed Interval'); ?></option>
 						<option value="daily"><?php echo tr('Daily'); ?></option>
 						<option value="weekly"><?php echo tr('Weekly'); ?></option>
@@ -583,7 +587,7 @@ body { background-color: whitesmoke; }
 						<option value="annual"><?php echo tr('Annual'); ?></option>
 					</select>
 
-					<input v-show="state.mode==='interval'" id="request-interval" type="text"
+					<input v-show="state.mode==='interval'" id="request-interval" type="text" class="form-control flex-grow-0"
 						:value="state.fixinterval ? state.interval : state.interval + 's (auto)'"
 						:readonly="!state.fixinterval"
 						:class="{'interval-input-auto': !state.fixinterval}"
@@ -591,7 +595,7 @@ body { background-color: whitesmoke; }
 						@click="onIntervalInputClick"
 						@keydown="onIntegerKeydown"
 						@change="onIntervalInputChange"
-						style="width:90px; text-align:center">
+						style="width:104px; text-align:center">
 					<button v-show="state.mode==='interval' && state.fixinterval" class="btn btn-default input-group-text" @click="onIntervalResetAuto" title="<?php echo tr('Return to auto interval'); ?>">&#x2715;</button>
 				</div>
 
@@ -599,7 +603,7 @@ body { background-color: whitesmoke; }
 					<div id="yaxis_left" class="input-group me-2" v-show="leftCount > 0">
 						<span class="input-group-text px-2">L</span>
 						<!-- Left Y-axis min -->
-						<input class="yaxis-minmax" id="yaxis-min" type="text"
+						<input class="form-control yaxis-minmax" id="yaxis-min" type="text"
 							:value="state.yaxismin === 'auto' ? 'auto' : state.yaxismin"
 							:readonly="state.yaxismin === 'auto'"
 							:class="{'interval-input-auto': state.yaxismin === 'auto'}"
@@ -608,7 +612,7 @@ body { background-color: whitesmoke; }
 							@keydown="onDecimalKeydown"
 							@change="onYAxisMinMaxChange('left', 'min', $event)">
 						<!-- Left Y-axis max -->
-						<input class="yaxis-minmax" id="yaxis-max" type="text"
+						<input class="form-control yaxis-minmax" id="yaxis-max" type="text"
 							:value="state.yaxismax === 'auto' ? 'auto' : state.yaxismax"
 							:readonly="state.yaxismax === 'auto'"
 							:class="{'interval-input-auto': state.yaxismax === 'auto'}"
@@ -622,7 +626,7 @@ body { background-color: whitesmoke; }
 					<div id="yaxis_right" class="input-group" v-show="rightCount > 0">
 						<span class="input-group-text px-2">R</span>
 						<!-- Right Y-axis min -->
-						<input class="yaxis-minmax" id="yaxis-min2" type="text"
+						<input class="form-control yaxis-minmax" id="yaxis-min2" type="text"
 							:value="state.yaxismin2 === 'auto' ? 'auto' : state.yaxismin2"
 							:readonly="state.yaxismin2 === 'auto'"
 							:class="{'interval-input-auto': state.yaxismin2 === 'auto'}"
@@ -631,7 +635,7 @@ body { background-color: whitesmoke; }
 							@keydown="onDecimalKeydown"
 							@change="onYAxisMinMaxChange('right', 'min', $event)">
 						<!-- Right Y-axis max -->
-						<input class="yaxis-minmax" id="yaxis-max2" type="text"
+						<input class="form-control yaxis-minmax" id="yaxis-max2" type="text"
 							:value="state.yaxismax2 === 'auto' ? 'auto' : state.yaxismax2"
 							:readonly="state.yaxismax2 === 'auto'"
 							:class="{'interval-input-auto': state.yaxismax2 === 'auto'}"
@@ -659,7 +663,7 @@ body { background-color: whitesmoke; }
 						</label>
 						<span class="input-group interval-max-fill my-0" v-if="state.removeNull">
 							<span class="input-group-text"><?php echo tr('Max fill'); ?></span>
-							<input type="text" class="remove-null-max-duration" v-model="state.removeNullMaxDuration" @change="onRemoveNullChange" style="width:50px; text-align:center">
+							<input type="text" class="form-control remove-null-max-duration" v-model="state.removeNullMaxDuration" @change="onRemoveNullChange" style="width:64px; text-align:center">
 							<span class="input-group-text"><?php echo tr('seconds'); ?></span>
 						</span>
 					</div>
@@ -743,22 +747,22 @@ body { background-color: whitesmoke; }
 								<td>{{ feed.id }}</td>
 								<td class="col-primary">{{ feedName(feed) }}</td>
 								<td>
-									<select style="width:80px" :value="feed.plottype" @change="setPlottype(feed, $event)">
+									<select class="form-select" style="width:80px" :value="feed.plottype" @change="setPlottype(feed, $event)">
 										<option value="lines"><?php echo tr('Lines'); ?></option>
 										<option value="bars"><?php echo tr('Bars'); ?></option>
 										<option value="points"><?php echo tr('Points'); ?></option>
 										<option value="steps"><?php echo tr('Steps'); ?></option>
 									</select>
 								</td>
-								<td><input type="color" style="width:46px" :value="feedColor(feed)" @input="setColor(feed, $event)"></td>
+								<td><input type="color" class="form-control form-control-color" style="width:46px" :value="feedColor(feed)" @input="setColor(feed, $event)"></td>
 								<td style="text-align:center"><input type="checkbox" :checked="!!feed.fill" @change="setFill(feed, $event)"></td>
 								<td style="text-align:center"><input type="checkbox" :checked="!!feed.stack" @change="setStack(feed, $event)"></td>
-								<td style="text-align:center"><input type="text" style="width:50px" :value="feed.scale" @change="setScale(feed, $event)"></td>
-								<td style="text-align:center"><input type="text" style="width:50px" :value="feed.offset" @change="setOffset(feed, $event)"></td>
+								<td style="text-align:center"><input type="text" class="form-control d-inline-block" style="width:64px" :value="feed.scale" @change="setScale(feed, $event)"></td>
+								<td style="text-align:center"><input type="text" class="form-control d-inline-block" style="width:64px" :value="feed.offset" @change="setOffset(feed, $event)"></td>
 								<td style="text-align:center"><input type="checkbox" :checked="!!feed.delta" @change="setDelta(feed, $event)"></td>
 								<td style="text-align:center"><input type="checkbox" :checked="!!feed.average" @change="setAverage(feed, $event)"></td>
 								<td>
-									<select style="width:50px" :value="feed.dp" @change="setDp(feed, $event)">
+									<select class="form-select" style="width:50px" :value="feed.dp" @change="setDp(feed, $event)">
 										<option>0</option>
 										<option>1</option>
 										<option>2</option>
@@ -806,7 +810,7 @@ body { background-color: whitesmoke; }
 			<div class="controls-row">
 				<div class="input-group">
 					<span class="input-group-text csvoptions"><?php echo tr('Time format'); ?>:</span>
-					<select id="csvtimeformat" class="csvoptions" v-model="state.csvtimeformat">
+					<select id="csvtimeformat" class="form-select input-auto csvoptions" v-model="state.csvtimeformat">
 						<option value="unix"><?php echo tr('Unix timestamp'); ?></option>
 						<option value="seconds"><?php echo tr('Seconds since start'); ?></option>
 						<option value="datestr"><?php echo tr('Date-time string'); ?></option>
@@ -814,7 +818,7 @@ body { background-color: whitesmoke; }
 				</div>
 				<div class="input-group">
 					<span class="input-group-text csvoptions"><?php echo tr('Null values'); ?>:</span>
-					<select id="csvnullvalues" class="csvoptions" v-model="state.csvnullvalues">
+					<select id="csvnullvalues" class="form-select input-auto csvoptions" v-model="state.csvnullvalues">
 						<option value="show"><?php echo tr('Show'); ?></option>
 						<option value="lastvalue"><?php echo tr('Replace with last value'); ?></option>
 						<option value="remove"><?php echo tr('Remove whole line'); ?></option>
@@ -822,7 +826,7 @@ body { background-color: whitesmoke; }
 				</div>
 				<div class="input-group">
 					<span class="input-group-text csvoptions"><?php echo tr('Headers'); ?>:</span>
-					<select id="csvheaders" class="csvoptions" v-model="state.csvheaders">
+					<select id="csvheaders" class="form-select input-auto csvoptions" v-model="state.csvheaders">
 						<option value="showNameTag"><?php echo tr('Show name and tag'); ?></option>
 						<option value="showName"><?php echo tr('Show name'); ?></option>
 						<option value="hide"><?php echo tr('Hide'); ?></option>
@@ -834,7 +838,7 @@ body { background-color: whitesmoke; }
 					<span id="copy-csv-feedback" class="csvoptions"></span>
 				</div>
 			</div>
-			<textarea id="csv" class="w-100" style="height:500px; box-sizing:border-box" v-model="csvText"></textarea>
+			<textarea id="csv" class="form-control" style="height:500px; box-sizing:border-box" v-model="csvText"></textarea>
 		</div><!-- .panel-controls (csv) -->
 
 		<div class="panel-controls editor-section" style="border-top: 1px solid var(--border)" v-show="!histogramMode && editorMode">
@@ -850,9 +854,9 @@ body { background-color: whitesmoke; }
 					<div class="input-group my-0">
 						<span class="input-group-text">{{ editPoint.name }}</span>
 						<span class="input-group-text"><?php echo tr('Time'); ?></span>
-						<input type="text" v-model="editPoint.time" style="width:110px">
+						<input type="text" class="form-control" v-model="editPoint.time" style="width:124px">
 						<span class="input-group-text"><?php echo tr('Value'); ?></span>
-						<input type="text" v-model="editPoint.value" style="width:90px">
+						<input type="text" class="form-control" v-model="editPoint.value" style="width:104px">
 						<button class="btn btn-info" @click="onPointSave"><?php echo tr('Save'); ?></button>
 						<button class="btn btn-default" @click="editPoint = null" title="<?php echo tr('Cancel'); ?>">&#x2715;</button>
 					</div>
@@ -871,7 +875,7 @@ body { background-color: whitesmoke; }
 					<tbody>
 						<tr v-for="feed in state.feedlist" :key="'edit-'+feed.id">
 							<td class="editor-feed-name">{{ feedName(feed) }}</td>
-							<td><input type="text" class="editor-multiply-input" v-model="multiplyValues[feed.id]" placeholder="2, 1/2, -1, NAN, abs(x)" :disabled="feedHasScaleOffset(feed)"></td>
+							<td><input type="text" class="form-control editor-multiply-input" v-model="multiplyValues[feed.id]" placeholder="2, 1/2, -1, NAN, abs(x)" :disabled="feedHasScaleOffset(feed)"></td>
 							<td><button class="btn btn-info" @click="onMultiplySubmit(feed)" :disabled="feedHasScaleOffset(feed)"><?php echo tr('Save'); ?></button></td>
 							<td class="editor-status">{{ feedHasScaleOffset(feed) ? '<?php echo tr('Remove the scale and offset to edit this feed'); ?>' : multiplyStatus[feed.id] }}</td>
 						</tr>
@@ -896,7 +900,7 @@ body { background-color: whitesmoke; }
 			<template v-for="(tagFeeds, tag) in feedsByTag" :key="tag">
 				<thead>
 					<tr class="tagheading" tabindex="0" @click="toggleTag(tag)" @keyup.enter="toggleTag(tag)">
-						<th colspan="3"><span class="caret"></span>{{ tag }}</th>
+						<th colspan="3"><span class="tag-caret"></span>{{ tag }}</th>
 					</tr>
 				</thead>
 				<tbody v-show="!collapsedTags[tag]">
@@ -921,22 +925,22 @@ body { background-color: whitesmoke; }
 				</a>
 			</h4>
 			<div v-if="!savedGraphsCollapsed">
-				<select id="graph-select" class="mb-2" v-model="savedGraphSelected">
+				<select id="graph-select" class="form-select mb-2" v-model="savedGraphSelected">
 					<option value="-1"><?php echo tr('Select graph'); ?> :</option>
 					<option v-for="(g, i) in savedGraphs" :key="g.id" :value="i">[#{{ g.id }}] {{ g.name }}</option>
 				</select>
 				<h5><?php echo tr('Graph Name'); ?>:</h5>
-				<input id="graphName" class="mb-2" v-model="savedGraphName" type="text" placeholder="<?php echo tr('Graph Name'); ?>" :disabled="!canWriteGraphs">
-				<small class="help-block">
+				<input id="graphName" class="form-control mb-2" v-model="savedGraphName" type="text" placeholder="<?php echo tr('Graph Name'); ?>" :disabled="!canWriteGraphs">
+				<small class="form-text d-block mt-0 mb-2">
 					<span v-if="savedGraphSelected > -1"><?php echo tr('Selected graph id'); ?>: {{ savedGraphs[savedGraphSelected].id }}</span>
 					<span v-else><?php echo tr('None selected'); ?></span>
 				</small>
-				<small class="help-block" v-if="savedGraphSelected > -1">
+				<small class="form-text d-block mt-0 mb-2" v-if="savedGraphSelected > -1">
 					{{ savedGraphChanged ? '<?php echo tr('Changed'); ?>' : '<?php echo tr('No changes'); ?>' }}
 				</small>
 				<button class="btn btn-default" @click="onDeleteSavedGraph" :disabled="!canWriteGraphs || savedGraphSelected < 0"><?php echo tr('Delete'); ?></button>&nbsp;
 				<button class="btn btn-default" @click="onSaveSavedGraph" :disabled="!canSaveSavedGraph"><?php echo tr('Save'); ?></button>
-				<small class="help-block" v-if="savedGraphStatus">{{ savedGraphStatus }}</small>
+				<small class="form-text d-block mt-0 mb-2" v-if="savedGraphStatus">{{ savedGraphStatus }}</small>
 			</div>
 		</div>
 	</Teleport>
