@@ -1,0 +1,443 @@
+/* ==========================================================================
+   1. PAGE LAYOUT
+   ========================================================================== */
+body { background-color: var(--bg-body); }
+.content-container { max-width: 1150px; }
+
+/* ==========================================================================
+   2. GRAPH ERROR STATE
+   ========================================================================== */
+#placeholder_bound.has-error {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 18px;
+	box-sizing: border-box;
+}
+
+#placeholder_bound .graph-window-error {
+	width: 100%;
+	height: 100%;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	text-align: center;
+	color: #253040;
+	border-radius: 10px;
+}
+
+#placeholder_bound .graph-window-error.is-error {
+	background: linear-gradient(180deg, #fff5f5 0%, #ffe9e9 100%); color: #7a1d1d;
+}
+
+#placeholder_bound .graph-window-error.is-info {
+	background-color: rgba(183, 213, 238, 0.3); color: #1f4e75;
+}
+
+#placeholder_bound .graph-window-error .graph-window-error-title { font-size: 17px; font-weight: 600; }
+#placeholder_bound .graph-window-error .graph-window-error-actions { display: flex; justify-content: center; }
+#placeholder_bound .graph-window-error .graph-window-error-actions .btn { margin: 0; }
+
+/* ==========================================================================
+   3. GRAPH VIEW SHELL
+   ========================================================================== */
+#graph-view-app { padding-top: 1rem; }
+
+/* Grey header and controls strip of the graph panel */
+.graph-toolbar,
+.graph-toolbar:hover { background-color: var(--bs-secondary-bg); }
+
+/* ==========================================================================
+   4. FEEDS OPTIONS & STATS TABLES
+   ========================================================================== */
+#tables { overflow-x: auto; overflow-y: visible; }
+
+#feed-options-table { table-layout: auto; min-width: 700px; }
+
+/* Allow the feeds panel to scroll horizontally; .panel's global overflow:hidden clips #tables otherwise */
+.feed-options .panel { overflow-x: auto; }
+
+#feed-options-table input,
+#feed-options-table select { margin-bottom: 0; }
+
+#feed-stats-table {
+	display: grid;
+	grid-template-columns: max-content 1fr repeat(7, max-content);
+	font-family: var(--font-mono);
+	font-size: 13px;
+	color: var(--text-secondary);
+}
+
+#feed-stats-table thead,
+#feed-stats-table tbody,
+#feed-stats-table tr { display: contents; }
+
+#feed-stats-table th,
+#feed-stats-table td { white-space: nowrap; padding: 4px clamp(6px, 1.2vw, 25px); }
+
+#feed-stats-table td:nth-child(2),
+#feed-stats-table th:nth-child(2) { white-space: normal; }
+
+.feed-options { overflow-x: auto; }
+
+.graph-section-switcher {
+	display: flex;
+	width: 100%;
+	justify-content: center;
+}
+
+.graph-section-switcher .btn-group {
+	display: inline-flex;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.graph-section-switcher .btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.45rem;
+	padding-inline: 1rem;
+}
+
+.graph-section-switcher .btn.active {
+	background: var(--accent);
+	border-color: var(--accent);
+	color: #fff;
+	box-shadow: none;
+}
+
+.graph-section-switcher .btn i {
+	margin-top: -1px;
+}
+
+#feed-options-table td input[type="checkbox"],
+#feed-stats-table td input[type="checkbox"] {
+	vertical-align: middle;
+	margin: 0;
+	position: relative;
+	top: -1px;
+}
+
+/* ==========================================================================
+   5. GRAPH LEGEND, TOOLTIP & NAV BUTTONS
+   ========================================================================== */
+#tooltip { z-index: 1001; }
+
+#legend {
+	width: 100%;
+	float: right;
+	position: relative;
+	z-index: 2;
+	font-size: 12px;
+}
+
+#legend .col { position: absolute; top: 0; }
+
+#legend .right { right: 0.8em; }
+
+#legend .left { left: 0; }
+
+.legendLayer rect.background { fill: rgba(var(--bs-body-bg-rgb), 0.6); }
+
+.legend { font-size: 14px; }
+
+/* Keep touch gestures inside the plot so pan/pinch feels stable on mobile. */
+@media (pointer: coarse) {
+	#placeholder {
+		touch-action: none;
+		overscroll-behavior: contain;
+	}
+}
+
+#graph_zoomin,
+#graph_zoomout,
+#graph_left,
+#graph_right {
+	font-weight: 700;
+}
+
+/* ==========================================================================
+   6. TOP CONTROLS LAYOUT
+   ========================================================================== */
+#showcontrols { gap: 0.75rem; margin-left: auto; }
+
+.time-manual-controls .input-group {
+	flex: 0 0 auto;
+	width: auto;
+	max-width: none;
+}
+
+.ctrl-checkbox { gap: 0.35rem; }
+
+.ctrl-checkbox input[type="checkbox"] {
+	margin: 0;
+	position: relative;
+	top: -1px;
+}
+
+.controls-row-top { align-items: flex-start; }
+
+.controls-row-top .interval-controls { flex: 1 1 0; }
+
+.controls-row-top .axes-controls {
+	flex: 1 1 0;
+	display: flex;
+	justify-content: flex-end;
+	align-items: flex-start;
+	gap: 0.5rem;
+	flex-wrap: wrap;
+}
+
+/* ==========================================================================
+   7. INTERVAL MODE OPTIONS
+   ========================================================================== */
+.interval-options-row { gap: 0.5rem; }
+
+.interval-toggle-grid {
+	gap: 0.75rem;
+	align-items: center;
+	flex-wrap: nowrap;
+}
+
+
+.interval-toggle-item.interval-toggle-item-fill {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+.interval-toggle-item {
+	flex: 0 0 auto;
+	justify-content: flex-start;
+	gap: 0.5rem;
+}
+
+.interval-toggle-item-end {
+	margin-left: auto;
+	justify-content: flex-end;
+}
+
+.interval-toggle-item input[type="checkbox"] { margin: 0; }
+
+.interval-toggle-check { gap: 0.5rem; }
+
+.interval-max-fill {
+	display: inline-flex;
+	align-items: center;
+	margin-left: 0.5rem;
+}
+
+.interval-input-auto {
+	cursor: pointer;
+	background-color: var(--bs-secondary-bg);
+	color: var(--text-secondary);
+}
+
+/* ==========================================================================
+   8. MOBILE ADJUSTMENTS
+   ========================================================================== */
+
+@media (max-width: 768px) {
+	#graph-view-app { padding-top: 0.2rem; }
+
+	/* Keep interval + axes on same row, wrap if needed */
+	.controls-row-top { flex-wrap: wrap; align-items: center; }
+
+	.controls-row-top .interval-controls { flex: 1 1 auto; justify-content: flex-start; }
+
+	.controls-row-top .axes-controls { flex: 0 1 auto; justify-content: flex-start; }
+
+	/* panel-controls slightly tighter on mobile */
+	.panel-controls { padding: 0.5rem 0.6rem; }
+
+	/* Keep manual date range pickers from stretching unexpectedly on small screens */
+	.time-manual-controls {
+		flex-wrap: wrap;
+		gap: 0.4rem;
+	}
+
+	.time-manual-controls .dtp-input {
+		-webkit-text-size-adjust: 100%;
+		text-size-adjust: 100%;
+	}
+
+	/* Fill nulls + show gaps on same line */
+	.interval-toggle-grid {
+		flex-direction: row;
+		align-items: center;
+		flex-wrap: nowrap;
+		gap: 0.5rem 1rem;
+	}
+
+	.interval-toggle-grid.is-expanded { flex-wrap: wrap; }
+
+	.interval-options-row { gap: 0.35rem; }
+
+	.interval-toggle-item {
+		flex: 0 0 auto;
+		justify-content: flex-start;
+		gap: 0.35rem;
+		flex-wrap: nowrap;
+	}
+
+	.interval-toggle-item.interval-toggle-item-fill { flex: 1 1 auto; }
+
+	.interval-toggle-grid.is-expanded .interval-toggle-item.interval-toggle-item-fill { flex-basis: 100%; }
+
+	.interval-toggle-check,
+	.interval-toggle-grid .ctrl-checkbox,
+	.interval-toggle-item-end {
+		white-space: nowrap;
+	}
+
+	.interval-toggle-item-end { justify-content: flex-start; }
+
+	.interval-toggle-item-end { margin-left: 0; }
+
+	.interval-max-fill { margin-left: 0; }
+}
+
+/* ==========================================================================
+   9. AXIS, WINDOW INFO & CSV CONTROLS
+   ========================================================================== */
+.yaxis-minmax { width: 64px !important; }
+
+.csvoptions { width: auto; }
+
+.window-info {
+	font-size: var(--font-sm);
+	color: var(--text-secondary);
+	margin: 0.2rem 0 0;
+}
+
+/* ==========================================================================
+   10. SIDEBAR: SAVED GRAPHS PANEL
+   ========================================================================== */
+#my_graphs {
+	box-sizing: content-box;
+	width: 13rem;
+	overflow: hidden;
+	position: relative;
+}
+
+#my_graphs h4 a { color: var(--l2-title); }
+#my_graphs h4 a:hover { text-decoration: underline; }
+#my_graphs h5 { color: var(--l2-title); }
+#my_graphs input { width: calc(12rem + 14px); }
+#my_graphs select { width: 13rem; }
+
+/* ==========================================================================
+   11. SIDEBAR: FEED SELECTOR TABLE
+   ========================================================================== */
+
+#feed-selector thead th {
+    border-top: 2px solid var(--bg-l2);
+	font-weight: normal !important;
+	color: var(--l2-title);
+	cursor: pointer;
+	transition: all .3s ease-in;
+	padding-left: 0;
+}
+
+#feed-selector thead th:hover { color: var(--l2-text); text-decoration: underline; }
+
+#feed-selector input[type="checkbox"] { margin: 0; }
+
+#feed-selector tbody tr > * { border-color: var(--bg-l2); }
+
+#feed-selector tbody tr th {
+	cursor: pointer;
+	transition: all .3s ease-in;
+	font-weight: normal;
+}
+
+#feed-selector tbody tr th:hover { text-decoration: underline; }
+
+#feed-selector tbody tr th.feed-title span { max-width: 9em; }
+
+#feed-selector .tag-caret {
+	display: inline-block;
+	width: 0;
+	height: 0;
+	margin-right: .4em;
+	vertical-align: middle;
+	border-top: 4px solid currentColor;
+	border-right: 4px solid transparent;
+	border-left: 4px solid transparent;
+}
+
+/* ==========================================================================
+   12. EDITOR SECTION
+   ========================================================================== */
+.editor-section .editor-note {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	margin: 0 0 1.5rem;
+	padding: 0.5rem 0.8rem;
+	font-size: var(--font-sm);
+	color: var(--text-secondary);
+	background: rgba(240, 173, 78, 0.08);
+	border-left: 3px solid #f0ad4e;
+	border-radius: 4px;
+}
+
+.editor-section .editor-note i { color: #f0ad4e; }
+
+.editor-section .editor-block { margin-bottom: 1.5rem; }
+.editor-section .editor-block:last-child { margin-bottom: 0; }
+
+.editor-section .editor-block + .editor-block {
+	border-top: 1px solid var(--border);
+	padding-top: 1.5rem;
+}
+
+.editor-section .editor-heading {
+	display: flex;
+	align-items: center;
+	gap: 0.4rem;
+	margin: 0 0 0.85rem;
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	color: var(--text-secondary);
+}
+
+.editor-section .editor-heading .icon-question-sign {
+	font-size: 13px;
+	opacity: 0.65;
+}
+
+.editor-section .editor-hint,
+.editor-section .editor-status {
+	font-size: var(--font-sm);
+	color: var(--text-secondary);
+	margin: 0.4rem 0 0;
+}
+
+.editor-section .editor-table { width: auto; border-collapse: separate; border-spacing: 0 5px; }
+
+.editor-section .editor-table td {
+	padding: 3px 14px 3px 0;
+	vertical-align: middle;
+	border: none;
+}
+
+.editor-section .editor-table td:first-child { padding-left: 0.25rem; }
+
+.editor-section .editor-feed-name { font-weight: 600; white-space: nowrap; }
+
+.editor-section .editor-point-row input,
+.editor-section .editor-multiply-input { font-family: var(--font-mono); margin-bottom: 0; }
+
+.editor-section .editor-multiply-input { width: 224px; }
+
+.editor-section .editor-multiply-input:disabled { cursor: not-allowed; opacity: 0.6; }
+
+.editor-section .editor-table .btn { margin-bottom: 0; }
+
+.editor-section .editor-table .editor-status { margin: 0; font-style: italic; }
+
+.editor-section .editor-point-row { gap: 0.75rem; flex-wrap: wrap; }
+.editor-section .editor-point-row .editor-status { margin: 0; }
+
