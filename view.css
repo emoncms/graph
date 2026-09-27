@@ -1,8 +1,7 @@
 /* ==========================================================================
    1. PAGE LAYOUT
    ========================================================================== */
-body { background-color: var(--bg-body); }
-.content-container { max-width: 1150px; }
+/* panel-page from the theme */
 
 /* ==========================================================================
    2. GRAPH ERROR STATE
@@ -37,7 +36,6 @@ body { background-color: var(--bg-body); }
 
 #placeholder_bound .graph-window-error .graph-window-error-title { font-size: 17px; font-weight: 600; }
 #placeholder_bound .graph-window-error .graph-window-error-actions { display: flex; justify-content: center; }
-#placeholder_bound .graph-window-error .graph-window-error-actions .btn { margin: 0; }
 
 /* ==========================================================================
    3. GRAPH VIEW SHELL
@@ -66,7 +64,7 @@ body { background-color: var(--bg-body); }
 	grid-template-columns: max-content 1fr repeat(7, max-content);
 	font-family: var(--font-mono);
 	font-size: 13px;
-	color: var(--text-secondary);
+	color: var(--ec-text-secondary);
 }
 
 #feed-stats-table thead,
@@ -100,8 +98,8 @@ body { background-color: var(--bg-body); }
 }
 
 .graph-section-switcher .btn.active {
-	background: var(--accent);
-	border-color: var(--accent);
+	background: var(--bs-primary);
+	border-color: var(--bs-primary);
 	color: #fff;
 	box-shadow: none;
 }
@@ -229,7 +227,7 @@ body { background-color: var(--bg-body); }
 .interval-input-auto {
 	cursor: pointer;
 	background-color: var(--bs-secondary-bg);
-	color: var(--text-secondary);
+	color: var(--ec-text-secondary);
 }
 
 /* ==========================================================================
@@ -305,7 +303,7 @@ body { background-color: var(--bg-body); }
 
 .window-info {
 	font-size: var(--font-sm);
-	color: var(--text-secondary);
+	color: var(--ec-text-secondary);
 	margin: 0.2rem 0 0;
 }
 
@@ -375,7 +373,7 @@ body { background-color: var(--bg-body); }
 	margin: 0 0 1.5rem;
 	padding: 0.5rem 0.8rem;
 	font-size: var(--font-sm);
-	color: var(--text-secondary);
+	color: var(--ec-text-secondary);
 	background: rgba(240, 173, 78, 0.08);
 	border-left: 3px solid #f0ad4e;
 	border-radius: 4px;
@@ -400,7 +398,7 @@ body { background-color: var(--bg-body); }
 	font-weight: 600;
 	text-transform: uppercase;
 	letter-spacing: 0.06em;
-	color: var(--text-secondary);
+	color: var(--ec-text-secondary);
 }
 
 .editor-section .editor-heading .icon-question-sign {
@@ -411,7 +409,7 @@ body { background-color: var(--bg-body); }
 .editor-section .editor-hint,
 .editor-section .editor-status {
 	font-size: var(--font-sm);
-	color: var(--text-secondary);
+	color: var(--ec-text-secondary);
 	margin: 0.4rem 0 0;
 }
 

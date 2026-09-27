@@ -29,13 +29,13 @@ load_css("Theme/css/datetimepicker.css");
 load_css("Modules/graph/view.css");
 ?>
 
-<div id="graph-view-app">
+<div id="graph-view-app" class="panel-page">
 	<!-- ── Graph card ─────────────────────────────────────────────── -->
 	<div class="panel mt-2">
 
 		<nav class="panel-header">
 			<div class="panel-name">
-				<span class="svg-icon-show_chart_bold text-accent" style="color: var(--accent)"></span>&nbsp;
+				<span class="svg-icon-show_chart_bold text-primary"></span>&nbsp;
 				<?php echo tr('Data viewer'); ?>
 			</div>
 			<button class="btn btn-default" v-if="histogramMode" @click="onHistogramBackClick"><?php echo tr('Back to main view'); ?></button>
